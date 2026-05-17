@@ -310,6 +310,43 @@ class AuthService {
     throw Exception('Erreur coordonnées paiement: ${response.body}');
   }
 
+  /// Solde disponible pour retrait (paiements débloqués après scan QR, non encore virés).
+  Future<Map<String, dynamic>> getPayoutBalance(String token) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/owner/payout/balance'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (response.statusCode == 200) return jsonDecode(response.body);
+    throw Exception('Erreur solde retrait: ${response.body}');
+  }
+
+  /// Déclenche un retrait DexPay. DexPay choisit l'opérateur selon le numéro.
+  Future<Map<String, dynamic>> requestPayout(
+    String token, {
+    required String phone,
+    int? amount,
+  }) async {
+    final body = <String, dynamic>{'phone': phone};
+    if (amount != null) body['amount'] = amount;
+
+    final response = await http.post(
+      Uri.parse('$_baseUrl/owner/payout/withdraw'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    }
+    final decoded = jsonDecode(response.body);
+    throw Exception(decoded['message'] ?? 'Erreur retrait: ${response.body}');
+  }
+
   Future<void> updateFcmToken(String token, String fcmToken) async {
     final response = await http.patch(
       Uri.parse('$_baseUrl/users/me/fcm-token'),

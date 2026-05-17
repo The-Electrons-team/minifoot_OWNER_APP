@@ -38,6 +38,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
             ),
             slivers: [
               SliverToBoxAdapter(child: _buildHeader(context)),
+              SliverToBoxAdapter(child: _buildAvailableBalance(context)),
               SliverToBoxAdapter(child: _buildPayoutDestination()),
               SliverToBoxAdapter(child: _buildNotice()),
               SliverToBoxAdapter(child: _buildMethodBreakdown()),
@@ -49,6 +50,216 @@ class PaymentsScreen extends GetView<PaymentsController> {
           ),
         ),
       ),
+    );
+  }
+
+  // ── Carte solde disponible + bouton Retirer ────────────────────────────────
+  Widget _buildAvailableBalance(BuildContext context) {
+    return Obx(() {
+      final balance = controller.availableBalance.value;
+      final count = controller.pendingPaymentsCount.value;
+      final isWithdrawing = controller.isWithdrawing.value;
+      final hasBalance = balance > 0;
+
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: hasBalance
+                ? const LinearGradient(
+                    colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: hasBalance ? null : kBgCard,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: kElevatedShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: hasBalance
+                          ? Colors.white.withValues(alpha: 0.18)
+                          : kGreenLight,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
+                      color: hasBalance ? Colors.white : kGreen,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Solde disponible',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: hasBalance
+                                ? Colors.white.withValues(alpha: 0.75)
+                                : kTextSub,
+                          ),
+                        ),
+                        Text(
+                          '${_fmt(balance)} F CFA',
+                          style: TextStyle(
+                            fontFamily: 'Orbitron',
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: hasBalance ? Colors.white : kTextPrim,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              if (count > 0) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '$count réservation${count > 1 ? 's' : ''} scannée${count > 1 ? 's' : ''} non retirée${count > 1 ? 's' : ''}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 16),
+
+              // Répartition commissions (info)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: hasBalance
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : kBgSurface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _CommissionChip(
+                      label: 'DexPay',
+                      percent: '2%',
+                      light: hasBalance,
+                    ),
+                    _CommissionDot(light: hasBalance),
+                    _CommissionChip(
+                      label: 'MiniFoot',
+                      percent: '2%',
+                      light: hasBalance,
+                    ),
+                    _CommissionDot(light: hasBalance),
+                    _CommissionChip(
+                      label: 'Vous',
+                      percent: '96%',
+                      light: hasBalance,
+                      highlight: true,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              // Bouton retirer
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed:
+                      hasBalance && !isWithdrawing
+                          ? () {
+                              HapticFeedback.mediumImpact();
+                              _showWithdrawSheet(context, balance);
+                            }
+                          : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: hasBalance ? Colors.white : kBgSurface,
+                    foregroundColor: hasBalance ? kGreen : kTextLight,
+                    disabledBackgroundColor: Colors.white.withValues(alpha: 0.25),
+                    disabledForegroundColor: Colors.white60,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  icon: isWithdrawing
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: hasBalance ? kGreen : Colors.white60,
+                          ),
+                        )
+                      : Icon(
+                          PhosphorIcons.arrowLineDown(PhosphorIconsStyle.bold),
+                          size: 18,
+                        ),
+                  label: Text(
+                    isWithdrawing
+                        ? 'Traitement en cours…'
+                        : hasBalance
+                        ? 'Retirer mon argent'
+                        : 'Aucun solde à retirer',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ).animate().fadeIn(delay: 80.ms, duration: 320.ms).slideY(
+            begin: 0.04,
+            duration: 320.ms,
+          );
+    });
+  }
+
+  void _showWithdrawSheet(BuildContext context, int balance) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder:
+          (_) => _WithdrawSheet(
+            availableBalance: balance,
+            formatAmount: _fmt,
+            payoutPhone: controller.payoutPhone.value,
+            payoutMethodLabel: controller.payoutMethodLabel,
+            onWithdraw: (phone) => controller.withdraw(phone),
+          ),
     );
   }
 
@@ -335,9 +546,9 @@ class PaymentsScreen extends GetView<PaymentsController> {
                   color: Colors.white.withValues(alpha: 0.25),
                 ),
                 _HeaderStat(
-                  icon: PhosphorIcons.hourglass(PhosphorIconsStyle.duotone),
-                  label: 'En attente',
-                  value: '${_fmt(controller.pendingAmount.value)} F',
+                  icon: PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
+                  label: 'À retirer',
+                  value: '${_fmt(controller.availableBalance.value)} F',
                 ),
               ],
             ),
@@ -1281,6 +1492,421 @@ class _TransactionDetailSheet extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Bottom sheet retrait ──────────────────────────────────────────────────────
+
+class _WithdrawSheet extends StatefulWidget {
+  final int availableBalance;
+  final String Function(int) formatAmount;
+  final String? payoutPhone;
+  final String payoutMethodLabel;
+  final Future<void> Function(String phone) onWithdraw;
+
+  const _WithdrawSheet({
+    required this.availableBalance,
+    required this.formatAmount,
+    required this.payoutPhone,
+    required this.payoutMethodLabel,
+    required this.onWithdraw,
+  });
+
+  @override
+  State<_WithdrawSheet> createState() => _WithdrawSheetState();
+}
+
+class _WithdrawSheetState extends State<_WithdrawSheet> {
+  final _phoneCtrl = TextEditingController();
+  bool _useConfigured = true;
+  bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.payoutPhone != null && widget.payoutPhone!.isNotEmpty) {
+      _phoneCtrl.text = widget.payoutPhone!;
+    } else {
+      _useConfigured = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  bool get _hasConfigured =>
+      widget.payoutPhone != null && widget.payoutPhone!.isNotEmpty;
+
+  String get _phone =>
+      _useConfigured ? (widget.payoutPhone ?? '') : _phoneCtrl.text.trim();
+
+  bool get _isValid {
+    final p = _phone;
+    return RegExp(r'^\+221[0-9]{9}$').hasMatch(p);
+  }
+
+  Future<void> _submit() async {
+    if (!_isValid || _submitting) return;
+    setState(() => _submitting = true);
+    try {
+      await widget.onWithdraw(_phone);
+      if (mounted) Navigator.of(context).pop();
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      padding: EdgeInsets.fromLTRB(24, 20, 24, 24 + bottom),
+      decoration: BoxDecoration(
+        color: kBgCard,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: kElevatedShadow,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Handle
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: kBorder,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Titre
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: kGreenLight,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  PhosphorIcons.arrowLineDown(PhosphorIconsStyle.duotone),
+                  color: kGreen,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Retirer mon argent',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: kTextPrim,
+                    ),
+                  ),
+                  Text(
+                    'Via DexPay · opérateur détecté automatiquement',
+                    style: const TextStyle(fontSize: 11, color: kTextSub),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Solde à retirer
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: kGreenLight,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                const Text(
+                  'Solde disponible',
+                  style: TextStyle(fontSize: 12, color: kGreen, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${widget.formatAmount(widget.availableBalance)} F CFA',
+                  style: const TextStyle(
+                    fontFamily: 'Orbitron',
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: kGreen,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Frais DexPay (2%) et commission MiniFoot (2%)\ndéjà déduits — ce montant est le vôtre.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 11, color: kGreen, height: 1.4),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Numéro de réception
+          const Text(
+            'Numéro de réception',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: kTextPrim,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Option : compte configuré
+          if (_hasConfigured) ...[
+            GestureDetector(
+              onTap: () => setState(() => _useConfigured = true),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: _useConfigured ? kGreenLight : kBgSurface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: _useConfigured ? kGreen : kBorder,
+                    width: _useConfigured ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      PhosphorIcons.checkCircle(
+                        _useConfigured
+                            ? PhosphorIconsStyle.fill
+                            : PhosphorIconsStyle.regular,
+                      ),
+                      color: _useConfigured ? kGreen : kTextLight,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.payoutMethodLabel,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: _useConfigured ? kGreen : kTextPrim,
+                            ),
+                          ),
+                          Text(
+                            widget.payoutPhone ?? '',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _useConfigured ? kGreen : kTextSub,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: kGreen.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Configuré',
+                        style: TextStyle(fontSize: 10, color: kGreen, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: () => setState(() => _useConfigured = false),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: !_useConfigured ? kBgSurface : kBgSurface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: !_useConfigured ? kGreen : kBorder,
+                    width: !_useConfigured ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      PhosphorIcons.checkCircle(
+                        !_useConfigured
+                            ? PhosphorIconsStyle.fill
+                            : PhosphorIconsStyle.regular,
+                      ),
+                      color: !_useConfigured ? kGreen : kTextLight,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'Autre numéro',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: kTextPrim),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+
+          // Champ numéro (si pas configuré ou "autre")
+          if (!_hasConfigured || !_useConfigured) ...[
+            const SizedBox(height: 10),
+            TextField(
+              controller: _phoneCtrl,
+              keyboardType: TextInputType.phone,
+              autofocus: !_hasConfigured,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: '+221 77 000 00 00',
+                hintStyle: const TextStyle(color: kTextLight, fontSize: 14),
+                filled: true,
+                fillColor: kBgSurface,
+                prefixIcon: Icon(
+                  PhosphorIcons.phone(PhosphorIconsStyle.duotone),
+                  color: kTextSub,
+                  size: 20,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: kBorder),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: kBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: kGreen, width: 1.5),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'DexPay détecte automatiquement l\'opérateur selon le numéro (Wave, Orange, WhatsApp…)',
+              style: TextStyle(fontSize: 11, color: kTextSub, height: 1.4),
+            ),
+          ],
+
+          const SizedBox(height: 20),
+
+          // Bouton confirmer
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: _isValid && !_submitting ? _submit : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kGreen,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: kGreenLight,
+                disabledForegroundColor: kGreen.withValues(alpha: 0.4),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: _submitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      'Confirmer le retrait · ${widget.formatAmount(widget.availableBalance)} F',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Widgets utilitaires commission ────────────────────────────────────────────
+
+class _CommissionChip extends StatelessWidget {
+  final String label;
+  final String percent;
+  final bool light;
+  final bool highlight;
+
+  const _CommissionChip({
+    required this.label,
+    required this.percent,
+    required this.light,
+    this.highlight = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = light
+        ? (highlight ? Colors.white : Colors.white70)
+        : (highlight ? kGreen : kTextSub);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          percent,
+          style: TextStyle(
+            fontSize: highlight ? 15 : 12,
+            fontWeight: FontWeight.w800,
+            color: textColor,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: light ? Colors.white60 : kTextLight,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CommissionDot extends StatelessWidget {
+  final bool light;
+  const _CommissionDot({required this.light});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 4,
+        height: 4,
+        decoration: BoxDecoration(
+          color: light ? Colors.white30 : kBorder,
+          shape: BoxShape.circle,
+        ),
+      );
 }
 
 class _DetailRow extends StatelessWidget {

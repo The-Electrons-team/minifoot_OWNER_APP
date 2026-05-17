@@ -54,6 +54,11 @@ class PaymentsController extends GetxController {
   final payoutMethod = RxnString();
   final payoutPhone = RxnString();
 
+  // Solde disponible pour retrait (débloqué après scan QR, pas encore viré)
+  final availableBalance = 0.obs;
+  final pendingPaymentsCount = 0.obs;
+  final isWithdrawing = false.obs;
+
   final transactions = <TransactionModel>[].obs;
   final selectedFilter = 'all'.obs;
   final selectedPeriod = 'month'.obs; // day / week / month
@@ -77,7 +82,7 @@ class PaymentsController extends GetxController {
       transactions.value = data.transactions
           .map(TransactionModel.fromOwnerTransaction)
           .toList();
-      await _loadPayoutInfo();
+      await Future.wait([_loadPayoutInfo(), _loadPayoutBalance()]);
     } catch (_) {
       errorMessage.value = 'Impossible de charger les paiements';
       Get.snackbar(
@@ -87,6 +92,40 @@ class PaymentsController extends GetxController {
       );
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> _loadPayoutBalance() async {
+    try {
+      final token = await _authService.savedToken();
+      if (token == null || token.isEmpty) return;
+      final data = await _authService.getPayoutBalance(token);
+      availableBalance.value = data['availableAmount'] as int? ?? 0;
+      pendingPaymentsCount.value = data['pendingPaymentsCount'] as int? ?? 0;
+    } catch (_) {
+      availableBalance.value = 0;
+    }
+  }
+
+  /// Lance un retrait DexPay. [phone] : numéro du compte à créditer.
+  /// DexPay détecte l'opérateur automatiquement (Wave, Orange, WhatsApp...).
+  Future<void> withdraw(String phone, {int? amount}) async {
+    isWithdrawing.value = true;
+    try {
+      final token = await _authService.savedToken();
+      if (token == null || token.isEmpty) throw Exception('Non connecté');
+      await _authService.requestPayout(token, phone: phone, amount: amount);
+      await Future.wait([_loadPayoutBalance(), loadPayments()]);
+      Get.snackbar(
+        'Retrait effectué',
+        'Votre retrait a été soumis à DexPay avec succès.',
+        snackPosition: SnackPosition.TOP,
+      );
+    } catch (e) {
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      Get.snackbar('Erreur', msg, snackPosition: SnackPosition.TOP);
+    } finally {
+      isWithdrawing.value = false;
     }
   }
 
