@@ -371,49 +371,63 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: 180.ms,
-        height: 38,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFF006F39) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? const Color(0xFF006F39) : const Color(0xFFE5E0D8),
-          ),
+    return AnimatedContainer(
+      duration: 180.ms,
+      height: 38,
+      decoration: BoxDecoration(
+        color: selected ? const Color(0xFF006F39) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: selected ? const Color(0xFF006F39) : const Color(0xFFE5E0D8),
         ),
-        child: Row(
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: selected ? Colors.white : const Color(0xFF6B7280),
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: selected
-                    ? Colors.white.withValues(alpha: 0.18)
-                    : const Color(0xFFF0EBE3),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '$count',
-                style: TextStyle(
-                  color: selected ? Colors.white : const Color(0xFF006F39),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: selected ? Colors.white : const Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? Colors.white.withValues(alpha: 0.18)
+                        : const Color(0xFFF0EBE3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '$count',
+                    style: TextStyle(
+                      color: selected ? Colors.white : const Color(0xFF006F39),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -439,20 +453,15 @@ class _TerrainCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Opacity(
       opacity: terrain.isActive ? 1.0 : 0.78,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE5E0D8)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
+      child: Material(
+        color: Colors.white,
         clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xFFE5E0D8)),
+        ),
+        shadowColor: Colors.black.withValues(alpha: 0.12),
+        elevation: 6,
         child: InkWell(
           onTap: onTap,
           child: Column(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/services/terrain_service.dart';
+import '../../auth/controllers/auth_controller.dart';
 import 'availability_range_helper.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -39,15 +40,18 @@ class TerrainOption {
   final String name;
   final String? subTerrainId;
   final String? parentName;
+  final bool isComplexView;
 
   const TerrainOption({
     required this.id,
     required this.name,
     this.subTerrainId,
     this.parentName,
+    this.isComplexView = false,
   });
 
   bool get isMiniTerrain => subTerrainId != null && subTerrainId!.isNotEmpty;
+  String get complexName => parentName ?? name;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -55,13 +59,13 @@ class TerrainOption {
 // ══════════════════════════════════════════════════════════════════════════════
 
 class AvailabilityController extends GetxController {
-  static const List<int> durationOptions = [2, 3, 4, 5, 6, 7];
-
   final _service = TerrainService();
+  final _auth = Get.find<AuthController>();
 
   final focusedDay = DateTime.now().obs;
   final selectedDate = DateTime.now().obs;
   final selectedTerrain = 0.obs;
+  final selectedTerrainKey = ''.obs;
   final slots = <TimeSlot>[].obs;
   final isLoading = false.obs;
   final isLoadingTerrains = false.obs;
@@ -71,6 +75,8 @@ class AvailabilityController extends GetxController {
   final calendarFormat = 'week'.obs;
 
   final terrains = <TerrainOption>[].obs;
+  final complexCount = 0.obs;
+  int _slotsRequestId = 0;
 
   @override
   void onInit() {
@@ -85,11 +91,13 @@ class AvailabilityController extends GetxController {
     try {
       final data = await _service.getMesTerrains();
       final options = <TerrainOption>[];
+      var loadedComplexes = 0;
       for (final item in data) {
         final m = item as Map<String, dynamic>;
         final terrainId = m['id'] as String? ?? '';
         final terrainName = m['name'] as String? ?? '';
         if (terrainId.isEmpty) continue;
+        loadedComplexes += 1;
 
         final subTerrains = (m['subTerrains'] as List<dynamic>? ?? [])
             .whereType<Map<String, dynamic>>()
@@ -104,6 +112,7 @@ class AvailabilityController extends GetxController {
               id: terrainId,
               name: '$terrainName · Tout le complexe',
               parentName: terrainName,
+              isComplexView: true,
             ),
           );
           for (final subTerrain in subTerrains) {
@@ -121,9 +130,15 @@ class AvailabilityController extends GetxController {
           }
         }
       }
+      complexCount.value = loadedComplexes;
       terrains.value = options;
       if (selectedTerrain.value >= terrains.length) {
         selectedTerrain.value = 0;
+      }
+      if (terrains.isNotEmpty) {
+        selectedTerrainKey.value = _optionKey(terrains[selectedTerrain.value]);
+      } else {
+        selectedTerrainKey.value = '';
       }
       if (terrains.isNotEmpty) {
         await _loadSlots(selectedDate.value);
@@ -131,6 +146,7 @@ class AvailabilityController extends GetxController {
         slots.clear();
       }
     } catch (e) {
+      complexCount.value = 0;
       errorMessage.value = 'Impossible de charger les terrains';
       Get.snackbar(
         'Erreur',
@@ -142,42 +158,124 @@ class AvailabilityController extends GetxController {
     }
   }
 
+  bool get isController => _auth.user.value?.isController == true;
+
+  DateTime get firstSelectableDay => isController
+      ? _startOfCurrentWeek()
+      : DateTime.now().subtract(const Duration(days: 365));
+
+  DateTime get lastSelectableDay => isController
+      ? _startOfCurrentWeek().add(const Duration(days: 6))
+      : DateTime.now().add(const Duration(days: 365));
+
+  String get scopeLabel {
+    if (isLoadingTerrains.value) return 'Chargement des complexes';
+    if (terrains.isEmpty) return 'Aucun complexe disponible';
+    if (isController) {
+      return '${complexCount.value} complexe${complexCount.value > 1 ? 's' : ''} assigné${complexCount.value > 1 ? 's' : ''} • semaine en cours';
+    }
+    return '${complexCount.value} complexe${complexCount.value > 1 ? 's' : ''} • ${terrains.length} option${terrains.length > 1 ? 's' : ''}';
+  }
+
+  String get selectedComplexLabel {
+    if (terrains.isEmpty) return 'Aucun complexe';
+    return terrains[selectedTerrain.value].complexName;
+  }
+
+  String get selectedUnitLabel {
+    if (terrains.isEmpty) return '';
+    final selected = terrains[selectedTerrain.value];
+    if (selected.isComplexView) return 'Vue globale du complexe';
+    if (selected.isMiniTerrain) return selected.name;
+    return 'Terrain principal';
+  }
+
   // ── Sélection de date ───────────────────────────────────────────────────────
   void onDaySelected(DateTime day, DateTime focused) {
-    selectedDate.value = day;
-    focusedDay.value = focused;
-    _loadSlots(day);
+    if (!canAccessDate(day)) {
+      Get.snackbar(
+        'Semaine limitée',
+        'Le contrôleur peut consulter uniquement les créneaux de la semaine en cours.',
+        snackPosition: SnackPosition.TOP,
+      );
+      return;
+    }
+    final clampedDay = _clampToAllowedRange(day);
+    selectedDate.value = clampedDay;
+    focusedDay.value = _clampToAllowedRange(focused);
+    _loadSlots(clampedDay);
   }
 
   void onPageChanged(DateTime focused) {
-    focusedDay.value = focused;
+    focusedDay.value = _clampToAllowedRange(focused);
+  }
+
+  void goToAdjacentDay(int delta) {
+    final target = selectedDate.value.add(Duration(days: delta));
+    if (!canAccessDate(target)) {
+      Get.snackbar(
+        'Semaine limitée',
+        'Le contrôleur reste limité à la semaine en cours.',
+        snackPosition: SnackPosition.TOP,
+      );
+      return;
+    }
+    onDaySelected(target, target);
   }
 
   // ── Sélection de terrain ────────────────────────────────────────────────────
   void selectTerrain(int index) {
     if (index < 0 || index >= terrains.length) return;
     selectedTerrain.value = index;
+    selectedTerrainKey.value = _optionKey(terrains[index]);
     _loadSlots(selectedDate.value);
   }
 
+  bool isTerrainSelected(TerrainOption option) =>
+      selectedTerrainKey.value == _optionKey(option);
+
+  String _optionKey(TerrainOption option) =>
+      '${option.id}:${option.subTerrainId ?? 'all'}';
+
   void toggleFormat() {
+    if (isController) {
+      calendarFormat.value = 'week';
+      return;
+    }
     calendarFormat.value = calendarFormat.value == 'month' ? 'week' : 'month';
   }
 
   // ── Chargement des créneaux depuis l'API ─────────────────────────────────────
   Future<void> _loadSlots(DateTime date) async {
     if (terrains.isEmpty) return;
+    if (!canAccessDate(date)) {
+      slots.clear();
+      return;
+    }
+    final requestId = ++_slotsRequestId;
+    final selectedOption = terrains[selectedTerrain.value];
     isLoading.value = true;
     errorMessage.value = '';
     try {
-      final terrainId = terrains[selectedTerrain.value].id;
-      final subTerrainId = terrains[selectedTerrain.value].subTerrainId;
+      final terrainId = selectedOption.id;
+      final subTerrainId = selectedOption.subTerrainId;
       final dateStr = _formatDate(date);
       final data = await _service.getCreneaux(
         terrainId,
         dateStr,
         subTerrainId: subTerrainId,
       );
+
+      if (requestId != _slotsRequestId ||
+          terrains.isEmpty ||
+          selectedTerrain.value >= terrains.length) {
+        return;
+      }
+      final currentOption = terrains[selectedTerrain.value];
+      if (currentOption.id != selectedOption.id ||
+          currentOption.subTerrainId != selectedOption.subTerrainId) {
+        return;
+      }
 
       slots.value = data.map((item) {
         final m = item as Map<String, dynamic>;
@@ -199,6 +297,7 @@ class AvailabilityController extends GetxController {
         );
       }).toList();
     } catch (e) {
+      if (requestId != _slotsRequestId) return;
       errorMessage.value = 'Impossible de charger les créneaux';
       Get.snackbar(
         'Erreur',
@@ -206,7 +305,9 @@ class AvailabilityController extends GetxController {
         snackPosition: SnackPosition.TOP,
       );
     } finally {
-      isLoading.value = false;
+      if (requestId == _slotsRequestId) {
+        isLoading.value = false;
+      }
     }
   }
 
@@ -295,7 +396,7 @@ class AvailabilityController extends GetxController {
       if (!silent) {
         Get.snackbar(
           'Durée indisponible',
-          'Sélectionne une plage continue de ${formatSlotDuration(slotCount)}.',
+          'Saisis une plage continue valide de $slotCount créneau${slotCount > 1 ? 'x' : ''}.',
           snackPosition: SnackPosition.TOP,
         );
       }
@@ -353,6 +454,62 @@ class AvailabilityController extends GetxController {
         );
       }
       return false;
+    }
+  }
+
+  Future<int> toggleBlockPeriod({
+    required DateTime startDate,
+    required String startTime,
+    required DateTime endDate,
+    required String endTime,
+    required bool unblock,
+  }) async {
+    if (terrains.isEmpty || isBulkUpdating.value) return 0;
+
+    final start = _startOfDay(startDate);
+    final end = _startOfDay(endDate);
+    final startMinutes = _parseSlotMinutes(startTime);
+    final endMinutes = _parseSlotMinutes(endTime);
+    if (start.isAfter(end)) return 0;
+    if (isSameDay(start, end) && endMinutes <= startMinutes) return 0;
+
+    isBulkUpdating.value = true;
+    var count = 0;
+    try {
+      var day = start;
+      while (!day.isAfter(end)) {
+        final from = isSameDay(day, start) ? startMinutes : 8 * 60;
+        final to = isSameDay(day, end) ? endMinutes : 24 * 60;
+        for (var minutes = from; minutes < to; minutes += 30) {
+          final slot = _formatSlotMinutes(minutes);
+          try {
+            if (unblock) {
+              await _service.debloquerCreneau(
+                terrains[selectedTerrain.value].id,
+                _formatDate(day),
+                slot,
+                subTerrainId: terrains[selectedTerrain.value].subTerrainId,
+              );
+            } else {
+              await _service.bloquerCreneau(
+                terrains[selectedTerrain.value].id,
+                _formatDate(day),
+                slot,
+                subTerrainId: terrains[selectedTerrain.value].subTerrainId,
+              );
+            }
+            count += 1;
+          } catch (_) {
+            // Un créneau déjà réservé ou déjà dans l'état demandé ne doit pas
+            // empêcher le reste de la plage de se traiter.
+          }
+        }
+        day = day.add(const Duration(days: 1));
+      }
+      await _loadSlots(selectedDate.value);
+      return count;
+    } finally {
+      isBulkUpdating.value = false;
     }
   }
 
@@ -416,6 +573,29 @@ class AvailabilityController extends GetxController {
   String _formatDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
+  bool canAccessDate(DateTime date) {
+    final day = _startOfDay(date);
+    return !day.isBefore(_startOfDay(firstSelectableDay)) &&
+        !day.isAfter(_startOfDay(lastSelectableDay));
+  }
+
+  DateTime _clampToAllowedRange(DateTime date) {
+    final day = _startOfDay(date);
+    final min = _startOfDay(firstSelectableDay);
+    final max = _startOfDay(lastSelectableDay);
+    if (day.isBefore(min)) return min;
+    if (day.isAfter(max)) return max;
+    return day;
+  }
+
+  DateTime _startOfDay(DateTime date) =>
+      DateTime(date.year, date.month, date.day);
+
+  DateTime _startOfCurrentWeek() {
+    final today = _startOfDay(DateTime.now());
+    return today.subtract(Duration(days: today.weekday % 7));
+  }
+
   String _addThirtyMin(String time) {
     final parts = time.split('h');
     int h = int.parse(parts[0]);
@@ -425,6 +605,17 @@ class AvailabilityController extends GetxController {
       m -= 60;
       h += 1;
     }
+    return '${h.toString().padLeft(2, '0')}h${m.toString().padLeft(2, '0')}';
+  }
+
+  int _parseSlotMinutes(String time) {
+    final parts = time.split('h');
+    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
+  }
+
+  String _formatSlotMinutes(int minutes) {
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
     return '${h.toString().padLeft(2, '0')}h${m.toString().padLeft(2, '0')}';
   }
 
@@ -471,7 +662,7 @@ class AvailabilityController extends GetxController {
       case SlotStatus.booked:
         return const Color(0xFFF59E0B);
       case SlotStatus.blocked:
-        return const Color(0xFF9CA3AF);
+        return const Color(0xFFEF4444);
     }
   }
 
@@ -482,7 +673,7 @@ class AvailabilityController extends GetxController {
       case SlotStatus.booked:
         return const Color(0xFFFEF3C7);
       case SlotStatus.blocked:
-        return const Color(0xFFF3F4F6);
+        return const Color(0xFFFEE2E2);
     }
   }
 

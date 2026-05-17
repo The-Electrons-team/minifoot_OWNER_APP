@@ -115,7 +115,7 @@ class DashboardController extends GetxController {
     try {
       await Get.toNamed(route);
     } finally {
-      selectedTab.value = 0;
+      Future.microtask(() => selectedTab.value = 0);
     }
   }
 

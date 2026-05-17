@@ -15,7 +15,7 @@ class ControllerDetailScreen extends StatefulWidget {
 
 class _ControllerDetailScreenState extends State<ControllerDetailScreen> {
   late final ControllersController controller;
-  late final OwnerControllerModel item;
+  late OwnerControllerModel item;
 
   @override
   void initState() {
@@ -100,19 +100,31 @@ class _ControllerDetailScreenState extends State<ControllerDetailScreen> {
             ),
             const SizedBox(height: 18),
             _SectionCard(
-              title: 'Terrains autorisés',
-              child: item.terrains.isEmpty
+              title: 'Complexes autorisés',
+              action: TextButton.icon(
+                onPressed: _showComplexAssignmentSheet,
+                icon: const Icon(Icons.edit_rounded, size: 16),
+                label: const Text('Modifier'),
+                style: TextButton.styleFrom(
+                  foregroundColor: kGreen,
+                  textStyle: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              child: item.complexes.isEmpty
                   ? const Text(
-                      'Aucun terrain assigné',
+                      'Aucun complexe assigné',
                       style: TextStyle(color: kTextSub, fontSize: 13),
                     )
                   : Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: item.terrains
+                      children: item.complexes
                           .map(
-                            (terrain) => Chip(
-                              label: Text(terrain),
+                            (complex) => Chip(
+                              label: Text(complex),
                               backgroundColor: kGreenLight,
                               labelStyle: const TextStyle(
                                 color: kGreen,
@@ -151,6 +163,113 @@ class _ControllerDetailScreenState extends State<ControllerDetailScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showComplexAssignmentSheet() {
+    final selected = item.complexIds.toSet().obs;
+
+    Get.bottomSheet(
+      Container(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          14,
+          20,
+          MediaQuery.of(context).viewInsets.bottom + 20,
+        ),
+        decoration: const BoxDecoration(
+          color: kBgCard,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Obx(
+            () => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: kBorder,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Changer l’affectation',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: kTextPrim,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  item.fullName.isEmpty ? item.phone : item.fullName,
+                  style: const TextStyle(color: kTextSub, fontSize: 13),
+                ),
+                const SizedBox(height: 16),
+                if (controller.terrains.isEmpty)
+                  const Text(
+                    'Aucun complexe disponible',
+                    style: TextStyle(color: kTextSub, fontSize: 13),
+                  )
+                else
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 260),
+                    child: SingleChildScrollView(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: controller.terrains.map((complex) {
+                          final isSelected = selected.contains(complex.id);
+                          return FilterChip(
+                            selected: isSelected,
+                            label: Text(complex.name),
+                            selectedColor: kGreenLight,
+                            checkmarkColor: kGreen,
+                            onSelected: (_) {
+                              isSelected
+                                  ? selected.remove(complex.id)
+                                  : selected.add(complex.id);
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final updated = await controller.updateControllerComplexes(
+                        item,
+                        selected.toList(),
+                      );
+                      if (updated == null) return;
+                      setState(() => item = updated);
+                      Get.back();
+                      Get.snackbar(
+                        'Affectation mise à jour',
+                        'Le contrôleur voit maintenant les créneaux des complexes sélectionnés.',
+                        snackPosition: SnackPosition.TOP,
+                      );
+                    },
+                    child: const Text('Enregistrer'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      isScrollControlled: true,
     );
   }
 }
@@ -277,8 +396,9 @@ class _MetricCard extends StatelessWidget {
 class _SectionCard extends StatelessWidget {
   final String title;
   final Widget child;
+  final Widget? action;
 
-  const _SectionCard({required this.title, required this.child});
+  const _SectionCard({required this.title, required this.child, this.action});
 
   @override
   Widget build(BuildContext context) {
@@ -293,13 +413,20 @@ class _SectionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: kTextPrim,
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: kTextPrim,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              if (action != null) action!,
+            ],
           ),
           const SizedBox(height: 12),
           child,

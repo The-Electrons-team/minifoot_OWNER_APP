@@ -59,7 +59,7 @@ class ControllersScreen extends GetView<ControllersController> {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Ajoute une personne de confiance pour scanner les QR et gérer les créneaux autorisés.',
+                  'Ajoute une personne de confiance pour scanner les QR et gérer les créneaux des complexes autorisés.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: kTextSub, fontSize: 13, height: 1.4),
                 ),
@@ -102,7 +102,7 @@ class ControllersScreen extends GetView<ControllersController> {
     final firstNameCtrl = TextEditingController();
     final lastNameCtrl = TextEditingController();
     final phoneCtrl = TextEditingController(text: '+221');
-    final selectedTerrains = <String>{}.obs;
+    final selectedComplexes = <String>{}.obs;
 
     Get.bottomSheet(
       Container(
@@ -159,7 +159,7 @@ class ControllersScreen extends GetView<ControllersController> {
 
               const SizedBox(height: 16),
               const Text(
-                'Terrains autorisés',
+                'Complexes autorisés',
                 style: TextStyle(
                   color: kTextPrim,
                   fontWeight: FontWeight.w700,
@@ -172,7 +172,7 @@ class ControllersScreen extends GetView<ControllersController> {
                   spacing: 8,
                   runSpacing: 8,
                   children: controller.terrains.map((terrain) {
-                    final selected = selectedTerrains.contains(terrain.id);
+                    final selected = selectedComplexes.contains(terrain.id);
                     return FilterChip(
                       selected: selected,
                       label: Text(terrain.name),
@@ -180,8 +180,8 @@ class ControllersScreen extends GetView<ControllersController> {
                       checkmarkColor: kGreen,
                       onSelected: (_) {
                         selected
-                            ? selectedTerrains.remove(terrain.id)
-                            : selectedTerrains.add(terrain.id);
+                            ? selectedComplexes.remove(terrain.id)
+                            : selectedComplexes.add(terrain.id);
                       },
                     );
                   }).toList(),
@@ -197,7 +197,7 @@ class ControllersScreen extends GetView<ControllersController> {
                       firstName: firstNameCtrl.text.trim(),
                       lastName: lastNameCtrl.text.trim(),
                       phone: phoneCtrl.text.trim(),
-                      terrainIds: selectedTerrains.toList(),
+                      complexIds: selectedComplexes.toList(),
                     );
                     if (credentials == null) return;
                     Get.back();
@@ -324,9 +324,9 @@ class _ControllerCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                item.terrains.isEmpty
-                    ? 'Aucun terrain assigné'
-                    : item.terrains.join(' • '),
+                item.complexes.isEmpty
+                    ? 'Aucun complexe assigné'
+                    : item.complexes.join(' • '),
                 style: const TextStyle(
                   color: kTextLight,
                   fontSize: 12,

@@ -319,6 +319,8 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
   final _pageCtrl = PageController();
   final _editingTerrainIndex = RxnInt();
   final _miniTerrains = <_SubTerrainDraft>[].obs;
+  final _contactPhones = <String>[].obs;
+  final _phoneCtrl = TextEditingController();
 
   final _equipments = <String, bool>{
     'Éclairage': true,
@@ -373,6 +375,8 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
       );
       _surface.value = surf;
 
+      _contactPhones.assignAll(t.contactPhones);
+
       const caps = {'5v5', '7v7', '11v11'};
       for (final f in t.features) {
         if (caps.contains(f)) _capacities.add(f);
@@ -414,6 +418,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
     _openCtrl.dispose();
     _closeCtrl.dispose();
     _pageCtrl.dispose();
+    _phoneCtrl.dispose();
     for (final miniTerrain in _miniTerrains) {
       miniTerrain.dispose();
     }
@@ -995,9 +1000,116 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
           ctrl: _descCtrl,
           hint: 'Décrivez le complexe et ses terrains...',
         ),
+        const SizedBox(height: 16),
+        _buildContactPhonesList(),
       ],
     ),
   );
+
+  Widget _buildContactPhonesList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Numéros de contact',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF6B7280),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Obx(() => Column(
+              children: [
+                ..._contactPhones.map((phone) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Container(
+                        height: 48,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF9FAF7),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE5E0D8)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(PhosphorIconsLight.phone,
+                                color: Color(0xFF006F39), size: 18),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                phone,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF1A1A1A),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () => _contactPhones.remove(phone),
+                              icon: const Icon(PhosphorIconsLight.trash,
+                                  color: Color(0xFFEF4444), size: 18),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )),
+              ],
+            )),
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE5E0D8)),
+          ),
+          child: Row(
+            children: [
+              const SizedBox(width: 14),
+              const Icon(PhosphorIconsLight.phone,
+                  color: Color(0xFF006F39), size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  controller: _phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF1A1A1A),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  decoration: const InputDecoration(
+                    hintText: 'Ajouter un numéro...',
+                    hintStyle: TextStyle(
+                      color: Color(0xFF9CA3AF),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: () {
+                  final phone = _phoneCtrl.text.trim();
+                  if (phone.isNotEmpty && !_contactPhones.contains(phone)) {
+                    _contactPhones.add(phone);
+                    _phoneCtrl.clear();
+                  }
+                },
+                icon: const Icon(PhosphorIconsLight.plusCircle,
+                    color: Color(0xFF006F39), size: 20),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildDropdown({
     required String label,
@@ -1749,6 +1861,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
             ? null
             : _descCtrl.text.trim(),
         features: features,
+        contactPhones: _contactPhones.toList(),
         subTerrains: subTerrains,
         images: _images.toList(),
         managerId: authCtrl.user.value?.id,

@@ -33,7 +33,7 @@ class ControllerService {
     required String firstName,
     required String lastName,
     required String phone,
-    required List<String> terrainIds,
+    required List<String> complexIds,
   }) async {
     final response = await http.post(
       Uri.parse('$_base/owner/controllers'),
@@ -42,7 +42,7 @@ class ControllerService {
         'firstName': firstName,
         'lastName': lastName,
         'phone': phone,
-        'terrainIds': terrainIds,
+        'complexIds': complexIds,
       }),
     );
     if (response.statusCode == 200 || response.statusCode == 201) {

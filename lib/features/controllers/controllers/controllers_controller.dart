@@ -8,7 +8,8 @@ class OwnerControllerModel {
   final String phone;
   final bool isActive;
   final int commissionPerCheckIn;
-  final List<String> terrains;
+  final List<String> complexes;
+  final List<String> complexIds;
   final int scans;
   final int confirmed;
   final int blockedSlots;
@@ -20,7 +21,8 @@ class OwnerControllerModel {
     required this.phone,
     required this.isActive,
     required this.commissionPerCheckIn,
-    required this.terrains,
+    required this.complexes,
+    required this.complexIds,
     required this.scans,
     required this.confirmed,
     required this.blockedSlots,
@@ -31,17 +33,22 @@ class OwnerControllerModel {
     final firstName = (json['firstName'] ?? '').toString();
     final lastName = (json['lastName'] ?? '').toString();
     final stats = json['todayStats'] as Map<String, dynamic>? ?? {};
+    final links = ((json['complexes'] ?? json['terrains']) as List<dynamic>? ?? [])
+        .whereType<Map<String, dynamic>>()
+        .toList();
     return OwnerControllerModel(
       id: (json['id'] ?? '').toString(),
       fullName: '$firstName $lastName'.trim(),
       phone: (json['phone'] ?? '').toString(),
       isActive: json['isActive'] == true,
       commissionPerCheckIn: _asInt(json['commissionPerCheckIn']),
-      terrains: (json['terrains'] as List<dynamic>? ?? [])
-          .map(
-            (item) => ((item as Map<String, dynamic>)['name'] ?? '').toString(),
-          )
+      complexes: links
+          .map((item) => (item['name'] ?? '').toString())
           .where((name) => name.isNotEmpty)
+          .toList(),
+      complexIds: links
+          .map((item) => (item['id'] ?? '').toString())
+          .where((id) => id.isNotEmpty)
           .toList(),
       scans: _asInt(stats['scans']),
       confirmed: _asInt(stats['confirmed']),
@@ -184,14 +191,14 @@ class ControllersController extends GetxController {
     required String firstName,
     required String lastName,
     required String phone,
-    required List<String> terrainIds,
+    required List<String> complexIds,
   }) async {
     try {
       final result = await _service.createController(
         firstName: firstName,
         lastName: lastName,
         phone: phone,
-        terrainIds: terrainIds,
+        complexIds: complexIds,
       );
       await refreshAll();
       return result['credentials'] as Map<String, dynamic>?;
@@ -217,6 +224,31 @@ class ControllersController extends GetxController {
         'Impossible de modifier ce controller',
         snackPosition: SnackPosition.TOP,
       );
+    }
+  }
+
+  Future<OwnerControllerModel?> updateControllerComplexes(
+    OwnerControllerModel controller,
+    List<String> complexIds,
+  ) async {
+    try {
+      final data = await _service.updateController(controller.id, {
+        'complexIds': complexIds,
+      });
+      final updated = OwnerControllerModel.fromJson(data);
+      final index = controllers.indexWhere((item) => item.id == updated.id);
+      if (index != -1) {
+        controllers[index] = updated;
+        controllers.refresh();
+      }
+      return updated;
+    } catch (_) {
+      Get.snackbar(
+        'Erreur',
+        'Impossible de modifier les complexes du controller',
+        snackPosition: SnackPosition.TOP,
+      );
+      return null;
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart' show CupertinoDatePicker, CupertinoDatePickerMode, CupertinoTheme, CupertinoThemeData;
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -29,17 +30,14 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
             child: GestureDetector(
               onHorizontalDragEnd: (details) {
                 if (details.primaryVelocity == null) return;
-                final current = controller.selectedDate.value;
                 if (details.primaryVelocity! < -200) {
                   // Swipe gauche → jour suivant
                   HapticFeedback.selectionClick();
-                  final next = current.add(const Duration(days: 1));
-                  controller.onDaySelected(next, next);
+                  controller.goToAdjacentDay(1);
                 } else if (details.primaryVelocity! > 200) {
                   // Swipe droite → jour précédent
                   HapticFeedback.selectionClick();
-                  final prev = current.subtract(const Duration(days: 1));
-                  controller.onDaySelected(prev, prev);
+                  controller.goToAdjacentDay(-1);
                 }
               },
               child: Obx(() {
@@ -99,7 +97,7 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
         children: [
           // Bouton retour
           IconButton(
-            onPressed: () => Get.back(),
+            onPressed: () => Navigator.of(context).pop(),
             icon: const Icon(
               Icons.arrow_back_ios_new_rounded,
               color: kTextPrim,
@@ -113,7 +111,7 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Disponibilités',
+                    'Créneaux',
                     style: TextStyle(
                       fontFamily: 'Orbitron',
                       fontSize: 17,
@@ -122,7 +120,7 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
                     ),
                   ),
                   Text(
-                    controller.selectedDateLabel,
+                    '${controller.selectedDateLabel} • ${controller.scopeLabel}',
                     style: const TextStyle(
                       fontSize: 12,
                       color: kTextSub,
@@ -136,7 +134,7 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
           // Toggle mois / semaine
           Obx(
             () => GestureDetector(
-              onTap: controller.toggleFormat,
+              onTap: controller.isController ? null : controller.toggleFormat,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(
@@ -152,7 +150,8 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      controller.calendarFormat.value == 'month'
+                      controller.isController ||
+                              controller.calendarFormat.value == 'month'
                           ? Icons.calendar_view_week_rounded
                           : Icons.calendar_month_rounded,
                       size: 16,
@@ -160,7 +159,8 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
                     ),
                     const SizedBox(width: 5),
                     Text(
-                      controller.calendarFormat.value == 'month'
+                      controller.isController ||
+                              controller.calendarFormat.value == 'month'
                           ? 'Semaine'
                           : 'Mois',
                       style: const TextStyle(
@@ -182,17 +182,17 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
   // ── Sélecteur de terrain ─────────────────────────────────────────────────────
   Widget _buildTerrainSelector() {
     return SizedBox(
-      height: 50,
+      height: 82,
       child: Obx(() {
         if (controller.isLoadingTerrains.value) {
           return ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             itemCount: 3,
             separatorBuilder: (context, index) => const SizedBox(width: 8),
             itemBuilder: (_, i) =>
                 Container(
-                      width: 118,
+                      width: 190,
                       decoration: BoxDecoration(
                         color: kBgSurface,
                         borderRadius: BorderRadius.circular(20),
@@ -212,52 +212,20 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
 
         return ListView.separated(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           itemCount: controller.terrains.length,
           separatorBuilder: (context, index) => const SizedBox(width: 8),
           itemBuilder: (_, i) {
             final terrain = controller.terrains[i];
-            final selected = controller.selectedTerrain.value == i;
-            return GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                controller.selectTerrain(i);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: selected ? kGreen : kBgSurface,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: selected ? kGreen : kBorder,
-                    width: selected ? 0 : 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      terrain.isMiniTerrain
-                          ? Icons.grid_view_rounded
-                          : Icons.sports_soccer_rounded,
-                      size: 14,
-                      color: selected ? Colors.white : kTextSub,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      terrain.name,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: selected ? Colors.white : kTextSub,
-                      ),
-                    ),
-                  ],
-                ),
+            return Obx(
+              () => _TerrainSelectorChip(
+                key: ValueKey('${terrain.id}:${terrain.subTerrainId ?? 'all'}'),
+                terrain: terrain,
+                selected: controller.isTerrainSelected(terrain),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  controller.selectTerrain(i);
+                },
               ),
             );
           },
@@ -271,15 +239,18 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
     return Obx(() {
       final isMonth = controller.calendarFormat.value == 'month';
       return TableCalendar(
-        firstDay: DateTime.now().subtract(const Duration(days: 365)),
-        lastDay: DateTime.now().add(const Duration(days: 365)),
+        firstDay: controller.firstSelectableDay,
+        lastDay: controller.lastSelectableDay,
         focusedDay: controller.focusedDay.value,
         selectedDayPredicate: (day) =>
             controller.isSameDay(day, controller.selectedDate.value),
-        calendarFormat: isMonth ? CalendarFormat.month : CalendarFormat.week,
+        calendarFormat: controller.isController || !isMonth
+            ? CalendarFormat.week
+            : CalendarFormat.month,
         onDaySelected: controller.onDaySelected,
         onPageChanged: controller.onPageChanged,
         eventLoader: controller.getEventsForDay,
+        enabledDayPredicate: controller.canAccessDate,
 
         // ── Marqueurs personnalisés ───────────────────────────────────────────
         calendarBuilders: CalendarBuilders(
@@ -421,9 +392,9 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
       if (controller.terrains.isEmpty) {
         return const _AvailabilityEmptyState(
           icon: Icons.sports_soccer_rounded,
-          title: 'Aucun terrain',
+          title: 'Aucun complexe',
           message:
-              'Crée d’abord un terrain pour gérer ses créneaux de réservation.',
+              'Crée d’abord un complexe pour gérer ses créneaux de réservation.',
           showCreateButton: true,
         );
       }
@@ -574,6 +545,53 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
       ),
       child: Column(
         children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: kGreenLight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.sports_soccer_rounded,
+                  color: kGreen,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      controller.selectedComplexLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: kTextPrim,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      controller.selectedUnitLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: kTextSub,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -1022,7 +1040,7 @@ class _NoTerrainChip extends StatelessWidget {
           Icon(Icons.info_outline_rounded, size: 14, color: kTextSub),
           SizedBox(width: 6),
           Text(
-            'Aucun terrain disponible',
+            'Aucun complexe disponible',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -1030,6 +1048,98 @@ class _NoTerrainChip extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TerrainSelectorChip extends StatelessWidget {
+  final TerrainOption terrain;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _TerrainSelectorChip({
+    super.key,
+    required this.terrain,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      constraints: const BoxConstraints(minWidth: 176, minHeight: 58),
+      decoration: BoxDecoration(
+        color: selected ? kGreen : kBgSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: selected ? kGreen : kBorder,
+          width: selected ? 0 : 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  terrain.isMiniTerrain
+                      ? Icons.grid_view_rounded
+                      : Icons.sports_soccer_rounded,
+                  size: 14,
+                  color: selected ? Colors.white : kTextSub,
+                ),
+                const SizedBox(width: 6),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 210),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.max,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        terrain.complexName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.05,
+                          fontWeight: FontWeight.w800,
+                          color: selected ? Colors.white : kTextPrim,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        terrain.isComplexView
+                            ? 'Tous les terrains'
+                            : terrain.isMiniTerrain
+                                ? terrain.name
+                                : 'Terrain principal',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 10,
+                          height: 1.05,
+                          fontWeight: FontWeight.w600,
+                          color: selected
+                              ? Colors.white.withValues(alpha: 0.8)
+                              : kTextSub,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1095,7 +1205,7 @@ class _AvailabilityEmptyState extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.add_rounded, size: 20),
                 label: const Text(
-                  'Créer un terrain',
+                  'Créer un complexe',
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
@@ -1122,7 +1232,15 @@ class _SlotDetailSheet extends StatefulWidget {
 }
 
 class _SlotDetailSheetState extends State<_SlotDetailSheet> {
-  int selectedDurationSlots = AvailabilityController.durationOptions.first;
+  late DateTime endDate;
+  late String endTime;
+
+  @override
+  void initState() {
+    super.initState();
+    endDate = widget.controller.selectedDate.value;
+    endTime = widget.slot.endTime;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1130,15 +1248,14 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
     final controller = widget.controller;
     final accentColor = controller.slotColor(slot.status);
     final bgColor = controller.slotBgColor(slot.status);
-    final actionEnabled =
-        !slot.isBooked &&
-        controller.canToggleRange(slot.time, selectedDurationSlots);
+    final actionEnabled = !slot.isBooked && _isPeriodValid(controller, slot);
+    final endLabel = _formatDateLabel(endDate);
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+
       decoration: BoxDecoration(
         color: kBgCard,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         boxShadow: kElevatedShadow,
       ),
       child: Column(
@@ -1171,7 +1288,7 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
 
           // Heure
           Text(
-            '${slot.time} → ${rangeEndTime(slot.time, selectedDurationSlots)}',
+            '${slot.time} → $endTime',
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
@@ -1206,7 +1323,7 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Durée',
+                    'Fin du blocage',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -1214,69 +1331,28 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Row(
-                    children: AvailabilityController.durationOptions.map((
-                      slotCount,
-                    ) {
-                      final isSelected = selectedDurationSlots == slotCount;
-                      final isEnabled = controller.canToggleRange(
-                        slot.time,
-                        slotCount,
-                      );
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: GestureDetector(
-                          onTap: !isEnabled
-                              ? null
-                              : () {
-                                  HapticFeedback.selectionClick();
-                                  setState(
-                                    () => selectedDurationSlots = slotCount,
-                                  );
-                                },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? kGreen
-                                  : isEnabled
-                                  ? kBgSurface
-                                  : kBg,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: isSelected
-                                    ? kGreen
-                                    : isEnabled
-                                    ? kBorder
-                                    : kDivider,
-                              ),
-                            ),
-                            child: Text(
-                              formatSlotDuration(slotCount),
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: isSelected
-                                    ? Colors.white
-                                    : isEnabled
-                                    ? kTextPrim
-                                    : kTextLight,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                  Column(
+                    children: [
+                      _PeriodFieldButton(
+                        label: 'Date',
+                        value: endLabel,
+                        icon: Icons.calendar_today_rounded,
+                        onTap: () => _pickEndDate(context, controller),
+                      ),
+                      const SizedBox(height: 12),
+                      _PeriodFieldButton(
+                        label: 'Heure',
+                        value: endTime,
+                        icon: Icons.access_time_rounded,
+                        onTap: () => _pickEndTime(context, controller),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   Text(
                     actionEnabled
-                        ? 'Tu appliques l’action sur une plage continue de ${formatSlotDuration(selectedDurationSlots)}.'
-                        : 'Cette durée n’est pas disponible en continu depuis ${slot.time}.',
+                        ? 'La plage sera appliquée du ${controller.selectedDateLabel} à ${slot.time} jusqu’au $endLabel à $endTime.'
+                        : 'Choisis une date et une heure de fin après ${slot.time}.',
                     style: const TextStyle(
                       fontSize: 12,
                       height: 1.35,
@@ -1404,12 +1480,28 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
                                   ? null
                                   : () async {
                                       HapticFeedback.mediumImpact();
-                                      await controller.toggleBlockRange(
-                                        slot.time,
-                                        selectedDurationSlots,
+                                      final count =
+                                          await controller.toggleBlockPeriod(
+                                        startDate:
+                                            controller.selectedDate.value,
+                                        startTime: slot.time,
+                                        endDate: endDate,
+                                        endTime: endTime,
+                                        unblock: slot.isBlocked,
                                       );
                                       if (!context.mounted) return;
                                       Navigator.of(context).pop();
+                                      Get.snackbar(
+                                        slot.isBlocked
+                                            ? 'Créneaux débloqués'
+                                            : 'Créneaux bloqués',
+                                        count == 0
+                                            ? 'Aucun créneau modifié'
+                                            : '$count créneau${count > 1 ? 'x' : ''} modifié${count > 1 ? 's' : ''}',
+                                        snackPosition: SnackPosition.BOTTOM,
+                                        backgroundColor: kBgCard,
+                                        colorText: kTextPrim,
+                                      );
                                     },
                               style: ElevatedButton.styleFrom(
                                 disabledBackgroundColor: kDivider,
@@ -1428,8 +1520,8 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
                               ),
                               label: Text(
                                 slot.isBlocked
-                                    ? 'Débloquer ${formatSlotDuration(selectedDurationSlots)}'
-                                    : 'Bloquer ${formatSlotDuration(selectedDurationSlots)}',
+                                    ? 'Débloquer la plage'
+                                    : 'Bloquer la plage',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -1442,6 +1534,175 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+
+
+  bool _isPeriodValid(AvailabilityController controller, TimeSlot slot) {
+    final startDate = DateTime(
+      controller.selectedDate.value.year,
+      controller.selectedDate.value.month,
+      controller.selectedDate.value.day,
+    );
+    final normalizedEnd = DateTime(endDate.year, endDate.month, endDate.day);
+    if (normalizedEnd.isBefore(startDate)) return false;
+    if (!controller.canAccessDate(normalizedEnd)) return false;
+    if (normalizedEnd.isAtSameMomentAs(startDate)) {
+      return _minutes(endTime) > _minutes(slot.time);
+    }
+    return true;
+  }
+
+  int _minutes(String time) {
+    final parts = time.split('h');
+    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
+  }
+
+  String _formatDateLabel(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day/$month/${date.year}';
+  }
+
+  Future<void> _pickEndDate(
+    BuildContext context,
+    AvailabilityController controller,
+  ) async {
+    final firstDate = DateTime(
+      controller.selectedDate.value.year,
+      controller.selectedDate.value.month,
+      controller.selectedDate.value.day,
+    );
+    final lastDate = DateTime(
+      controller.lastSelectableDay.year,
+      controller.lastSelectableDay.month,
+      controller.lastSelectableDay.day,
+    );
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: endDate.isBefore(firstDate) ? firstDate : endDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: kGreen,
+              onPrimary: Colors.white,
+              onSurface: kTextPrim,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: kGreen,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked == null) return;
+    setState(() => endDate = picked);
+  }
+
+  Future<void> _pickEndTime(
+    BuildContext context,
+    AvailabilityController controller,
+  ) async {
+    final parts = endTime.split('h');
+    final initialTime = TimeOfDay(
+      hour: int.parse(parts[0]),
+      minute: int.parse(parts[1]),
+    );
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: kGreen,
+              onPrimary: Colors.white,
+              onSurface: kTextPrim,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: kGreen,
+              ),
+            ),
+          ),
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+            child: child!,
+          ),
+        );
+      },
+    );
+    if (picked == null) return;
+    final hour = picked.hour.toString().padLeft(2, '0');
+    final minute = picked.minute.toString().padLeft(2, '0');
+    setState(() => endTime = '${hour}h${minute}');
+  }
+}
+
+class _PeriodFieldButton extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _PeriodFieldButton({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: kBgSurface,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: kBorder),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 16, color: kTextSub),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(fontSize: 11, color: kTextSub),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: kTextPrim,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1459,10 +1720,10 @@ class _BulkActionSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+
       decoration: BoxDecoration(
         color: kBgCard,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

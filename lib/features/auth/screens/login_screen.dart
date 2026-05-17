@@ -156,7 +156,6 @@ class LoginScreen extends GetView<AuthController> {
           const SizedBox(height: 8),
           TextField(
                 controller: phoneCtrl,
-                enableInteractiveSelection: false,
                 keyboardType: TextInputType.phone,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
@@ -204,7 +203,6 @@ class LoginScreen extends GetView<AuthController> {
           Obx(
                 () => TextField(
                   controller: passCtrl,
-                  enableInteractiveSelection: false,
                   obscureText: controller.obscurePass.value,
                   style: const TextStyle(color: kTextPrim, fontSize: 16),
                   decoration: InputDecoration(
@@ -524,7 +522,6 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
                   const SizedBox(height: 8),
                   TextField(
                     controller: codeCtrl,
-                    enableInteractiveSelection: false,
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
@@ -537,7 +534,6 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
                   const SizedBox(height: 8),
                   TextField(
                     controller: newPasswordCtrl,
-                    enableInteractiveSelection: false,
                     obscureText: obscureNew,
                     decoration: InputDecoration(
                       hintText: 'Minimum 6 caractères',
@@ -558,7 +554,6 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
                   const SizedBox(height: 8),
                   TextField(
                     controller: confirmPasswordCtrl,
-                    enableInteractiveSelection: false,
                     obscureText: obscureConfirm,
                     decoration: InputDecoration(
                       hintText: 'Retapez le mot de passe',

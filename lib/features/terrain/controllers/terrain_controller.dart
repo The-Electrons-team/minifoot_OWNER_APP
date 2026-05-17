@@ -115,6 +115,7 @@ class TerrainModel {
   final int pricePerHour;
   final String zone;
   final List<String> features;
+  final List<String> contactPhones;
   final String? imageUrl;
   final List<String> imageUrls;
   final double rating;
@@ -132,6 +133,7 @@ class TerrainModel {
     required this.pricePerHour,
     required this.zone,
     this.features = const [],
+    this.contactPhones = const [],
     this.imageUrl,
     this.imageUrls = const [],
     this.rating = 0,
@@ -151,6 +153,8 @@ class TerrainModel {
       pricePerHour: (json['pricePerHour'] ?? 0) as int,
       zone: json['zone'] ?? 'DAKAR',
       features: (json['features'] as List<dynamic>? ?? []).cast<String>(),
+      contactPhones: (json['contactPhones'] as List<dynamic>? ?? [])
+          .cast<String>(),
       imageUrl: json['imageUrl'],
       imageUrls: (json['imageUrls'] as List<dynamic>? ?? []).cast<String>(),
       rating: (json['rating'] ?? 0).toDouble(),
@@ -410,7 +414,7 @@ class TerrainController extends GetxController {
     reviews.clear();
     currentPhotoIndex.value = 0;
     loadReviews(terrain.id);
-    Get.toNamed(Routes.terrainDetail);
+    Get.toNamed(Routes.terrainDetail, arguments: terrain);
   }
 
   Future<void> loadReviews(String terrainId) async {
@@ -429,7 +433,7 @@ class TerrainController extends GetxController {
 
   void goToForm(TerrainModel? terrain) {
     selectedTerrain.value = terrain;
-    Get.toNamed(Routes.terrainForm);
+    Get.toNamed(Routes.terrainForm, arguments: terrain);
   }
 
   Future<void> saveTerrain({
@@ -440,24 +444,24 @@ class TerrainController extends GetxController {
     required double lat,
     required double lng,
     String? description,
-    required List<String> features,
+    List<String> features = const [],
+    List<String> contactPhones = const [],
     required List<SubTerrainModel> subTerrains,
     List<XFile> images = const [],
     String? managerId,
   }) async {
-    final data = <String, dynamic>{
+    final data = {
       'name': name,
       'address': address,
       'zone': zone,
       'pricePerHour': pricePerHour,
       'lat': lat,
       'lng': lng,
-      if (description != null && description.isNotEmpty)
-        'description': description,
+      if (description != null) 'description': description,
       'features': features,
-      'subTerrains': subTerrains
-          .map((subTerrain) => subTerrain.toJson())
-          .toList(),
+      'contactPhones': contactPhones,
+      'subTerrains': subTerrains.map((s) => s.toJson()).toList(),
+      if (managerId != null) 'managerId': managerId,
     };
 
     final terrain = selectedTerrain.value;

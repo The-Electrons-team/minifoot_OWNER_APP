@@ -9,6 +9,11 @@ class TerrainDetailScreen extends GetView<TerrainController> {
 
   @override
   Widget build(BuildContext context) {
+    final argument = Get.arguments;
+    if (controller.selectedTerrain.value == null && argument is TerrainModel) {
+      controller.selectedTerrain.value = argument;
+    }
+
     return Obx(() {
       final terrain = controller.selectedTerrain.value;
       if (terrain == null) {
