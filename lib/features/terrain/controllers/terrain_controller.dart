@@ -461,7 +461,6 @@ class TerrainController extends GetxController {
       'features': features,
       'contactPhones': contactPhones,
       'subTerrains': subTerrains.map((s) => s.toJson()).toList(),
-      if (managerId != null) 'managerId': managerId,
     };
 
     final terrain = selectedTerrain.value;

@@ -1869,19 +1869,17 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
 
       Get.dialog(
         LottieSuccessDialog(
-          message: _isEditing ? 'Terrain modifié !' : 'Terrain créé !',
+          message: _isEditing ? 'Complexe modifié !' : 'Terrain créé !',
           subtitle: _isEditing
               ? 'Les modifications ont été enregistrées'
               : 'Votre complexe et ses terrains sont prêts',
         ),
         barrierDismissible: false,
       );
-      Future.delayed(const Duration(seconds: 2), () {
-        if (Get.isDialogOpen ?? false) {
-          Get.back();
-        }
-        _ctrl.goBack();
-      });
+      await Future.delayed(const Duration(seconds: 2));
+      if (Get.isDialogOpen ?? false) Get.back();
+      await Future.delayed(const Duration(milliseconds: 80));
+      _ctrl.goBack();
     } catch (e) {
       final message = e.toString().replaceFirst('Exception: ', '');
       Get.snackbar('Erreur', message, snackPosition: SnackPosition.TOP);

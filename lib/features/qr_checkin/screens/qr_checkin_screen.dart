@@ -35,24 +35,18 @@ class _QrCheckInScreenState extends State<QrCheckInScreen> {
   Future<void> _pauseScanner() async {
     if (!_scannerStarted) return;
     await scannerController.stop();
-    if (mounted) {
-      setState(() => _scannerStarted = false);
-    }
+    if (mounted) setState(() => _scannerStarted = false);
   }
 
   Future<void> _resumeScanner() async {
     controller.resetScan();
     await scannerController.start();
-    if (mounted) {
-      setState(() => _scannerStarted = true);
-    }
+    if (mounted) setState(() => _scannerStarted = true);
   }
 
   Future<void> _toggleTorch() async {
     await scannerController.toggleTorch();
-    if (mounted) {
-      setState(() => _torchEnabled = !_torchEnabled);
-    }
+    if (mounted) setState(() => _torchEnabled = !_torchEnabled);
   }
 
   String _formatDate(dynamic value) {
@@ -80,308 +74,519 @@ class _QrCheckInScreenState extends State<QrCheckInScreen> {
   IconData _statusIcon(String status) {
     switch (status) {
       case 'checked_in':
-        return PhosphorIcons.checkCircle(PhosphorIconsStyle.duotone);
+        return PhosphorIcons.checkCircle(PhosphorIconsStyle.fill);
       case 'ready':
-        return PhosphorIcons.qrCode(PhosphorIconsStyle.duotone);
+        return PhosphorIcons.qrCode(PhosphorIconsStyle.fill);
       case 'already_checked_in':
-        return PhosphorIcons.sealCheck(PhosphorIconsStyle.duotone);
+        return PhosphorIcons.sealCheck(PhosphorIconsStyle.fill);
       case 'not_confirmed':
-        return PhosphorIcons.clockCountdown(PhosphorIconsStyle.duotone);
+        return PhosphorIcons.clockCountdown(PhosphorIconsStyle.fill);
       default:
-        return PhosphorIcons.warningCircle(PhosphorIconsStyle.duotone);
+        return PhosphorIcons.warningCircle(PhosphorIconsStyle.fill);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kBg,
-      appBar: AppBar(
-        backgroundColor: kBg,
-        elevation: 0,
-        title: const Text(
-          'Scanner réservation',
-          style: TextStyle(
-            color: kTextPrim,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // ── Caméra plein écran ────────────────────────────────────────
+          MobileScanner(
+            controller: scannerController,
+            onDetect: (capture) async {
+              final code = capture.barcodes.first.rawValue;
+              if (code == null || code.isEmpty) return;
+              await _pauseScanner();
+              await controller.scanCode(code);
+            },
           ),
-        ),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-          child: Column(
-            children: [
-              AspectRatio(
-                aspectRatio: 1,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: kBgCard,
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: kCardShadow,
-                  ),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(28),
-                        child: MobileScanner(
-                          controller: scannerController,
-                          onDetect: (capture) async {
-                            final code = capture.barcodes.first.rawValue;
-                            if (code == null || code.isEmpty) return;
-                            await _pauseScanner();
-                            await controller.scanCode(code);
-                          },
-                        ),
-                      ),
-                      IgnorePointer(
-                        child: Center(
-                          child: Container(
-                            width: 220,
-                            height: 220,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: Colors.white, width: 3),
-                            ),
+
+          // ── Overlay sombre autour de la zone de scan ──────────────────
+          _ScanOverlay(),
+
+          // ── Barre du haut ─────────────────────────────────────────────
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Material(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(14),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: () => Get.back(),
+                        child: const Padding(
+                          padding: EdgeInsets.all(10),
+                          child: Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white,
+                            size: 18,
                           ),
                         ),
                       ),
-                      Positioned(
-                        top: 16,
-                        right: 16,
-                        child: Material(
-                          color: Colors.black.withValues(alpha: 0.32),
-                          borderRadius: BorderRadius.circular(14),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(14),
-                            onTap: _toggleTorch,
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Icon(
-                                _torchEnabled
-                                    ? PhosphorIcons.flashlight(
-                                        PhosphorIconsStyle.fill,
-                                      )
-                                    : PhosphorIcons.flashlight(
-                                        PhosphorIconsStyle.duotone,
-                                      ),
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                            ),
+                    ),
+                    const Expanded(
+                      child: Text(
+                        'Scanner réservation',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 17,
+                        ),
+                      ),
+                    ),
+                    Material(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(14),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: _toggleTorch,
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Icon(
+                            _torchEnabled
+                                ? PhosphorIcons.flashlight(
+                                    PhosphorIconsStyle.fill,
+                                  )
+                                : PhosphorIcons.flashlight(
+                                    PhosphorIconsStyle.regular,
+                                  ),
+                            color: _torchEnabled ? kGold : Colors.white,
+                            size: 20,
                           ),
                         ),
                       ),
-                      Positioned(
-                        left: 18,
-                        right: 18,
-                        bottom: 18,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.42),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Text(
-                            'Cadrez le QR de la réservation pour vérifier la présence du joueur.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ── Résultat en bas après scan ────────────────────────────────
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Obx(() {
+              final hasResult = controller.status.value.isNotEmpty;
+              return AnimatedSlide(
+                offset: hasResult ? Offset.zero : const Offset(0, 1),
+                duration: const Duration(milliseconds: 320),
+                curve: Curves.easeOutCubic,
+                child: AnimatedOpacity(
+                  opacity: hasResult ? 1 : 0,
+                  duration: const Duration(milliseconds: 250),
+                  child: _ResultPanel(
+                    controller: controller,
+                    onRescan: _resumeScanner,
+                    formatDate: _formatDate,
+                    statusColor: _statusColor,
+                    statusIcon: _statusIcon,
                   ),
                 ),
-              ).animate().fadeIn(duration: 350.ms).slideY(begin: 0.04, end: 0),
-              const SizedBox(height: 18),
-              Expanded(
-                child: Obx(() {
-                  final resultStatus = controller.status.value;
-                  final reservation = controller.reservation.value;
-                  final resultColor = _statusColor(resultStatus);
-                  final canConfirm =
-                      resultStatus == 'ready' && reservation != null;
-
-                  return Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: kBgCard,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: kCardShadow,
-                    ),
-                    child: controller.isProcessing.value
-                        ? const Center(
-                            child: CircularProgressIndicator(color: kGreen),
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      color: resultColor.withValues(
-                                        alpha: 0.12,
-                                      ),
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Icon(
-                                      _statusIcon(resultStatus),
-                                      color: resultColor,
-                                      size: 24,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      controller.message.value.isEmpty
-                                          ? 'Prêt à scanner'
-                                          : controller.message.value,
-                                      style: const TextStyle(
-                                        color: kTextPrim,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              if (reservation != null) ...[
-                                const SizedBox(height: 18),
-                                _InfoRow(
-                                  label: 'Client',
-                                  value:
-                                      reservation['clientName']?.toString() ??
-                                      'Client MiniFoot',
-                                ),
-                                _InfoRow(
-                                  label: 'Terrain',
-                                  value:
-                                      reservation['subTerrainName']
-                                              ?.toString()
-                                              .isNotEmpty ==
-                                          true
-                                      ? '${reservation['terrainName']} • ${reservation['subTerrainName']}'
-                                      : reservation['terrainName']
-                                                ?.toString() ??
-                                            '',
-                                ),
-                                _InfoRow(
-                                  label: 'Créneau',
-                                  value:
-                                      '${_formatDate(reservation['date'])} • ${reservation['startSlot']} - ${reservation['endSlot']}',
-                                ),
-                                _InfoRow(
-                                  label: 'Référence',
-                                  value:
-                                      reservation['reference']?.toString() ??
-                                      '',
-                                ),
-                                if (reservation['checkedInAt'] != null)
-                                  _InfoRow(
-                                    label: 'Déjà pointée',
-                                    value: _formatDate(
-                                      reservation['checkedInAt'],
-                                    ),
-                                  ),
-                              ] else ...[
-                                const Spacer(),
-                                const Text(
-                                  'Scannez un QR code pour voir les détails de la réservation avant confirmation.',
-                                  style: TextStyle(
-                                    color: kTextLight,
-                                    fontSize: 13,
-                                    height: 1.45,
-                                  ),
-                                ),
-                                const Spacer(),
-                              ],
-                              const Spacer(),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: OutlinedButton(
-                                      onPressed: _resumeScanner,
-                                      style: OutlinedButton.styleFrom(
-                                        side: const BorderSide(color: kGreen),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 14,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        'Rescanner',
-                                        style: TextStyle(
-                                          color: kGreen,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: ElevatedButton(
-                                      onPressed: canConfirm
-                                          ? controller.isConfirming.value
-                                                ? null
-                                                : controller.confirmCheckIn
-                                          : null,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: kGreen,
-                                        disabledBackgroundColor: kGreenLight,
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 14,
-                                        ),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            16,
-                                          ),
-                                        ),
-                                      ),
-                                      child: controller.isConfirming.value
-                                          ? const SizedBox(
-                                              width: 18,
-                                              height: 18,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: Colors.white,
-                                              ),
-                                            )
-                                          : const Text(
-                                              'Confirmer',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                  ).animate().fadeIn(duration: 400.ms, delay: 120.ms);
-                }),
-              ),
-            ],
+              );
+            }),
           ),
+
+          // ── Hint centré en bas de la zone scan (visible avant résultat) ──
+          Obx(() {
+            if (controller.status.value.isNotEmpty) return const SizedBox();
+            return Positioned(
+              bottom: 80,
+              left: 40,
+              right: 40,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Text(
+                  'Cadrez le QR code dans la zone',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ).animate().fadeIn(duration: 400.ms, delay: 300.ms),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Overlay sombre avec découpe centrale ──────────────────────────────────────
+
+class _ScanOverlay extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    const zoneSize = 240.0;
+    const radius = 20.0;
+    const borderLen = 36.0;
+    const borderW = 4.0;
+
+    return IgnorePointer(
+      child: CustomPaint(
+        painter: _OverlayPainter(
+          zoneSize: zoneSize,
+          radius: radius,
+        ),
+        child: Center(
+          child: SizedBox(
+            width: zoneSize,
+            height: zoneSize,
+            child: Stack(
+              children: [
+                // Coin haut-gauche
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  child: _Corner(len: borderLen, w: borderW, r: radius,
+                      top: true, left: true),
+                ),
+                // Coin haut-droit
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: _Corner(len: borderLen, w: borderW, r: radius,
+                      top: true, left: false),
+                ),
+                // Coin bas-gauche
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  child: _Corner(len: borderLen, w: borderW, r: radius,
+                      top: false, left: true),
+                ),
+                // Coin bas-droit
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: _Corner(len: borderLen, w: borderW, r: radius,
+                      top: false, left: false),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OverlayPainter extends CustomPainter {
+  final double zoneSize;
+  final double radius;
+
+  const _OverlayPainter({required this.zoneSize, required this.radius});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = Colors.black.withValues(alpha: 0.60);
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final half = zoneSize / 2;
+
+    final full = Rect.fromLTWH(0, 0, size.width, size.height);
+    final hole = RRect.fromRectAndRadius(
+      Rect.fromLTRB(cx - half, cy - half, cx + half, cy + half),
+      Radius.circular(radius),
+    );
+
+    final path = Path()
+      ..addRect(full)
+      ..addRRect(hole)
+      ..fillType = PathFillType.evenOdd;
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_OverlayPainter old) => false;
+}
+
+class _Corner extends StatelessWidget {
+  final double len;
+  final double w;
+  final double r;
+  final bool top;
+  final bool left;
+
+  const _Corner({
+    required this.len,
+    required this.w,
+    required this.r,
+    required this.top,
+    required this.left,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: len,
+      height: len,
+      child: CustomPaint(
+        painter: _CornerPainter(w: w, r: r, top: top, left: left),
+      ),
+    );
+  }
+}
+
+class _CornerPainter extends CustomPainter {
+  final double w;
+  final double r;
+  final bool top;
+  final bool left;
+
+  const _CornerPainter({
+    required this.w,
+    required this.r,
+    required this.top,
+    required this.left,
+  });
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = w
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path();
+    if (top && left) {
+      path.moveTo(0, s.height);
+      path.lineTo(0, r);
+      path.arcToPoint(Offset(r, 0),
+          radius: Radius.circular(r), clockwise: true);
+      path.lineTo(s.width, 0);
+    } else if (top && !left) {
+      path.moveTo(0, 0);
+      path.lineTo(s.width - r, 0);
+      path.arcToPoint(Offset(s.width, r),
+          radius: Radius.circular(r), clockwise: true);
+      path.lineTo(s.width, s.height);
+    } else if (!top && left) {
+      path.moveTo(0, 0);
+      path.lineTo(0, s.height - r);
+      path.arcToPoint(Offset(r, s.height),
+          radius: Radius.circular(r), clockwise: false);
+      path.lineTo(s.width, s.height);
+    } else {
+      path.moveTo(0, s.height);
+      path.lineTo(s.width - r, s.height);
+      path.arcToPoint(Offset(s.width, s.height - r),
+          radius: Radius.circular(r), clockwise: false);
+      path.lineTo(s.width, 0);
+    }
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_CornerPainter old) => false;
+}
+
+// ── Panel résultat (slide depuis le bas) ─────────────────────────────────────
+
+class _ResultPanel extends StatelessWidget {
+  final QrCheckInController controller;
+  final VoidCallback onRescan;
+  final String Function(dynamic) formatDate;
+  final Color Function(String) statusColor;
+  final IconData Function(String) statusIcon;
+
+  const _ResultPanel({
+    required this.controller,
+    required this.onRescan,
+    required this.formatDate,
+    required this.statusColor,
+    required this.statusIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final status = controller.status.value;
+    final reservation = controller.reservation.value;
+    final color = statusColor(status);
+    final canConfirm = status == 'ready' && reservation != null;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: kBgCard,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          child: controller.isProcessing.value
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: CircularProgressIndicator(color: kGreen),
+                  ),
+                )
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Handle
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: kBorder,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Status row
+                    Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(statusIcon(status),
+                              color: color, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            controller.message.value,
+                            style: const TextStyle(
+                              color: kTextPrim,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    if (reservation != null) ...[
+                      const SizedBox(height: 16),
+                      _InfoRow(
+                        label: 'Client',
+                        value: reservation['clientName']?.toString() ??
+                            'Client MiniFoot',
+                      ),
+                      _InfoRow(
+                        label: 'Terrain',
+                        value: (reservation['subTerrainName']
+                                    ?.toString()
+                                    .isNotEmpty ==
+                                true)
+                            ? '${reservation['terrainName']} · ${reservation['subTerrainName']}'
+                            : reservation['terrainName']?.toString() ?? '',
+                      ),
+                      _InfoRow(
+                        label: 'Créneau',
+                        value:
+                            '${formatDate(reservation['date'])} · ${reservation['startSlot']} → ${reservation['endSlot']}',
+                      ),
+                      _InfoRow(
+                        label: 'Réf.',
+                        value: reservation['reference']?.toString() ?? '',
+                      ),
+                      if (reservation['checkedInAt'] != null)
+                        _InfoRow(
+                          label: 'Pointé le',
+                          value: formatDate(reservation['checkedInAt']),
+                        ),
+                    ],
+
+                    const SizedBox(height: 20),
+
+                    // Boutons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: onRescan,
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: kBorder),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: const Text(
+                              'Rescanner',
+                              style: TextStyle(
+                                color: kTextSub,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: canConfirm
+                                ? controller.isConfirming.value
+                                    ? null
+                                    : controller.confirmCheckIn
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kGreen,
+                              disabledBackgroundColor: kGreenLight,
+                              elevation: 0,
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: controller.isConfirming.value
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Confirmer',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
         ),
       ),
     );
@@ -397,12 +602,12 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 78,
+            width: 70,
             child: Text(
               label,
               style: const TextStyle(

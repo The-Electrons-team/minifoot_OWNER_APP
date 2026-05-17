@@ -157,20 +157,24 @@ class TerrainService {
     String slot, {
     String? subTerrainId,
   }) async {
-    final request = http.Request(
-      'DELETE',
-      Uri.parse('$_base/terrains/$terrainId/slots/block'),
+    final uri = Uri.parse('$_base/terrains/$terrainId/slots/block').replace(
+      queryParameters: {
+        'date': date,
+        'slot': slot,
+        if (subTerrainId != null && subTerrainId.isNotEmpty)
+          'subTerrainId': subTerrainId,
+      },
     );
-    request.headers.addAll(await _headers());
-    request.body = jsonEncode({
-      'date': date,
-      'slot': slot,
-      if (subTerrainId != null && subTerrainId.isNotEmpty)
-        'subTerrainId': subTerrainId,
-    });
-    final streamed = await request.send();
-    if (streamed.statusCode != 200 && streamed.statusCode != 204) {
-      throw Exception('Erreur déblocage créneau');
+    final response = await http.delete(
+      uri,
+      headers: await _headers(),
+    );
+
+
+
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Erreur déblocage créneau: ${response.body}');
     }
   }
 
