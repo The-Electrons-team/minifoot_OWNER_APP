@@ -46,7 +46,7 @@ class ControllersScreen extends GetView<ControllersController> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(24, 80, 24, 120),
               children: const [
-                Icon(Icons.badge_outlined, color: kGreen, size: 54),
+                _EmptyControllerIcon(),
                 SizedBox(height: 16),
                 Text(
                   'Aucun contrôleur',
@@ -73,14 +73,12 @@ class ControllersScreen extends GetView<ControllersController> {
             itemCount: controller.controllers.length,
             separatorBuilder: (_, index) => const SizedBox(height: 12),
             itemBuilder: (_, index) {
+              final item = controller.controllers[index];
               return _ControllerCard(
-                item: controller.controllers[index],
-                onTap: () => Get.toNamed(
-                  Routes.controllerDetail,
-                  arguments: controller.controllers[index],
-                ),
-                onToggle: () =>
-                    controller.toggleActive(controller.controllers[index]),
+                item: item,
+                onTap: () =>
+                    Get.toNamed(Routes.controllerDetail, arguments: item),
+                onToggle: () => controller.toggleActive(item),
               );
             },
           );
@@ -89,7 +87,10 @@ class ControllersScreen extends GetView<ControllersController> {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: kGreen,
         onPressed: () => _showCreateSheet(context),
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        icon: Icon(
+          PhosphorIcons.plus(PhosphorIconsStyle.bold),
+          color: Colors.white,
+        ),
         label: const Text(
           'Ajouter',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
@@ -277,7 +278,9 @@ class _ControllerCard extends StatelessWidget {
                   CircleAvatar(
                     backgroundColor: item.isActive ? kGreenLight : kBgSurface,
                     child: Icon(
-                      Icons.badge_outlined,
+                      PhosphorIcons.identificationBadge(
+                        PhosphorIconsStyle.duotone,
+                      ),
                       color: item.isActive ? kGreen : kTextSub,
                     ),
                   ),
@@ -337,6 +340,19 @@ class _ControllerCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _EmptyControllerIcon extends StatelessWidget {
+  const _EmptyControllerIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(
+      PhosphorIcons.identificationBadge(PhosphorIconsStyle.duotone),
+      color: kGreen,
+      size: 54,
     );
   }
 }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/owner_ui.dart';
 import '../controllers/profile_controller.dart';
 
 class EditProfileScreen extends GetView<ProfileController> {
@@ -17,7 +19,10 @@ class EditProfileScreen extends GetView<ProfileController> {
         elevation: 0,
         leading: IconButton(
           onPressed: _close,
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+          icon: Icon(
+            PhosphorIcons.arrowLeft(PhosphorIconsStyle.duotone),
+            size: 18,
+          ),
           color: kTextPrim,
         ),
         title: const Text(
@@ -35,11 +40,9 @@ class EditProfileScreen extends GetView<ProfileController> {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 34),
           children: [
-            _buildIdentityPreview(),
+            _buildProfileHero(),
             const SizedBox(height: 16),
             _buildFormCard(),
-            const SizedBox(height: 14),
-            _buildNotice(),
             const SizedBox(height: 24),
             SizedBox(
               height: 54,
@@ -79,60 +82,82 @@ class EditProfileScreen extends GetView<ProfileController> {
     );
   }
 
-  Widget _buildIdentityPreview() {
+  Widget _buildProfileHero() {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: kBgCard,
-        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFFFFF), Color(0xFFF8F5EF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: kCardShadow,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 58,
-            height: 58,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: kGreenGradient,
-            ),
-            child: Center(
-              child: Text(
-                controller.initials,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
+          Row(
+            children: [
+              Container(
+                width: 62,
+                height: 62,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: kGreenGradient,
+                  boxShadow: [
+                    BoxShadow(
+                      color: kGreen.withValues(alpha: 0.20),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    controller.initials,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      controller.ownerName.value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: kTextPrim,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      controller.phone.value,
+                      style: const TextStyle(
+                        color: kTextSub,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  controller.ownerName.value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: kTextPrim,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  controller.phone.value,
-                  style: const TextStyle(
-                    color: kTextSub,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(height: 16),
+          const OwnerSectionHeader(
+            title: 'Informations du compte',
+            subtitle:
+                'Mettez à jour votre identité visible dans l’espace propriétaire.',
           ),
         ],
       ),
@@ -144,65 +169,93 @@ class EditProfileScreen extends GetView<ProfileController> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: kBgCard,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: kCardShadow,
+        border: Border.all(color: kBorder),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const OwnerSectionHeader(
+            title: 'Modifier vos coordonnées',
+            subtitle:
+                'Gardez un nom professionnel clair pour vos terrains et réservations.',
+          ),
+          const SizedBox(height: 18),
           _ProfileTextField(
             label: 'Prénom',
             controller: controller.firstNameCtrl,
-            icon: Icons.person_outline_rounded,
+            icon: PhosphorIcons.user(PhosphorIconsStyle.duotone),
           ),
           const Divider(height: 24, color: kDivider),
           _ProfileTextField(
             label: 'Nom',
             controller: controller.lastNameCtrl,
-            icon: Icons.badge_outlined,
+            icon: PhosphorIcons.identificationBadge(PhosphorIconsStyle.duotone),
           ),
           const Divider(height: 24, color: kDivider),
           _ReadOnlyProfileField(
             label: 'Téléphone',
             value: controller.phone.value,
-            icon: Icons.phone_outlined,
+            icon: PhosphorIcons.phone(PhosphorIconsStyle.duotone),
           ),
           const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: _showPhoneChangeSheet,
-              icon: const Icon(Icons.verified_user_outlined, size: 16),
-              label: const Text('Changer avec OTP'),
-              style: TextButton.styleFrom(
-                foregroundColor: kGreen,
-                textStyle: const TextStyle(fontWeight: FontWeight.w800),
+          InkWell(
+            onTap: _showPhoneChangeSheet,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: kBgSurface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: kBorder),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotice() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: kBlueLight,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Row(
-        children: [
-          Icon(Icons.info_outline_rounded, color: kBlue, size: 20),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Le téléphone se modifie avec un code OTP envoyé au nouveau numéro.',
-              style: TextStyle(
-                color: kBlue,
-                fontSize: 12,
-                height: 1.35,
-                fontWeight: FontWeight.w600,
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: kGreenLight,
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Icon(
+                      PhosphorIcons.shieldCheck(PhosphorIconsStyle.duotone),
+                      color: kGreen,
+                      size: 17,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Changer le téléphone',
+                          style: TextStyle(
+                            color: kTextPrim,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Validation sécurisée par code OTP',
+                          style: TextStyle(
+                            color: kTextSub,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    PhosphorIcons.caretRight(PhosphorIconsStyle.bold),
+                    color: kGreen,
+                    size: 16,
+                  ),
+                ],
               ),
             ),
           ),
@@ -252,9 +305,33 @@ class EditProfileScreen extends GetView<ProfileController> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Un code OTP sera envoyé au nouveau numéro.',
-                  style: TextStyle(color: kTextSub, fontSize: 13, height: 1.4),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: kBlueLight,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        PhosphorIcons.info(PhosphorIconsStyle.duotone),
+                        color: kBlue,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Un code OTP sera envoyé au nouveau numéro pour confirmer le changement.',
+                          style: TextStyle(
+                            color: kBlue,
+                            fontSize: 12,
+                            height: 1.35,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 18),
                 TextField(
@@ -338,33 +415,49 @@ class _ProfileTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _FieldIcon(icon: icon),
-        const SizedBox(width: 12),
-        Expanded(
-          child: TextField(
-            controller: controller,
-            enableInteractiveSelection: false,
-            textCapitalization: TextCapitalization.words,
-            textInputAction: TextInputAction.next,
-            style: const TextStyle(
-              color: kTextPrim,
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-            ),
-            decoration: InputDecoration(
-              labelText: label,
-              labelStyle: const TextStyle(
-                color: kTextSub,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+        Text(
+          label,
+          style: const TextStyle(
+            color: kTextSub,
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          height: 58,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: kBgSurface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: kBorder),
+          ),
+          child: Row(
+            children: [
+              _FieldIcon(icon: icon),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  enableInteractiveSelection: false,
+                  textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction.next,
+                  style: const TextStyle(
+                    color: kTextPrim,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
               ),
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: EdgeInsets.zero,
-            ),
+            ],
           ),
         ),
       ],
@@ -385,35 +478,47 @@ class _ReadOnlyProfileField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _FieldIcon(icon: icon),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        Text(
+          label,
+          style: const TextStyle(
+            color: kTextSub,
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            color: kBgSurface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: kBorder),
+          ),
+          child: Row(
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: kTextSub,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+              _FieldIcon(icon: icon),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    color: kTextPrim,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-              const SizedBox(height: 3),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: kTextPrim,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                ),
+              Icon(
+                PhosphorIcons.lockKey(PhosphorIconsStyle.duotone),
+                color: kTextLight,
+                size: 18,
               ),
             ],
           ),
         ),
-        const Icon(Icons.lock_outline_rounded, color: kTextLight, size: 18),
       ],
     );
   }
@@ -427,13 +532,13 @@ class _FieldIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 38,
-      height: 38,
+      width: 34,
+      height: 34,
       decoration: BoxDecoration(
         color: kGreenLight,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(11),
       ),
-      child: Icon(icon, color: kGreen, size: 18),
+      child: Icon(icon, color: kGreen, size: 17),
     );
   }
 }

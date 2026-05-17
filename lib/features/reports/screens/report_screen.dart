@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -576,8 +577,8 @@ class _ReportScreenState extends State<ReportScreen> {
         elevation: 0,
         leading: IconButton(
           onPressed: Get.back,
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
+          icon: Icon(
+            PhosphorIcons.arrowLeft(PhosphorIconsStyle.duotone),
             color: kTextPrim,
             size: 18,
           ),
@@ -596,12 +597,20 @@ class _ReportScreenState extends State<ReportScreen> {
           if (_pdfBytes != null) ...[
             IconButton(
               onPressed: _sharePdf,
-              icon: const Icon(Icons.share_rounded, color: kGreen, size: 22),
+              icon: Icon(
+                PhosphorIcons.shareNetwork(PhosphorIconsStyle.duotone),
+                color: kGreen,
+                size: 22,
+              ),
               tooltip: 'Partager',
             ),
             IconButton(
               onPressed: _printPdf,
-              icon: const Icon(Icons.print_rounded, color: kGreen, size: 22),
+              icon: Icon(
+                PhosphorIcons.printer(PhosphorIconsStyle.duotone),
+                color: kGreen,
+                size: 22,
+              ),
               tooltip: 'Imprimer',
             ),
           ],
@@ -686,14 +695,14 @@ class _ReportScreenState extends State<ReportScreen> {
         children: [
           _ReportChip(
             label: 'Revenus',
-            icon: Icons.account_balance_wallet_rounded,
+            icon: PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
             selected: _reportType == _ReportType.revenues,
             onTap: () => _changeReportType(_ReportType.revenues),
           ),
           const SizedBox(width: 10),
           _ReportChip(
             label: 'Réservations',
-            icon: Icons.calendar_month_rounded,
+            icon: PhosphorIcons.calendarBlank(PhosphorIconsStyle.duotone),
             selected: _reportType == _ReportType.reservations,
             onTap: () => _changeReportType(_ReportType.reservations),
           ),
@@ -722,7 +731,11 @@ class _ReportScreenState extends State<ReportScreen> {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: _printPdf,
-                icon: const Icon(Icons.print_rounded, color: kGreen, size: 20),
+                icon: Icon(
+                  PhosphorIcons.printer(PhosphorIconsStyle.duotone),
+                  color: kGreen,
+                  size: 20,
+                ),
                 label: const Text(
                   'Imprimer',
                   style: TextStyle(color: kGreen, fontWeight: FontWeight.w700),
@@ -733,7 +746,10 @@ class _ReportScreenState extends State<ReportScreen> {
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: _sharePdf,
-                icon: const Icon(Icons.share_rounded, size: 20),
+                icon: Icon(
+                  PhosphorIcons.shareNetwork(PhosphorIconsStyle.duotone),
+                  size: 20,
+                ),
                 label: const Text(
                   'Partager',
                   style: TextStyle(fontWeight: FontWeight.w800),
@@ -753,7 +769,11 @@ class _ReportScreenState extends State<ReportScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline_rounded, size: 64, color: kRed),
+            Icon(
+              PhosphorIcons.warningCircle(PhosphorIconsStyle.duotone),
+              size: 64,
+              color: kRed,
+            ),
             const SizedBox(height: 16),
             Text(
               _errorMessage ?? 'Erreur de génération',

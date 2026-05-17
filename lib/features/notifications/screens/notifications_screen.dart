@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../controllers/notifications_controller.dart';
 
@@ -23,7 +24,10 @@ class NotificationsScreen extends GetView<NotificationsController> {
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: kTextPrim),
+          icon: Icon(
+            PhosphorIcons.arrowLeft(PhosphorIconsStyle.duotone),
+            color: kTextPrim,
+          ),
           onPressed: () => Get.back(),
         ),
         actions: [
@@ -108,7 +112,7 @@ class _FilterChips extends GetView<NotificationsController> {
               ),
               const SizedBox(width: 8),
               _FilterChip(
-                label: 'Reservations',
+                label: 'Réservations',
                 value: 'booking',
                 isSelected: selected == 'booking',
                 onTap: () => controller.setFilter('booking'),
@@ -122,7 +126,7 @@ class _FilterChips extends GetView<NotificationsController> {
               ),
               const SizedBox(width: 8),
               _FilterChip(
-                label: 'Systeme',
+                label: 'Système',
                 value: 'system',
                 isSelected: selected == 'system',
                 onTap: () => controller.setFilter('system'),
@@ -270,11 +274,31 @@ class _TypeIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (IconData icon, Color iconColor, Color bgColor) = switch (type) {
-      'booking' => (Icons.calendar_month_rounded, kBlue, kBlueLight),
-      'payment' => (Icons.payments_rounded, kGreen, kGreenLight),
-      'chat' => (Icons.chat_bubble_rounded, kGold, kGoldLight),
-      'system' => (Icons.info_rounded, kTextSub, kBgSurface),
-      _ => (Icons.notifications_rounded, kTextSub, kBgSurface),
+      'booking' => (
+        PhosphorIcons.calendarBlank(PhosphorIconsStyle.duotone),
+        kBlue,
+        kBlueLight,
+      ),
+      'payment' => (
+        PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
+        kGreen,
+        kGreenLight,
+      ),
+      'chat' => (
+        PhosphorIcons.chatCircleText(PhosphorIconsStyle.duotone),
+        kGold,
+        kGoldLight,
+      ),
+      'system' => (
+        PhosphorIcons.info(PhosphorIconsStyle.duotone),
+        kTextSub,
+        kBgSurface,
+      ),
+      _ => (
+        PhosphorIcons.bell(PhosphorIconsStyle.duotone),
+        kTextSub,
+        kBgSurface,
+      ),
     };
 
     return Container(
@@ -295,7 +319,11 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.notifications_none_rounded, size: 64, color: kTextLight),
+          Icon(
+            PhosphorIcons.bellSlash(PhosphorIconsStyle.duotone),
+            size: 64,
+            color: kTextLight,
+          ),
           const SizedBox(height: 16),
           const Text(
             'Aucune notification',
@@ -325,7 +353,11 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.wifi_off_rounded, size: 56, color: kTextLight),
+            Icon(
+              PhosphorIcons.warningCircle(PhosphorIconsStyle.duotone),
+              size: 56,
+              color: kTextLight,
+            ),
             const SizedBox(height: 16),
             Text(
               message,

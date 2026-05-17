@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../controllers/chat_controller.dart';
 
@@ -48,7 +49,11 @@ class ConversationScreen extends StatelessWidget {
       elevation: 0,
       leading: IconButton(
         onPressed: Get.back,
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, color: kTextPrim, size: 18),
+        icon: Icon(
+          PhosphorIcons.arrowLeft(PhosphorIconsStyle.duotone),
+          color: kTextPrim,
+          size: 18,
+        ),
       ),
       title: Row(
         children: [
@@ -109,7 +114,11 @@ class ConversationScreen extends StatelessWidget {
               duration: const Duration(seconds: 2),
             );
           },
-          icon: const Icon(Icons.phone_rounded, color: kGreen, size: 22),
+          icon: Icon(
+            PhosphorIcons.phone(PhosphorIconsStyle.duotone),
+            color: kGreen,
+            size: 22,
+          ),
         ),
       ],
       bottom: PreferredSize(
@@ -121,35 +130,38 @@ class ConversationScreen extends StatelessWidget {
 
   // ── Liste de messages ────────────────────────────────────────────────────────
   Widget _buildMessageList() {
-    return Obx(() => ListView.builder(
-      controller: ctrl.scrollController,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      itemCount: ctrl.messages.length,
-      itemBuilder: (_, i) {
-        final msg  = ctrl.messages[i];
-        final prev = i > 0 ? ctrl.messages[i - 1] : null;
-        final showTime = prev == null ||
-            msg.timestamp.difference(prev.timestamp).inMinutes > 5;
+    return Obx(
+      () => ListView.builder(
+        controller: ctrl.scrollController,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        itemCount: ctrl.messages.length,
+        itemBuilder: (_, i) {
+          final msg = ctrl.messages[i];
+          final prev = i > 0 ? ctrl.messages[i - 1] : null;
+          final showTime =
+              prev == null ||
+              msg.timestamp.difference(prev.timestamp).inMinutes > 5;
 
-        return Column(
-          children: [
-            if (showTime)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Text(
-                  _formatDateTime(msg.timestamp),
-                  style: const TextStyle(fontSize: 11, color: kTextLight),
+          return Column(
+            children: [
+              if (showTime)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Text(
+                    _formatDateTime(msg.timestamp),
+                    style: const TextStyle(fontSize: 11, color: kTextLight),
+                  ),
                 ),
-              ),
-            _MessageBubble(
-              message: msg,
-              avatarColor: conversation.avatarColor,
-              initials: conversation.avatarInitials,
-            ).animate().fadeIn(duration: 200.ms).slideY(begin: 0.1),
-          ],
-        );
-      },
-    ));
+              _MessageBubble(
+                message: msg,
+                avatarColor: conversation.avatarColor,
+                initials: conversation.avatarInitials,
+              ).animate().fadeIn(duration: 200.ms).slideY(begin: 0.1),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   // ── Réponses rapides ─────────────────────────────────────────────────────────
@@ -227,7 +239,10 @@ class ConversationScreen extends StatelessWidget {
                 decoration: const InputDecoration(
                   hintText: 'Écrire un message…',
                   hintStyle: TextStyle(color: kTextLight, fontSize: 14),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   border: InputBorder.none,
                 ),
               ),
@@ -299,8 +314,9 @@ class _MessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
-        mainAxisAlignment:
-            isOwner ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isOwner
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           // Avatar joueur (gauche)

@@ -35,9 +35,10 @@ class ChatListScreen extends GetView<ChatController> {
                   endIndent: 16,
                   color: kDivider,
                 ),
-                itemBuilder: (_, i) => _ConversationTile(
-                  conversation: convs[i],
-                ).animate().fadeIn(duration: 300.ms, delay: (i * 50).ms).slideX(begin: 0.05),
+                itemBuilder: (_, i) => _ConversationTile(conversation: convs[i])
+                    .animate()
+                    .fadeIn(duration: 300.ms, delay: (i * 50).ms)
+                    .slideX(begin: 0.05),
               );
             }),
           ),
@@ -58,29 +59,31 @@ class ChatListScreen extends GetView<ChatController> {
           size: 18,
         ),
       ),
-      title: Obx(() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Messages',
-            style: TextStyle(
-              fontFamily: 'Orbitron',
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: kTextPrim,
-            ),
-          ),
-          if (controller.totalUnread > 0)
-            Text(
-              '${controller.totalUnread} non lu(s)',
-              style: const TextStyle(
-                fontSize: 11,
-                color: kGreen,
-                fontWeight: FontWeight.w500,
+      title: Obx(
+        () => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Messages',
+              style: TextStyle(
+                fontFamily: 'Orbitron',
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: kTextPrim,
               ),
             ),
-        ],
-      )),
+            if (controller.totalUnread > 0)
+              Text(
+                '${controller.totalUnread} non lu(s)',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: kGreen,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+          ],
+        ),
+      ),
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
         child: Container(height: 1, color: kDivider),
@@ -98,7 +101,11 @@ class ChatListScreen extends GetView<ChatController> {
         decoration: InputDecoration(
           hintText: 'Rechercher un joueur…',
           hintStyle: const TextStyle(color: kTextLight, fontSize: 14),
-          prefixIcon: const Icon(Icons.search_rounded, color: kTextLight, size: 20),
+          prefixIcon: Icon(
+            PhosphorIcons.magnifyingGlass(PhosphorIconsStyle.duotone),
+            color: kTextLight,
+            size: 20,
+          ),
           filled: true,
           fillColor: kBgSurface,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -123,12 +130,20 @@ class ChatListScreen extends GetView<ChatController> {
               color: kBgSurface,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.chat_bubble_outline_rounded, size: 40, color: kTextLight),
+            child: Icon(
+              PhosphorIcons.chatCircleDots(PhosphorIconsStyle.duotone),
+              size: 40,
+              color: kTextLight,
+            ),
           ),
           const SizedBox(height: 16),
           const Text(
             'Aucun message',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: kTextSub),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: kTextSub,
+            ),
           ),
         ],
       ),
@@ -212,7 +227,9 @@ class _ConversationTile extends StatelessWidget {
                           conversation.playerName,
                           style: TextStyle(
                             fontSize: 15,
-                            fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w600,
+                            fontWeight: hasUnread
+                                ? FontWeight.w700
+                                : FontWeight.w600,
                             color: kTextPrim,
                           ),
                         ),
@@ -222,7 +239,9 @@ class _ConversationTile extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 11,
                           color: hasUnread ? kGreen : kTextLight,
-                          fontWeight: hasUnread ? FontWeight.w600 : FontWeight.w400,
+                          fontWeight: hasUnread
+                              ? FontWeight.w600
+                              : FontWeight.w400,
                         ),
                       ),
                     ],
@@ -241,7 +260,9 @@ class _ConversationTile extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             color: hasUnread ? kTextPrim : kTextSub,
-                            fontWeight: hasUnread ? FontWeight.w500 : FontWeight.w400,
+                            fontWeight: hasUnread
+                                ? FontWeight.w500
+                                : FontWeight.w400,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -249,7 +270,10 @@ class _ConversationTile extends StatelessWidget {
                       ),
                       if (hasUnread)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: kGreen,
                             borderRadius: BorderRadius.circular(10),

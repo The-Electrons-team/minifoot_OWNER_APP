@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/owner_ui.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../../routes/app_routes.dart';
 import '../../reports/screens/report_screen.dart';
@@ -28,7 +29,7 @@ class ReservationsScreen extends GetView<ReservationsController> {
           color: kTextPrim,
         ),
         title: const Text(
-          'Reservations',
+          'Réservations',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -42,7 +43,10 @@ class ReservationsScreen extends GetView<ReservationsController> {
               () => const ReportScreen(),
               arguments: {'reportType': 'reservations'},
             ),
-            icon: const Icon(Icons.picture_as_pdf_rounded, color: kGreen),
+            icon: Icon(
+              PhosphorIcons.filePdf(PhosphorIconsStyle.duotone),
+              color: kGreen,
+            ),
             tooltip: 'Rapport PDF',
           ),
         ],
@@ -184,22 +188,10 @@ class ReservationsScreen extends GetView<ReservationsController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Vue rapide',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: kTextPrim,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${list.length} réservation${list.length > 1 ? 's' : ''} dans cette vue',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: kTextSub,
-                  fontWeight: FontWeight.w500,
-                ),
+              OwnerSectionHeader(
+                title: 'Priorités de la vue',
+                subtitle:
+                    '${list.length} réservation${list.length > 1 ? 's' : ''} à suivre dans ce filtre',
               ),
               const SizedBox(height: 14),
               Row(
