@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/owner_ui.dart';
 import '../controllers/profile_controller.dart';
 
 class PaymentMethodsScreen extends GetView<ProfileController> {
@@ -17,7 +19,10 @@ class PaymentMethodsScreen extends GetView<ProfileController> {
         elevation: 0,
         leading: IconButton(
           onPressed: Get.back,
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+          icon: Icon(
+            PhosphorIcons.arrowLeft(PhosphorIconsStyle.duotone),
+            size: 18,
+          ),
           color: kTextPrim,
         ),
         title: const Text(
@@ -35,8 +40,6 @@ class PaymentMethodsScreen extends GetView<ProfileController> {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 34),
           children: [
-            _buildIntro(),
-            const SizedBox(height: 14),
             _PayoutMethodCard(
               title: 'Wave',
               subtitle: 'Numéro de réception Wave',
@@ -112,54 +115,6 @@ class PaymentMethodsScreen extends GetView<ProfileController> {
     );
   }
 
-  Widget _buildIntro() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: kBgCard,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: kCardShadow,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: kGreenLight,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(
-              Icons.account_balance_wallet_outlined,
-              color: kGreen,
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Coordonnées de paiement',
-                  style: TextStyle(
-                    color: kTextPrim,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Ces numéros serviront plus tard à orienter vos reversements.',
-                  style: TextStyle(color: kTextSub, fontSize: 12, height: 1.35),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildNotice() {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -167,11 +122,15 @@ class PaymentMethodsScreen extends GetView<ProfileController> {
         color: kBlueLight,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.info_outline_rounded, color: kBlue, size: 20),
-          SizedBox(width: 10),
-          Expanded(
+          Icon(
+            PhosphorIcons.info(PhosphorIconsStyle.duotone),
+            color: kBlue,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          const Expanded(
             child: Text(
               'Vous pouvez renseigner un ou plusieurs numéros. Sélectionnez la méthode préférée pour vos futurs reversements.',
               style: TextStyle(
@@ -228,11 +187,8 @@ class _PayoutMethodCard extends StatelessWidget {
               Container(
                 width: 46,
                 height: 46,
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(Icons.phone_iphone_rounded, color: color, size: 22),
+                alignment: Alignment.center,
+                child: PaymentBrandBadge(method: method, size: 46),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -271,8 +227,8 @@ class _PayoutMethodCard extends StatelessWidget {
                     children: [
                       Icon(
                         selected
-                            ? Icons.check_circle_rounded
-                            : Icons.circle_outlined,
+                            ? PhosphorIcons.checkCircle(PhosphorIconsStyle.fill)
+                            : PhosphorIcons.circle(PhosphorIconsStyle.duotone),
                         size: 15,
                         color: selected ? color : kTextLight,
                       ),
@@ -311,7 +267,10 @@ class _PayoutMethodCard extends StatelessWidget {
                   ? null
                   : IconButton(
                       onPressed: controller.clear,
-                      icon: const Icon(Icons.close_rounded, color: kTextLight),
+                      icon: Icon(
+                        PhosphorIcons.x(PhosphorIconsStyle.bold),
+                        color: kTextLight,
+                      ),
                     ),
             ),
           ),

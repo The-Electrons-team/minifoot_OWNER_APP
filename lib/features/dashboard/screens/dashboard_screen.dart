@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/owner_ui.dart';
 import '../controllers/dashboard_controller.dart';
 
 // ─── Constantes de layout ────────────────────────────────────────────────────
@@ -88,7 +89,11 @@ class DashboardScreen extends GetView<DashboardController> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.info_outline_rounded, color: kRed, size: 18),
+            Icon(
+              PhosphorIcons.warningCircle(PhosphorIconsStyle.duotone),
+              color: kRed,
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -168,26 +173,10 @@ class DashboardScreen extends GetView<DashboardController> {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              children: [
-                const Text(
-                  'Actions rapides',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: kTextPrim,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: kGreen,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ],
+            child: const OwnerSectionHeader(
+              title: 'À faire maintenant',
+              subtitle:
+                  'Accès directs vers les actions les plus fréquentes du gérant',
             ),
           ),
           const SizedBox(height: 14),
@@ -238,7 +227,7 @@ class DashboardScreen extends GetView<DashboardController> {
                 ),
                 _ActionData(
                   icon: PhosphorIcons.usersThree(PhosphorIconsStyle.duotone),
-                  label: 'Controllers',
+                  label: 'Contrôleurs',
                   subtitle: 'Accès & suivi',
                   color: kBlue,
                   bgColor: kBlueLight,
@@ -255,64 +244,74 @@ class DashboardScreen extends GetView<DashboardController> {
               ],
             ];
 
-            return SizedBox(
-              height: 120,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                itemCount: actions.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final a = actions[index];
-                  return GestureDetector(
-                        onTap: a.onTap,
-                        child: Container(
-                          width: 140,
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: kBgCard,
-                            borderRadius: BorderRadius.circular(18),
-                            boxShadow: kCardShadow,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: a.bgColor,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(a.icon, color: a.color, size: 22),
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final itemWidth = (constraints.maxWidth - 12) / 2;
+                  return Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: List.generate(actions.length, (index) {
+                      final a = actions[index];
+                      return GestureDetector(
+                            onTap: a.onTap,
+                            child: Container(
+                              width: itemWidth,
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: kBgCard,
+                                borderRadius: BorderRadius.circular(18),
+                                boxShadow: kCardShadow,
                               ),
-                              const Spacer(),
-                              Text(
-                                a.label,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: kTextPrim,
-                                ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: a.bgColor,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      a.icon,
+                                      color: a.color,
+                                      size: 22,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 18),
+                                  Text(
+                                    a.label,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: kTextPrim,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    a.subtitle,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: kTextLight,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                a.subtitle,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: kTextLight,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                      .animate()
-                      .fadeIn(duration: 400.ms, delay: (400 + index * 80).ms)
-                      .slideX(begin: 0.15, end: 0);
+                            ),
+                          )
+                          .animate()
+                          .fadeIn(
+                            duration: 400.ms,
+                            delay: (400 + index * 80).ms,
+                          )
+                          .slideX(begin: 0.15, end: 0);
+                    }),
+                  );
                 },
               ),
             );
@@ -555,7 +554,11 @@ class DashboardScreen extends GetView<DashboardController> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(Icons.chevron_right, color: kGreen, size: 18),
+                      Icon(
+                        PhosphorIcons.caretRight(PhosphorIconsStyle.bold),
+                        color: kGreen,
+                        size: 18,
+                      ),
                     ],
                   ),
                 ),
@@ -949,8 +952,8 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.person_rounded,
+                  child: Icon(
+                    PhosphorIcons.user(PhosphorIconsStyle.duotone),
                     color: kGreen,
                     size: 22,
                   ),
@@ -987,8 +990,8 @@ class _NotifBell extends StatelessWidget {
               color: Colors.white,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.notifications_none_rounded,
+            child: Icon(
+              PhosphorIcons.bell(PhosphorIconsStyle.duotone),
               color: kGreen,
               size: 22,
             ),
@@ -1205,7 +1208,11 @@ class _RevenueCardAnimated extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 3),
-                  const Icon(Icons.chevron_right, color: kGreen, size: 18),
+                  Icon(
+                    PhosphorIcons.caretRight(PhosphorIconsStyle.bold),
+                    color: kGreen,
+                    size: 18,
+                  ),
                 ],
               ),
             ),
@@ -1321,10 +1328,14 @@ class _EmptyChartState extends StatelessWidget {
         color: kBgSurface,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Column(
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.bar_chart_rounded, color: kTextLight, size: 30),
+          Icon(
+            PhosphorIcons.chartBar(PhosphorIconsStyle.duotone),
+            color: kTextLight,
+            size: 30,
+          ),
           SizedBox(height: 8),
           Text(
             'Aucun revenu sur cette période',

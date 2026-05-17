@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/owner_ui.dart';
 import '../controllers/payments_controller.dart';
 
 class PaymentsScreen extends GetView<PaymentsController> {
@@ -82,17 +82,29 @@ class PaymentsScreen extends GetView<PaymentsController> {
                 Container(
                   width: 48,
                   height: 48,
-                  decoration: BoxDecoration(
-                    color: configured ? kGreenLight : kGoldLight,
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Icon(
-                    configured
-                        ? Icons.account_balance_wallet_rounded
-                        : Icons.add_card_rounded,
-                    color: configured ? kGreen : kGold,
-                    size: 23,
-                  ),
+                  alignment: Alignment.center,
+                  child: configured
+                      ? PaymentBrandBadge(
+                          method: controller.payoutMethod.value ?? method,
+                          size: 48,
+                        )
+                      : Container(
+                          decoration: BoxDecoration(
+                            color: kGoldLight,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: Icon(
+                              PhosphorIcons.creditCard(
+                                PhosphorIconsStyle.duotone,
+                              ),
+                              color: kGold,
+                              size: 23,
+                            ),
+                          ),
+                        ),
                 ),
                 const SizedBox(width: 13),
                 Expanded(
@@ -143,8 +155,8 @@ class PaymentsScreen extends GetView<PaymentsController> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(
-                        Icons.chevron_right_rounded,
+                      Icon(
+                        PhosphorIcons.caretRight(PhosphorIconsStyle.duotone),
                         color: kGreen,
                         size: 16,
                       ),
@@ -188,7 +200,11 @@ class PaymentsScreen extends GetView<PaymentsController> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.info_outline_rounded, color: kRed, size: 18),
+            Icon(
+              PhosphorIcons.warningCircle(PhosphorIconsStyle.duotone),
+              color: kRed,
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -366,13 +382,9 @@ class PaymentsScreen extends GetView<PaymentsController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Répartition des paiements',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: kTextPrim,
-                ),
+              const OwnerSectionHeader(
+                title: 'Répartition des paiements',
+                subtitle: 'Part de chaque moyen de paiement encaissé',
               ),
               const SizedBox(height: 12),
 
@@ -404,13 +416,10 @@ class PaymentsScreen extends GetView<PaymentsController> {
                   return Expanded(
                     child: Row(
                       children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: _methodColor(entry.key),
-                            shape: BoxShape.circle,
-                          ),
+                        PaymentBrandBadge(
+                          method: _methodToBrandKey(entry.key),
+                          size: 28,
+                          compact: true,
                         ),
                         const SizedBox(width: 5),
                         Flexible(
@@ -445,6 +454,19 @@ class PaymentsScreen extends GetView<PaymentsController> {
         return const Color(0xFFFFD100);
       default:
         return kTextSub;
+    }
+  }
+
+  String _methodToBrandKey(String method) {
+    switch (method) {
+      case 'Wave':
+        return 'WAVE';
+      case 'Orange Money':
+        return 'ORANGE_MONEY';
+      case 'Yas Money':
+        return 'FREE_MONEY';
+      default:
+        return method;
     }
   }
 
@@ -835,29 +857,11 @@ class _TransactionCard extends StatelessWidget {
   Widget _buildMethodLogo() {
     switch (transaction.method) {
       case 'Wave':
-        return Padding(
-          padding: const EdgeInsets.all(6),
-          child: Image.asset(
-            'assets/images/wave_logo.webp',
-            fit: BoxFit.contain,
-          ),
-        );
+        return const PaymentBrandBadge(method: 'WAVE', size: 44);
       case 'Orange Money':
-        return Padding(
-          padding: const EdgeInsets.all(4),
-          child: Image.asset(
-            'assets/images/orange_money.png',
-            fit: BoxFit.contain,
-          ),
-        );
+        return const PaymentBrandBadge(method: 'ORANGE_MONEY', size: 44);
       case 'Yas Money':
-        return Padding(
-          padding: const EdgeInsets.all(6),
-          child: SvgPicture.asset(
-            'assets/images/yas_money.svg',
-            fit: BoxFit.contain,
-          ),
-        );
+        return const PaymentBrandBadge(method: 'FREE_MONEY', size: 44);
       default:
         return Icon(
           PhosphorIcons.creditCard(PhosphorIconsStyle.duotone),

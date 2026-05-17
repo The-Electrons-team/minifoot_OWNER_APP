@@ -184,7 +184,7 @@ class _IdentityCard extends StatelessWidget {
             radius: 28,
             backgroundColor: item.isActive ? kGreenLight : kBgSurface,
             child: Icon(
-              Icons.badge_outlined,
+              PhosphorIcons.identificationBadge(PhosphorIconsStyle.duotone),
               color: item.isActive ? kGreen : kTextSub,
               size: 28,
             ),
@@ -365,7 +365,11 @@ class _ActivityTile extends StatelessWidget {
               color: _resultColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(Icons.history_rounded, color: _resultColor, size: 18),
+            child: Icon(
+              PhosphorIcons.clockCounterClockwise(PhosphorIconsStyle.duotone),
+              color: _resultColor,
+              size: 18,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(

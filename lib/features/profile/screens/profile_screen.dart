@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/owner_ui.dart';
 import '../../../routes/app_routes.dart';
 import '../controllers/profile_controller.dart';
 
@@ -18,7 +20,10 @@ class ProfileScreen extends GetView<ProfileController> {
         elevation: 0,
         leading: IconButton(
           onPressed: Get.back,
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+          icon: Icon(
+            PhosphorIcons.arrowLeft(PhosphorIconsStyle.duotone),
+            size: 18,
+          ),
           color: kTextPrim,
         ),
         title: const Text(
@@ -33,7 +38,10 @@ class ProfileScreen extends GetView<ProfileController> {
         actions: [
           IconButton(
             onPressed: _openEditProfile,
-            icon: const Icon(Icons.edit_outlined, size: 20),
+            icon: Icon(
+              PhosphorIcons.pencilSimpleLine(PhosphorIconsStyle.duotone),
+              size: 20,
+            ),
             color: kGreen,
           ),
         ],
@@ -143,7 +151,7 @@ class ProfileScreen extends GetView<ProfileController> {
           _StatCard(
             value: '${controller.totalTerrains.value}',
             label: 'Terrains',
-            icon: Icons.stadium_rounded,
+            icon: PhosphorIcons.soccerBall(PhosphorIconsStyle.duotone),
             color: kGreen,
             bgColor: kGreenLight,
           ),
@@ -151,7 +159,7 @@ class ProfileScreen extends GetView<ProfileController> {
           _StatCard(
             value: '${controller.totalBookings.value}',
             label: 'Réservations',
-            icon: Icons.calendar_month_rounded,
+            icon: PhosphorIcons.calendarBlank(PhosphorIconsStyle.duotone),
             color: kBlue,
             bgColor: kBlueLight,
           ),
@@ -159,7 +167,7 @@ class ProfileScreen extends GetView<ProfileController> {
           _StatCard(
             value: controller.rating.value.toStringAsFixed(1),
             label: 'Note',
-            icon: Icons.star_rounded,
+            icon: PhosphorIcons.star(PhosphorIconsStyle.duotone),
             color: kGold,
             bgColor: kGoldLight,
           ),
@@ -186,8 +194,8 @@ class ProfileScreen extends GetView<ProfileController> {
                 color: kGoldLight,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Icon(
-                Icons.account_balance_wallet_rounded,
+              child: Icon(
+                PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
                 color: kGold,
                 size: 24,
               ),
@@ -213,7 +221,11 @@ class ProfileScreen extends GetView<ProfileController> {
                 ],
               ),
             ),
-            const Icon(Icons.trending_up_rounded, color: kGold, size: 22),
+            Icon(
+              PhosphorIcons.trendUp(PhosphorIconsStyle.duotone),
+              color: kGold,
+              size: 22,
+            ),
           ],
         ),
       ),
@@ -221,27 +233,37 @@ class ProfileScreen extends GetView<ProfileController> {
   }
 
   Widget _buildQuickActions() {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _QuickAction(
-          icon: Icons.stadium_rounded,
-          label: 'Terrains',
-          color: kGreen,
-          onTap: () => Get.toNamed(Routes.terrainList),
+        const OwnerSectionHeader(
+          title: 'Accès rapides',
+          subtitle: 'Retrouvez les trois zones de gestion les plus utilisées',
         ),
-        const SizedBox(width: 10),
-        _QuickAction(
-          icon: Icons.calendar_month_rounded,
-          label: 'Réservations',
-          color: kBlue,
-          onTap: () => Get.toNamed(Routes.reservations),
-        ),
-        const SizedBox(width: 10),
-        _QuickAction(
-          icon: Icons.schedule_rounded,
-          label: 'Créneaux',
-          color: kGold,
-          onTap: () => Get.toNamed(Routes.availability),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _QuickAction(
+              icon: PhosphorIcons.soccerBall(PhosphorIconsStyle.duotone),
+              label: 'Terrains',
+              color: kGreen,
+              onTap: () => Get.toNamed(Routes.terrainList),
+            ),
+            const SizedBox(width: 10),
+            _QuickAction(
+              icon: PhosphorIcons.calendarBlank(PhosphorIconsStyle.duotone),
+              label: 'Réservations',
+              color: kBlue,
+              onTap: () => Get.toNamed(Routes.reservations),
+            ),
+            const SizedBox(width: 10),
+            _QuickAction(
+              icon: PhosphorIcons.clockCountdown(PhosphorIconsStyle.duotone),
+              label: 'Créneaux',
+              color: kGold,
+              onTap: () => Get.toNamed(Routes.availability),
+            ),
+          ],
         ),
       ],
     );
@@ -262,18 +284,18 @@ class ProfileScreen extends GetView<ProfileController> {
             Row(
               children: [
                 const Expanded(
-                  child: Text(
-                    'Informations',
-                    style: TextStyle(
-                      color: kTextPrim,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                    ),
+                  child: OwnerSectionHeader(
+                    title: 'Informations du compte',
+                    subtitle:
+                        'Identité, sécurité et coordonnées de reversement',
                   ),
                 ),
                 TextButton.icon(
                   onPressed: _openEditProfile,
-                  icon: const Icon(Icons.edit_outlined, size: 16),
+                  icon: Icon(
+                    PhosphorIcons.pencilSimpleLine(PhosphorIconsStyle.duotone),
+                    size: 16,
+                  ),
                   label: const Text('Modifier'),
                   style: TextButton.styleFrom(
                     foregroundColor: kGreen,
@@ -284,33 +306,35 @@ class ProfileScreen extends GetView<ProfileController> {
             ),
             const SizedBox(height: 10),
             _InfoRow(
-              icon: Icons.badge_outlined,
+              icon: PhosphorIcons.identificationBadge(
+                PhosphorIconsStyle.duotone,
+              ),
               label: 'Nom complet',
               value: controller.ownerName.value,
             ),
             const Divider(height: 22, color: kDivider),
             _InfoRow(
-              icon: Icons.phone_outlined,
+              icon: PhosphorIcons.phone(PhosphorIconsStyle.duotone),
               label: 'Téléphone',
               value: controller.phone.value,
               helper: 'Lecture seule',
             ),
             const Divider(height: 22, color: kDivider),
             _InfoRow(
-              icon: Icons.calendar_today_outlined,
+              icon: PhosphorIcons.calendarDots(PhosphorIconsStyle.duotone),
               label: 'Membre depuis',
               value: controller.memberSince.value,
             ),
             const Divider(height: 22, color: kDivider),
             _AccountAction(
-              icon: Icons.payments_outlined,
+              icon: PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
               title: 'Reversements',
               subtitle: 'Wave, Orange Money, Yas Money',
               onTap: _openPaymentMethods,
             ),
             const Divider(height: 22, color: kDivider),
             _AccountAction(
-              icon: Icons.lock_outline_rounded,
+              icon: PhosphorIcons.shieldCheck(PhosphorIconsStyle.duotone),
               title: 'Sécurité',
               subtitle: 'Changer le mot de passe',
               onTap: _openSecurity,
@@ -371,7 +395,7 @@ class ProfileScreen extends GetView<ProfileController> {
               ),
               const SizedBox(height: 14),
               _AvatarSourceTile(
-                icon: Icons.photo_camera_outlined,
+                icon: PhosphorIcons.camera(PhosphorIconsStyle.duotone),
                 title: 'Prendre une photo',
                 onTap: () {
                   Get.back();
@@ -380,7 +404,7 @@ class ProfileScreen extends GetView<ProfileController> {
               ),
               const SizedBox(height: 10),
               _AvatarSourceTile(
-                icon: Icons.photo_library_outlined,
+                icon: PhosphorIcons.images(PhosphorIconsStyle.duotone),
                 title: 'Choisir depuis la galerie',
                 onTap: () {
                   Get.back();
@@ -407,10 +431,14 @@ class ProfileScreen extends GetView<ProfileController> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: kRed.withValues(alpha: 0.25)),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.logout_rounded, color: kRed, size: 18),
+            Icon(
+              PhosphorIcons.signOut(PhosphorIconsStyle.duotone),
+              color: kRed,
+              size: 18,
+            ),
             SizedBox(width: 10),
             Text(
               'Déconnexion',
@@ -462,7 +490,11 @@ class ProfileScreen extends GetView<ProfileController> {
                   color: kRedLight,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.logout_rounded, color: kRed, size: 28),
+                child: Icon(
+                  PhosphorIcons.signOut(PhosphorIconsStyle.duotone),
+                  color: kRed,
+                  size: 28,
+                ),
               ),
               const SizedBox(height: 18),
               const Text(
@@ -726,8 +758,8 @@ class _ProfileAvatar extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: kBgCard, width: 2),
               ),
-              child: const Icon(
-                Icons.photo_camera_outlined,
+              child: Icon(
+                PhosphorIcons.camera(PhosphorIconsStyle.bold),
                 color: Colors.white,
                 size: 13,
               ),
@@ -804,7 +836,10 @@ class _AvatarSourceTile extends StatelessWidget {
                 ),
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: kTextLight),
+            Icon(
+              PhosphorIcons.caretRight(PhosphorIconsStyle.duotone),
+              color: kTextLight,
+            ),
           ],
         ),
       ),
@@ -942,7 +977,10 @@ class _AccountAction extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: kTextLight),
+            Icon(
+              PhosphorIcons.caretRight(PhosphorIconsStyle.duotone),
+              color: kTextLight,
+            ),
           ],
         ),
       ),

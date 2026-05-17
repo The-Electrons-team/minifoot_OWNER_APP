@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../controllers/terrain_controller.dart';
 
@@ -12,7 +13,7 @@ class TerrainListScreen extends GetView<TerrainController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE5E0D8),
+      backgroundColor: kBg,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(64),
         child: Container(
@@ -34,7 +35,7 @@ class TerrainListScreen extends GetView<TerrainController> {
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
-                    Icons.arrow_back_ios_new_rounded,
+                    PhosphorIconsLight.arrowLeft,
                     color: Color(0xFF1A1A1A),
                     size: 16,
                   ),
@@ -43,7 +44,7 @@ class TerrainListScreen extends GetView<TerrainController> {
             ),
             centerTitle: true,
             title: const Text(
-              'Mes Parcelles',
+              'Mes terrains',
               style: TextStyle(
                 fontFamily: 'Orbitron',
                 fontSize: 18,
@@ -60,13 +61,13 @@ class TerrainListScreen extends GetView<TerrainController> {
         elevation: 8,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: const Icon(
-          PhosphorIconsLight.plusCircle,
+          PhosphorIconsLight.plus,
           color: Colors.white,
           size: 28,
         ),
       ),
       body: Container(
-        color: const Color(0xFFF5F0E8),
+        color: kBg,
         child: Column(
           children: [
             Padding(
@@ -78,7 +79,7 @@ class TerrainListScreen extends GetView<TerrainController> {
                       children: [
                         Expanded(
                           child: _StatPill(
-                            label: 'Parcelles',
+                            label: 'Terrains',
                             value: '${controller.totalTerrains}',
                             icon: PhosphorIconsLight.soccerBall,
                             color: const Color(0xFF006F39),
@@ -138,7 +139,7 @@ class TerrainListScreen extends GetView<TerrainController> {
                               fontWeight: FontWeight.w500,
                             ),
                             decoration: const InputDecoration(
-                              hintText: 'Rechercher une parcelle...',
+                              hintText: 'Rechercher un terrain...',
                               hintStyle: TextStyle(
                                 color: Color(0xFF9CA3AF),
                                 fontSize: 14,
@@ -236,61 +237,74 @@ class TerrainListScreen extends GetView<TerrainController> {
 
   Widget _buildEmptyState() {
     final hasAnyTerrain = controller.totalTerrains > 0;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Lottie.asset(
-              'assets/lottie/football_bounce.json',
-              width: 140,
-              height: 140,
-              repeat: true,
-            ),
-            const SizedBox(height: 20),
-            Text(
-              hasAnyTerrain ? 'Aucun résultat' : 'Aucune parcelle',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1A1A1A),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              hasAnyTerrain
-                  ? 'Essayez une autre recherche\nou un autre filtre.'
-                  : 'Ajoutez votre première parcelle\npour commencer.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF6B7280),
-                height: 1.5,
-              ),
-            ),
-            if (!hasAnyTerrain) ...[
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: () => controller.goToForm(null),
-                icon: const Icon(PhosphorIconsLight.plus, size: 18),
-                label: const Text('Ajouter une parcelle'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF006F39),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 0,
+    return LayoutBuilder(
+      builder: (context, constraints) => ListView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 140),
+        children: [
+          ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - 24),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Lottie.asset(
+                      'assets/lottie/football_bounce.json',
+                      width: 140,
+                      height: 140,
+                      repeat: true,
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      hasAnyTerrain ? 'Aucun résultat' : 'Aucun terrain',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      hasAnyTerrain
+                          ? 'Essayez une autre recherche\nou un autre filtre.'
+                          : 'Ajoutez votre premier terrain\npour commencer.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF6B7280),
+                        height: 1.5,
+                      ),
+                    ),
+                    if (!hasAnyTerrain) ...[
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () => controller.goToForm(null),
+                        icon: const Icon(PhosphorIconsLight.plus, size: 18),
+                        label: const Text('Ajouter un terrain'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF006F39),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-            ],
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     ).animate().fadeIn(duration: 500.ms);
   }

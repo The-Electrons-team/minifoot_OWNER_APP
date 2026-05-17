@@ -675,7 +675,11 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
                   color: Colors.white,
                 ),
               )
-            : const Icon(Icons.tune_rounded, color: Colors.white, size: 20),
+            : Icon(
+                PhosphorIcons.slidersHorizontal(PhosphorIconsStyle.duotone),
+                color: Colors.white,
+                size: 20,
+              ),
         label: Text(
           isBusy ? 'Mise à jour' : 'Gérer',
           style: const TextStyle(
