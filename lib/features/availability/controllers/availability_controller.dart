@@ -346,6 +346,7 @@ class AvailabilityController extends GetxController {
           subTerrainId: terrains[selectedTerrain.value].subTerrainId,
         );
       }
+      await _loadSlots(selectedDate.value);
       return true;
     } catch (_) {
       // Annulation en cas d'erreur
@@ -439,6 +440,7 @@ class AvailabilityController extends GetxController {
           );
         }
       }
+      await _loadSlots(selectedDate.value);
       return true;
     } catch (_) {
       for (final rangeTime in rangeTimes) {

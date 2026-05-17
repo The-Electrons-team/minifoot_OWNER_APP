@@ -22,9 +22,12 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 class NotificationService {
   static final _messaging = FirebaseMessaging.instance;
+  static bool _isInitialized = false;
 
   // ── Initialisation ──────────────────────────────────────────────────────────
   static Future<void> init() async {
+    _isInitialized = true;
+    
     // 1. Handler arrière-plan
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
@@ -73,6 +76,10 @@ class NotificationService {
   }
 
   static Future<void> syncToken(String jwt) async {
+    if (!_isInitialized) {
+      debugPrint('Token FCM propriétaire non synchronisé : Firebase non initialisé.');
+      return;
+    }
     try {
       final fcmToken = await _messaging.getToken();
       if (fcmToken != null) await _sendToken(jwt, fcmToken);
@@ -161,5 +168,8 @@ class NotificationService {
   }
 
   // ── Récupérer le token (pour ton backend) ───────────────────────────────────
-  static Future<String?> getToken() => _messaging.getToken();
+  static Future<String?> getToken() {
+    if (!_isInitialized) return Future.value(null);
+    return _messaging.getToken();
+  }
 }
