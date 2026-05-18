@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../core/services/dashboard_service.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../routes/app_routes.dart';
 
 class DashboardController extends GetxController {
@@ -94,11 +95,7 @@ class DashboardController extends GetxController {
       notificationCount.value = data.unreadNotifications;
     } catch (_) {
       errorMessage.value = 'Impossible de charger le tableau de bord';
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger le tableau de bord',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de charger le tableau de bord. Vérifiez votre connexion.');
     } finally {
       isLoading.value = false;
     }

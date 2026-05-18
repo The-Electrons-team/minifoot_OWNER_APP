@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/controllers_controller.dart';
 
 class ControllerDetailScreen extends StatefulWidget {
@@ -255,11 +256,7 @@ class _ControllerDetailScreenState extends State<ControllerDetailScreen> {
                       if (updated == null) return;
                       setState(() => item = updated);
                       Get.back();
-                      Get.snackbar(
-                        'Affectation mise à jour',
-                        'Le contrôleur voit maintenant les créneaux des complexes sélectionnés.',
-                        snackPosition: SnackPosition.TOP,
-                      );
+                      AppSnackbar.success('Le contrôleur voit maintenant les créneaux des complexes sélectionnés.');
                     },
                     child: const Text('Enregistrer'),
                   ),

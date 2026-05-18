@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import '../../../core/services/reservation_service.dart';
+import '../../../core/widgets/app_snackbar.dart';
 
 class ReservationModel {
   final String id;
@@ -157,11 +158,7 @@ class ReservationsController extends GetxController {
           )
           .toList();
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les réservations',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de charger les réservations. Vérifiez votre connexion.');
     } finally {
       isLoading.value = false;
     }
@@ -197,17 +194,9 @@ class ReservationsController extends GetxController {
     try {
       await _service.cancelOwnerReservation(id);
       await loadReservations();
-      Get.snackbar(
-        'Réservation refusée',
-        'Le créneau est à nouveau disponible.',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.success('Réservation refusée. Le créneau est à nouveau disponible.');
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de refuser cette réservation',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de refuser cette réservation. Réessayez.');
       rethrow;
     }
   }

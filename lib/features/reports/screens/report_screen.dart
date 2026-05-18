@@ -71,7 +71,7 @@ class _ReportScreenState extends State<ReportScreen> {
       if (!mounted) return;
       setState(() {
         _isGenerating = false;
-        _errorMessage = 'Impossible de générer le rapport: $error';
+        _errorMessage = 'Impossible de générer le rapport. Vérifiez votre connexion et réessayez.';
       });
     }
   }

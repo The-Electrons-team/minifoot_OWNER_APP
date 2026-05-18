@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../core/widgets/app_snackbar.dart';
 import '../features/auth/bindings/auth_binding.dart';
 import '../features/auth/screens/splash_screen.dart';
 import '../features/auth/screens/onboarding_screen.dart';
@@ -266,11 +267,7 @@ class _OwnerOnlyMiddleware extends GetMiddleware {
       return null;
     }
 
-    Get.snackbar(
-      'Validation requise',
-      'Votre compte gérant doit être validé avant cette action.',
-      snackPosition: SnackPosition.TOP,
-    );
+    AppSnackbar.warning('Votre compte gérant doit être validé avant cette action.');
     return const RouteSettings(name: Routes.ownerPending);
   }
 }

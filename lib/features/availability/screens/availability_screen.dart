@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../routes/app_routes.dart';
 import '../controllers/availability_controller.dart';
 import '../controllers/availability_range_helper.dart';
@@ -491,15 +492,7 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
                     onLongPress: () async {
                       if (slot.isBooked) return;
                       if (!controller.canToggleRange(slot.time, 2)) {
-                        Get.snackbar(
-                          'Plage indisponible',
-                          'Le blocage rapide agit sur 1h minimum.',
-                          snackPosition: SnackPosition.BOTTOM,
-                          backgroundColor: kBgCard,
-                          colorText: kTextPrim,
-                          margin: const EdgeInsets.all(16),
-                          borderRadius: 16,
-                        );
+                        AppSnackbar.warning('Le blocage rapide nécessite au moins 1h de créneaux continus libres.');
                         return;
                       }
                       HapticFeedback.heavyImpact();
@@ -509,21 +502,10 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
                         2,
                       );
                       if (!ok) return;
-                      Get.snackbar(
-                        wasBlocked ? 'Débloqué' : 'Bloqué',
-                        '${slot.time} → ${rangeEndTime(slot.time, 2)} · 1h',
-                        snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: kBgCard,
-                        colorText: kTextPrim,
-                        margin: const EdgeInsets.all(16),
-                        borderRadius: 16,
-                        duration: const Duration(seconds: 1),
-                        icon: Icon(
-                          wasBlocked
-                              ? Icons.lock_open_rounded
-                              : Icons.lock_rounded,
-                          color: wasBlocked ? kGreen : kTextLight,
-                        ),
+                      AppSnackbar.success(
+                        wasBlocked
+                            ? 'Créneau débloqué : ${slot.time} → ${rangeEndTime(slot.time, 2)}'
+                            : 'Créneau bloqué : ${slot.time} → ${rangeEndTime(slot.time, 2)}',
                       );
                     },
                   )
@@ -1495,16 +1477,10 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
                                       );
                                       if (!context.mounted) return;
                                       Navigator.of(context).pop();
-                                      Get.snackbar(
-                                        slot.isBlocked
-                                            ? 'Créneaux débloqués'
-                                            : 'Créneaux bloqués',
+                                      AppSnackbar.success(
                                         count == 0
-                                            ? 'Aucun créneau modifié'
-                                            : '$count créneau${count > 1 ? 'x' : ''} modifié${count > 1 ? 's' : ''}',
-                                        snackPosition: SnackPosition.BOTTOM,
-                                        backgroundColor: kBgCard,
-                                        colorText: kTextPrim,
+                                            ? 'Aucun créneau modifié.'
+                                            : '$count créneau${count > 1 ? 'x' : ''} ${slot.isBlocked ? 'débloqué' : 'bloqué'}${count > 1 ? 's' : ''}.',
                                       );
                                     },
                               style: ElevatedButton.styleFrom(
@@ -1773,18 +1749,10 @@ class _BulkActionSheet extends StatelessWidget {
               HapticFeedback.mediumImpact();
               final count = await controller.blockAllAvailable();
               Get.back();
-              Get.snackbar(
-                'Créneaux bloqués',
+              AppSnackbar.success(
                 count == 0
-                    ? 'Aucun créneau libre à bloquer'
-                    : '$count créneau${count > 1 ? 'x' : ''} bloqué${count > 1 ? 's' : ''}',
-                snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: kBgCard,
-                colorText: kTextPrim,
-                margin: const EdgeInsets.all(16),
-                borderRadius: 16,
-                duration: const Duration(seconds: 2),
-                icon: const Icon(Icons.lock_rounded, color: kRed),
+                    ? 'Aucun créneau libre à bloquer.'
+                    : '$count créneau${count > 1 ? 'x' : ''} bloqué${count > 1 ? 's' : ''}.',
               );
             },
           ),
@@ -1805,18 +1773,10 @@ class _BulkActionSheet extends StatelessWidget {
               HapticFeedback.mediumImpact();
               final count = await controller.unblockAllBlocked();
               Get.back();
-              Get.snackbar(
-                'Créneaux débloqués',
+              AppSnackbar.success(
                 count == 0
-                    ? 'Aucun créneau bloqué à débloquer'
-                    : '$count créneau${count > 1 ? 'x' : ''} débloqué${count > 1 ? 's' : ''}',
-                snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: kBgCard,
-                colorText: kTextPrim,
-                margin: const EdgeInsets.all(16),
-                borderRadius: 16,
-                duration: const Duration(seconds: 2),
-                icon: const Icon(Icons.lock_open_rounded, color: kGreen),
+                    ? 'Aucun créneau bloqué à débloquer.'
+                    : '$count créneau${count > 1 ? 'x' : ''} débloqué${count > 1 ? 's' : ''}.',
               );
             },
           ),

@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/auth_controller.dart';
 
 class OwnerPendingScreen extends StatefulWidget {
@@ -77,30 +78,18 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
         setState(() => onPicked(File(picked.path)));
       }
     } catch (e) {
-      Get.snackbar('Erreur', 'Impossible d\'accéder à la caméra ou la galerie.');
+      AppSnackbar.error('Impossible d\'accéder à la caméra ou la galerie. Vérifiez les permissions.');
     }
   }
 
   Future<void> _submitDocuments() async {
     final cni = _cniCtrl.text.replaceAll(RegExp(r'\D'), '');
     if (cni.length != 13) {
-      Get.snackbar(
-        'Formulaire incomplet',
-        'La CNI doit faire exactement 13 chiffres.',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: kOrange,
-        colorText: Colors.white,
-      );
+      AppSnackbar.warning('La CNI doit faire exactement 13 chiffres.');
       return;
     }
     if (_profile == null || _cniFront == null || _cniBack == null) {
-      Get.snackbar(
-        'Photos manquantes',
-        'Veuillez fournir les 3 photos requises.',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: kOrange,
-        colorText: Colors.white,
-      );
+      AppSnackbar.warning('Veuillez fournir les 3 photos requises (profil, recto CNI, verso CNI).');
       return;
     }
 
@@ -111,13 +100,7 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
         cniFront: _cniFront!,
         cniBack: _cniBack!,
       );
-      Get.snackbar(
-        'Dossier envoyé !',
-        'Vos documents de vérification ont été mis à jour avec succès.',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: kGreen,
-        colorText: Colors.white,
-      );
+      AppSnackbar.success('Vos documents de vérification ont été envoyés avec succès.');
     } catch (_) {
       // error already reported by Controller Snackbar
     }

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/models/user_model.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../routes/app_routes.dart';
 
 class AuthController extends GetxController {
@@ -84,19 +85,17 @@ class AuthController extends GetxController {
         goToPostAuthDestination();
       }
     } catch (e) {
-      String message = 'Erreur de connexion';
+      String message = 'Impossible de se connecter. Réessayez.';
       if (e.toString().contains('COMPTE_NON_TROUVE')) {
-        message = 'Compte non trouvé. Veuillez vous inscrire.';
+        message = 'Aucun compte trouvé avec ce numéro. Inscrivez-vous d\'abord.';
       } else if (e.toString().contains('ID_INVALIDES')) {
-        message = 'Mot de passe incorrect.';
+        message = 'Mot de passe incorrect. Vérifiez et réessayez.';
       } else if (e.toString().contains('ROLE_NON_AUTORISE')) {
-        message =
-            'Ce compte est un compte joueur. Utilisez un compte propriétaire ou contrôleur.';
+        message = 'Ce numéro correspond à un compte joueur. Utilisez un compte propriétaire.';
       } else if (e.toString().contains('SERVER_UNAVAILABLE')) {
-        message =
-            'Serveur indisponible. Vérifiez votre connexion internet puis réessayez.';
+        message = 'Serveur indisponible. Vérifiez votre connexion internet.';
       }
-      Get.snackbar('Erreur', message, snackPosition: SnackPosition.TOP);
+      AppSnackbar.error(message);
     } finally {
       isLoading.value = false;
     }
@@ -119,7 +118,16 @@ class AuthController extends GetxController {
         cniNumber: cniNumber,
       );
     } catch (e) {
-      Get.snackbar('Erreur', e.toString().replaceAll('Exception: ', ''));
+      final raw = e.toString();
+      final String msg;
+      if (raw.contains('PHONE_ALREADY_TAKEN') || raw.contains('PHONE_TAKEN')) {
+        msg = 'Ce numéro est déjà associé à un compte.';
+      } else if (raw.contains('INVALID_PHONE') || raw.contains('PHONE_INVALIDE')) {
+        msg = 'Numéro de téléphone invalide.';
+      } else {
+        msg = 'Impossible de démarrer l\'inscription. Vérifiez votre connexion.';
+      }
+      AppSnackbar.error(msg);
       rethrow;
     } finally {
       isLoading.value = false;
@@ -130,17 +138,13 @@ class AuthController extends GetxController {
     isLoading.value = true;
     try {
       await _authService.forgotPassword(phone);
-      Get.snackbar(
-        'Code envoyé',
-        'Un code de réinitialisation a été envoyé',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.success('Un code de réinitialisation a été envoyé sur WhatsApp.');
     } catch (e) {
-      String message = 'Impossible d\'envoyer le code';
+      String message = 'Impossible d\'envoyer le code. Réessayez.';
       if (e.toString().contains('COMPTE_NON_TROUVE')) {
-        message = 'Aucun compte trouvé avec ce numéro.';
+        message = 'Aucun compte trouvé avec ce numéro de téléphone.';
       }
-      Get.snackbar('Erreur', message, snackPosition: SnackPosition.TOP);
+      AppSnackbar.error(message);
       rethrow;
     } finally {
       isLoading.value = false;
@@ -160,21 +164,17 @@ class AuthController extends GetxController {
         password: password,
       );
       
-      Get.snackbar(
-        'Mot de passe réinitialisé',
-        'Connexion automatique en cours...',
-        snackPosition: SnackPosition.TOP,
-      );
-      
+      AppSnackbar.success('Mot de passe réinitialisé. Connexion en cours...');
+
       // Auto-login the user immediately after reset
       await startLogin(phone, password);
-      
+
     } catch (e) {
-      String message = 'Impossible de réinitialiser le mot de passe';
+      String message = 'Impossible de réinitialiser le mot de passe.';
       if (e.toString().contains('CODE_INVALIDE')) {
-        message = 'Code invalide ou expiré.';
+        message = 'Code invalide ou expiré. Demandez un nouveau code.';
       }
-      Get.snackbar('Erreur', message, snackPosition: SnackPosition.TOP);
+      AppSnackbar.error(message);
       rethrow;
     } finally {
       isLoading.value = false;
@@ -205,7 +205,13 @@ class AuthController extends GetxController {
         throw Exception('Vérification échouée');
       }
     } catch (e) {
-      Get.snackbar('Erreur', e.toString().replaceAll('Exception: ', ''));
+      final raw = e.toString().replaceAll('Exception: ', '');
+      final isRole = raw.contains('ROLE_NON_AUTORISE');
+      AppSnackbar.error(
+        isRole
+            ? 'Ce numéro correspond à un compte joueur. Utilisez un compte propriétaire.'
+            : 'Code incorrect ou expiré. Vérifiez le code reçu.',
+      );
       rethrow;
     } finally {
       isLoading.value = false;
@@ -215,17 +221,9 @@ class AuthController extends GetxController {
   Future<void> resendOtp(String phone) async {
     try {
       await _authService.resendOtp(phone);
-      Get.snackbar(
-        'Code envoyé',
-        'Un nouveau code de vérification vous a été transmis.',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.success('Nouveau code envoyé sur WhatsApp.');
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de renvoyer le code. Réessayez plus tard.',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de renvoyer le code. Réessayez dans quelques instants.');
     }
   }
 
@@ -251,11 +249,7 @@ class AuthController extends GetxController {
         user.value = UserModel.fromJson(res['user'] as Map<String, dynamic>);
       }
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible d’envoyer les documents de vérification',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error(‘Impossible d\’envoyer les documents. Vérifiez votre connexion et réessayez.’);
       rethrow;
     } finally {
       isLoading.value = false;
@@ -298,15 +292,10 @@ class AuthController extends GetxController {
         );
       }
 
-      Get.snackbar(
-        'Succès',
-        'Mot de passe mis à jour avec succès',
-        snackPosition: SnackPosition.TOP,
-      );
-
+      AppSnackbar.success('Mot de passe mis à jour avec succès.');
       goToPostAuthDestination();
     } catch (e) {
-      Get.snackbar('Erreur', 'Impossible de changer le mot de passe');
+      AppSnackbar.error('Impossible de changer le mot de passe. Réessayez.');
       rethrow;
     } finally {
       isLoading.value = false;

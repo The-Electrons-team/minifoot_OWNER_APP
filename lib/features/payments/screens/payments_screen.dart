@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/owner_ui.dart';
 import '../controllers/payments_controller.dart';
 
@@ -1450,21 +1451,7 @@ class _TransactionDetailSheet extends StatelessWidget {
                           onPressed: () {
                             HapticFeedback.mediumImpact();
                             Navigator.of(context).pop();
-                            Get.snackbar(
-                              'Relance envoyée',
-                              'Un rappel a été envoyé à ${transaction.client}',
-                              snackPosition: SnackPosition.BOTTOM,
-                              backgroundColor: kBgCard,
-                              colorText: kTextPrim,
-                              margin: const EdgeInsets.all(16),
-                              borderRadius: 16,
-                              icon: Icon(
-                                PhosphorIcons.bellRinging(
-                                  PhosphorIconsStyle.duotone,
-                                ),
-                                color: kGold,
-                              ),
-                            );
+                            AppSnackbar.info('Un rappel a été envoyé à ${transaction.client}.');
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: kGold,

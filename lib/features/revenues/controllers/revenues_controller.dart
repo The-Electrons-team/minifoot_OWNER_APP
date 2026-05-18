@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../core/services/revenue_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_snackbar.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Modèles
@@ -61,11 +62,7 @@ class RevenuesController extends GetxController {
       terrainStats.value = data.terrainStats;
     } catch (_) {
       errorMessage.value = 'Impossible de charger les revenus';
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les revenus',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de charger les revenus. Vérifiez votre connexion.');
     } finally {
       isLoading.value = false;
     }

@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/lottie_success_dialog.dart';
 import '../controllers/owner_zone_options.dart';
 import '../controllers/terrain_controller.dart';
@@ -470,12 +471,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        Get.snackbar(
-          'GPS désactivé',
-          'Activez la localisation sur votre appareil',
-          backgroundColor: kBgCard,
-          colorText: kTextPrim,
-        );
+        AppSnackbar.warning('GPS désactivé. Activez la localisation sur votre appareil.');
         await Geolocator.openLocationSettings();
         _isLocating.value = false;
         return;
@@ -484,23 +480,13 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
       if (perm == LocationPermission.denied) {
         perm = await Geolocator.requestPermission();
         if (perm == LocationPermission.denied) {
-          Get.snackbar(
-            'Permission refusée',
-            'Autorisation de localisation requise',
-            backgroundColor: kBgCard,
-            colorText: kTextPrim,
-          );
+          AppSnackbar.warning('Autorisation de localisation requise.');
           _isLocating.value = false;
           return;
         }
       }
       if (perm == LocationPermission.deniedForever) {
-        Get.snackbar(
-          'Permission bloquée',
-          'Activez la localisation dans les réglages',
-          backgroundColor: kBgCard,
-          colorText: kTextPrim,
-        );
+        AppSnackbar.warning('Localisation bloquée. Activez-la dans les réglages de l\'application.');
         await Geolocator.openAppSettings();
         _isLocating.value = false;
         return;
@@ -518,12 +504,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
         _addressCtrl.text = 'Position actuelle détectée';
       }
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible d\'obtenir la position',
-        backgroundColor: kBgCard,
-        colorText: kTextPrim,
-      );
+      AppSnackbar.error('Impossible d\'obtenir votre position. Réessayez.');
     }
     _isLocating.value = false;
   }
@@ -1760,22 +1741,14 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
 
   Future<bool> _validateComplexInfo() async {
     if (_nameCtrl.text.trim().isEmpty) {
-      Get.snackbar(
-        'Champ requis',
-        'Veuillez saisir un nom de complexe',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Veuillez saisir un nom pour le complexe.');
       return false;
     }
     if (_addressCtrl.text.trim().isEmpty) {
       await _useCurrentLocation();
     }
     if (_addressCtrl.text.trim().isEmpty) {
-      Get.snackbar(
-        'Localisation requise',
-        'Autorisez la localisation pour continuer',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Autorisez la localisation pour continuer.');
       return false;
     }
     return true;
@@ -1788,11 +1761,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
     }
     final valid = _miniTerrains[index].toModels(index, 0);
     if (valid == null) {
-      Get.snackbar(
-        'Terrain incomplet',
-        'Vérifiez le nom, les formats, les découpes et les règles tarifaires',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Terrain incomplet. Vérifiez le nom, les formats, les découpes et les tarifs.');
       return false;
     }
     return true;
@@ -1801,11 +1770,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
   Future<void> _onSave() async {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
-      Get.snackbar(
-        'Champ requis',
-        'Veuillez saisir un nom de complexe',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Veuillez saisir un nom pour le complexe.');
       return;
     }
 
@@ -1821,22 +1786,14 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
     final subTerrains = subTerrainGroups.expand((models) => models).toList();
     if (subTerrains.isEmpty ||
         subTerrainGroups.length != _miniTerrains.length) {
-      Get.snackbar(
-        'Terrain incomplet',
-        'Chaque terrain doit avoir un nom, un format, des tarifs valides et au moins une découpe réservable',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Chaque terrain doit avoir un nom, un format, des tarifs valides et au moins une découpe réservable.');
       return;
     }
     final price = _deriveComplexPrice(subTerrains);
 
     final address = _addressCtrl.text.trim();
     if (address.isEmpty) {
-      Get.snackbar(
-        'Localisation requise',
-        'Autorisez la localisation pour continuer',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Autorisez la localisation pour continuer.');
       return;
     }
 
@@ -1881,8 +1838,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
       await Future.delayed(const Duration(milliseconds: 80));
       _ctrl.goBack();
     } catch (e) {
-      final message = e.toString().replaceFirst('Exception: ', '');
-      Get.snackbar('Erreur', message, snackPosition: SnackPosition.TOP);
+      AppSnackbar.error('Impossible d\'enregistrer le terrain. Vérifiez les informations et réessayez.');
     } finally {
       _isSaving.value = false;
     }

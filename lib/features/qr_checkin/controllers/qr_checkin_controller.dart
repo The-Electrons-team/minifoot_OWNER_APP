@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../core/services/reservation_service.dart';
+import '../../../core/widgets/app_snackbar.dart';
 
 class QrCheckInController extends GetxController {
   final _service = ReservationService();
@@ -48,11 +49,7 @@ class QrCheckInController extends GetxController {
           ? result['reservation'] as Map<String, dynamic>
           : reservation.value;
     } catch (_) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de confirmer la présence',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de confirmer la présence. Réessayez.');
     } finally {
       isConfirming.value = false;
     }

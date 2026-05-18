@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../core/services/in_app_notification_service.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 
 class NotificationItem {
@@ -122,11 +123,7 @@ class NotificationsController extends GetxController {
       _syncDashboardBadge();
     } catch (_) {
       errorMessage.value = 'Impossible de charger les notifications';
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les notifications',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de charger les notifications. Vérifiez votre connexion.');
     } finally {
       isLoading.value = false;
     }
@@ -150,11 +147,7 @@ class NotificationsController extends GetxController {
       notifications[index] = item;
       unreadTotal.value = unreadCount;
       _syncDashboardBadge();
-      Get.snackbar(
-        'Erreur',
-        'Lecture de la notification impossible',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de marquer cette notification comme lue.');
     }
   }
 
@@ -173,11 +166,7 @@ class NotificationsController extends GetxController {
       notifications.value = previous;
       unreadTotal.value = unreadCount;
       _syncDashboardBadge();
-      Get.snackbar(
-        'Erreur',
-        'Impossible de tout marquer comme lu',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de marquer toutes les notifications comme lues.');
     }
   }
 

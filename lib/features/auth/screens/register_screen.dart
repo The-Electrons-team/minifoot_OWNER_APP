@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/auth_controller.dart';
 import 'otp_screen.dart';
 
@@ -158,11 +159,7 @@ class _RegisterFlowState extends State<_RegisterFlow> {
       final phone = localPhone(phoneCtrl.text);
       phoneCtrl.text = phone;
       if (!isInfoValid) {
-        Get.snackbar(
-          'Champs requis',
-          'Renseignez votre prénom, nom et les 9 chiffres du téléphone.',
-          snackPosition: SnackPosition.TOP,
-        );
+        AppSnackbar.warning('Renseignez votre prénom, nom et les 9 chiffres du téléphone.');
         return;
       }
     }
@@ -170,11 +167,7 @@ class _RegisterFlowState extends State<_RegisterFlow> {
     if (step == 1) {
       cniCtrl.text = cleanCni(cniCtrl.text);
       if (!isDocumentValid) {
-        Get.snackbar(
-          'Documents requis',
-          'La CNI doit contenir 13 chiffres, avec photo profil, recto et verso.',
-          snackPosition: SnackPosition.TOP,
-        );
+        AppSnackbar.warning('La CNI doit contenir 13 chiffres, avec photo profil, recto et verso.');
         return;
       }
     }
@@ -191,19 +184,11 @@ class _RegisterFlowState extends State<_RegisterFlow> {
   Future<void> submit() async {
     final password = passCtrl.text.trim();
     if (password.length < 8) {
-      Get.snackbar(
-        'Mot de passe',
-        'Le mot de passe doit faire au moins 8 caractères.',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Le mot de passe doit faire au moins 8 caractères.');
       return;
     }
     if (password != confirmPassCtrl.text.trim()) {
-      Get.snackbar(
-        'Mot de passe',
-        'Les mots de passe ne correspondent pas.',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Les mots de passe ne correspondent pas.');
       return;
     }
 

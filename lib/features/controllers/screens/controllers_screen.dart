@@ -5,6 +5,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../routes/app_routes.dart';
 import '../controllers/controllers_controller.dart';
 
@@ -225,7 +226,7 @@ class ControllersScreen extends GetView<ControllersController> {
       onCancel: () {
         Clipboard.setData(ClipboardData(text: message));
         Get.back();
-        Get.snackbar('Copié', 'Identifiants copiés');
+        AppSnackbar.success('Identifiants copiés dans le presse-papiers.');
       },
       onConfirm: () {
         Get.back();

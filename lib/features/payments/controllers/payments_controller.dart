@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/revenue_service.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../routes/app_routes.dart';
 
 class TransactionModel {
@@ -85,11 +86,7 @@ class PaymentsController extends GetxController {
       await Future.wait([_loadPayoutInfo(), _loadPayoutBalance()]);
     } catch (_) {
       errorMessage.value = 'Impossible de charger les paiements';
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les paiements',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de charger les paiements. Vérifiez votre connexion.');
     } finally {
       isLoading.value = false;
     }
@@ -116,14 +113,13 @@ class PaymentsController extends GetxController {
       if (token == null || token.isEmpty) throw Exception('Non connecté');
       await _authService.requestPayout(token, phone: phone, amount: amount);
       await Future.wait([_loadPayoutBalance(), loadPayments()]);
-      Get.snackbar(
-        'Retrait effectué',
-        'Votre retrait a été soumis à DexPay avec succès.',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.success('Votre retrait a été soumis avec succès.');
     } catch (e) {
-      final msg = e.toString().replaceFirst('Exception: ', '');
-      Get.snackbar('Erreur', msg, snackPosition: SnackPosition.TOP);
+      final raw = e.toString().replaceFirst('Exception: ', '');
+      final msg = raw.contains('Non connecté')
+          ? 'Session expirée. Reconnectez-vous.'
+          : 'Impossible d\'effectuer le retrait. Réessayez.';
+      AppSnackbar.error(msg);
     } finally {
       isWithdrawing.value = false;
     }

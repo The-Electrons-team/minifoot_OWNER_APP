@@ -9,6 +9,7 @@ import '../../../core/models/user_model.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/reservation_service.dart';
 import '../../../core/services/terrain_service.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 class ProfileController extends GetxController {
@@ -97,11 +98,7 @@ class ProfileController extends GetxController {
       rating.value = _averageRating(terrains);
       totalRevenue.value = _confirmedRevenue(reservations);
     } catch (_) {
-      Get.snackbar(
-        'Profil',
-        'Impossible de rafraîchir toutes les informations',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de charger votre profil. Vérifiez votre connexion.');
     } finally {
       isLoading.value = false;
     }
@@ -114,11 +111,7 @@ class ProfileController extends GetxController {
     final nextFirstName = firstNameCtrl.text.trim();
     final nextLastName = lastNameCtrl.text.trim();
     if (nextFirstName.isEmpty || nextLastName.isEmpty) {
-      Get.snackbar(
-        'Profil',
-        'Le prénom et le nom sont obligatoires',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Le prénom et le nom sont obligatoires.');
       return;
     }
 
@@ -131,18 +124,10 @@ class ProfileController extends GetxController {
       final user = UserModel.fromJson(updated);
       _authController.user.value = user;
       _syncUser(user);
-      Get.snackbar(
-        'Profil mis à jour',
-        'Vos informations ont été enregistrées',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.success('Profil mis à jour avec succès.');
       Get.back();
     } catch (_) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de mettre à jour le profil',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de mettre à jour le profil. Réessayez.');
     } finally {
       isSaving.value = false;
     }
@@ -169,17 +154,9 @@ class ProfileController extends GetxController {
       final user = UserModel.fromJson(updated);
       _authController.user.value = user;
       _syncUser(user);
-      Get.snackbar(
-        'Photo mise à jour',
-        'Votre photo de profil a été enregistrée',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.success('Photo de profil mise à jour.');
     } catch (_) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de mettre à jour la photo',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de mettre à jour la photo. Réessayez.');
     } finally {
       isUploadingAvatar.value = false;
     }
@@ -227,21 +204,13 @@ class ProfileController extends GetxController {
             : null);
 
     if ([wave, orange, free].whereType<String>().isEmpty) {
-      Get.snackbar(
-        'Coordonnées',
-        'Ajoutez au moins un numéro de reversement',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Ajoutez au moins un numéro de reversement.');
       return;
     }
 
     if (preferred != null &&
         _phoneForMethod(preferred, wave, orange, free) == null) {
-      Get.snackbar(
-        'Coordonnées',
-        'Ajoutez le numéro de la méthode préférée',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Ajoutez le numéro correspondant à la méthode préférée.');
       return;
     }
 
@@ -258,17 +227,9 @@ class ProfileController extends GetxController {
       payoutFreePhone.value = updated['payoutFreePhone'];
       preferredPayoutMethod.value = updated['preferredPayoutMethod'];
       resetPayoutForm();
-      Get.snackbar(
-        'Coordonnées enregistrées',
-        'Vos numéros de reversement sont à jour',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.success('Vos numéros de reversement sont à jour.');
     } catch (_) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible d\'enregistrer les coordonnées',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible d\'enregistrer les coordonnées. Réessayez.');
     } finally {
       isSavingPayout.value = false;
     }
@@ -286,11 +247,7 @@ class ProfileController extends GetxController {
 
     final nextPhone = _fullPhoneOrNull(nextPhoneCtrl.text);
     if (nextPhone == null) {
-      Get.snackbar(
-        'Téléphone',
-        'Entrez un numéro sénégalais valide',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Entrez un numéro sénégalais valide (9 chiffres).');
       return;
     }
 
@@ -298,16 +255,12 @@ class ProfileController extends GetxController {
     try {
       await _authService.requestPhoneChange(token: token, phone: nextPhone);
       phoneOtpSent.value = true;
-      Get.snackbar(
-        'Code envoyé',
-        'Un code OTP a été envoyé au nouveau numéro',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.success('Un code de vérification a été envoyé au nouveau numéro.');
     } catch (e) {
       final message = e.toString().contains('PHONE_ALREADY_USED')
-          ? 'Ce numéro est déjà utilisé'
-          : 'Impossible d\'envoyer le code';
-      Get.snackbar('Erreur', message, snackPosition: SnackPosition.TOP);
+          ? 'Ce numéro est déjà utilisé par un autre compte.'
+          : 'Impossible d\'envoyer le code. Réessayez.';
+      AppSnackbar.error(message);
     } finally {
       isChangingPhone.value = false;
     }
@@ -320,11 +273,7 @@ class ProfileController extends GetxController {
     final nextPhone = _fullPhoneOrNull(nextPhoneCtrl.text);
     final code = phoneOtpCtrl.text.trim();
     if (nextPhone == null || code.length != 6) {
-      Get.snackbar(
-        'Téléphone',
-        'Vérifiez le numéro et le code OTP',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Vérifiez le numéro et le code de vérification (6 chiffres).');
       return;
     }
 
@@ -340,18 +289,14 @@ class ProfileController extends GetxController {
       _syncUser(user);
       resetPhoneChangeForm();
       Get.back();
-      Get.snackbar(
-        'Téléphone mis à jour',
-        'Votre nouveau numéro est actif',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.success('Votre nouveau numéro de téléphone est actif.');
     } catch (e) {
       final message = e.toString().contains('CODE_INVALIDE')
-          ? 'Code invalide ou expiré'
+          ? 'Code invalide ou expiré. Demandez un nouveau code.'
           : e.toString().contains('PHONE_ALREADY_USED')
-          ? 'Ce numéro est déjà utilisé'
-          : 'Impossible de changer le téléphone';
-      Get.snackbar('Erreur', message, snackPosition: SnackPosition.TOP);
+          ? 'Ce numéro est déjà utilisé par un autre compte.'
+          : 'Impossible de changer le numéro. Réessayez.';
+      AppSnackbar.error(message);
     } finally {
       isChangingPhone.value = false;
     }
@@ -368,29 +313,17 @@ class ProfileController extends GetxController {
     if (currentPassword.isEmpty ||
         newPassword.isEmpty ||
         confirmPassword.isEmpty) {
-      Get.snackbar(
-        'Mot de passe',
-        'Tous les champs sont obligatoires',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Tous les champs sont obligatoires.');
       return;
     }
 
     if (newPassword.length < 6) {
-      Get.snackbar(
-        'Mot de passe',
-        'Le nouveau mot de passe doit contenir au moins 6 caractères',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Le nouveau mot de passe doit contenir au moins 6 caractères.');
       return;
     }
 
     if (newPassword != confirmPassword) {
-      Get.snackbar(
-        'Mot de passe',
-        'Les deux nouveaux mots de passe ne correspondent pas',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Les deux nouveaux mots de passe ne correspondent pas.');
       return;
     }
 
@@ -402,17 +335,13 @@ class ProfileController extends GetxController {
         newPassword: newPassword,
       );
       resetPasswordForm();
-      Get.snackbar(
-        'Mot de passe mis à jour',
-        'Votre nouveau mot de passe est actif',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.success('Votre nouveau mot de passe est actif.');
       Get.back();
     } catch (e) {
       final message = e.toString().contains('MOT_DE_PASSE_ACTUEL_INCORRECT')
-          ? 'Le mot de passe actuel est incorrect'
-          : 'Impossible de modifier le mot de passe';
-      Get.snackbar('Erreur', message, snackPosition: SnackPosition.TOP);
+          ? 'Le mot de passe actuel est incorrect.'
+          : 'Impossible de modifier le mot de passe. Réessayez.';
+      AppSnackbar.error(message);
     } finally {
       isChangingPassword.value = false;
     }

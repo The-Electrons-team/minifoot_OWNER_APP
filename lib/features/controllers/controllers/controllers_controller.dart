@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../../core/services/controller_service.dart';
 import '../../../core/services/terrain_service.dart';
+import '../../../core/widgets/app_snackbar.dart';
 
 class OwnerControllerModel {
   final String id;
@@ -177,11 +178,7 @@ class ControllersController extends GetxController {
           .where((item) => item.id.isNotEmpty)
           .toList();
     } catch (_) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les controllers',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de charger les contrôleurs. Vérifiez votre connexion.');
     } finally {
       isLoading.value = false;
     }
@@ -203,11 +200,7 @@ class ControllersController extends GetxController {
       await refreshAll();
       return result['credentials'] as Map<String, dynamic>?;
     } catch (_) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de créer le controller',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de créer le contrôleur. Réessayez.');
       return null;
     }
   }
@@ -219,11 +212,7 @@ class ControllersController extends GetxController {
       });
       await refreshAll();
     } catch (_) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de modifier ce controller',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de modifier ce contrôleur. Réessayez.');
     }
   }
 
@@ -243,11 +232,7 @@ class ControllersController extends GetxController {
       }
       return updated;
     } catch (_) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de modifier les complexes du controller',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de modifier les complexes du contrôleur. Réessayez.');
       return null;
     }
   }
@@ -263,11 +248,7 @@ class ControllersController extends GetxController {
           )
           .toList();
     } catch (_) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger l’activité',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error(‘Impossible de charger l\’activité. Réessayez.’);
     } finally {
       isLoadingActivity.value = false;
     }

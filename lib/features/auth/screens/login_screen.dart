@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/auth_controller.dart';
 
 class LoginScreen extends GetView<AuthController> {
@@ -368,11 +369,7 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
 
   Future<void> _sendCode() async {
     if (phoneCtrl.text.trim().length != 9) {
-      Get.snackbar(
-        'Téléphone',
-        'Entrez un numéro sénégalais valide',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Entrez un numéro sénégalais valide (9 chiffres).');
       return;
     }
 
@@ -388,29 +385,17 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
     final confirm = confirmPasswordCtrl.text.trim();
 
     if (code.length != 6) {
-      Get.snackbar(
-        'Code',
-        'Le code doit contenir 6 chiffres',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Le code doit contenir 6 chiffres.');
       return;
     }
 
     if (password.length < 6) {
-      Get.snackbar(
-        'Mot de passe',
-        'Le mot de passe doit contenir au moins 6 caractères',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Le mot de passe doit contenir au moins 6 caractères.');
       return;
     }
 
     if (password != confirm) {
-      Get.snackbar(
-        'Mot de passe',
-        'Les mots de passe ne correspondent pas',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.warning('Les mots de passe ne correspondent pas.');
       return;
     }
 

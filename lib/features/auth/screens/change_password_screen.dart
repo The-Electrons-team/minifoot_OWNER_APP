@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/auth_controller.dart';
 
 class ForceChangePasswordScreen extends StatefulWidget {
@@ -29,15 +30,15 @@ class _ForceChangePasswordScreenState extends State<ForceChangePasswordScreen> {
     final confirm = _confirmController.text.trim();
 
     if (pass.isEmpty) {
-      Get.snackbar('Erreur', 'Veuillez saisir un mot de passe');
+      AppSnackbar.warning('Veuillez saisir un mot de passe.');
       return;
     }
     if (pass.length < 6) {
-      Get.snackbar('Erreur', 'Le mot de passe doit faire au moins 6 caractères');
+      AppSnackbar.warning('Le mot de passe doit faire au moins 6 caractères.');
       return;
     }
     if (pass != confirm) {
-      Get.snackbar('Erreur', 'Les mots de passe ne correspondent pas');
+      AppSnackbar.warning('Les mots de passe ne correspondent pas.');
       return;
     }
 

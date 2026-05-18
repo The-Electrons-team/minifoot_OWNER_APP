@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/auth_controller.dart';
 
 class OtpScreen extends StatefulWidget {
@@ -128,14 +129,7 @@ class _OtpScreenState extends State<OtpScreen> {
           );
         } catch (e) {
           // Alerte silencieuse : on ne bloque pas la redirection !
-          Get.snackbar(
-            'Compte Activé',
-            'Vérification réussie, mais l\'envoi des pièces justificatives a échoué. Veuillez contacter le support ou réessayer plus tard.',
-            snackPosition: SnackPosition.TOP,
-            backgroundColor: kOrange,
-            colorText: Colors.white,
-            duration: const Duration(seconds: 7),
-          );
+          AppSnackbar.warning('Vérification réussie, mais l\'envoi des pièces justificatives a échoué. Contactez le support ou réessayez plus tard.');
         }
       }
 

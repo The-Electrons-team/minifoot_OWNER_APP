@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/services/terrain_service.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../auth/controllers/auth_controller.dart';
 import 'availability_range_helper.dart';
 
@@ -148,11 +149,7 @@ class AvailabilityController extends GetxController {
     } catch (e) {
       complexCount.value = 0;
       errorMessage.value = 'Impossible de charger les terrains';
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les terrains',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de charger vos terrains. Vérifiez votre connexion.');
     } finally {
       isLoadingTerrains.value = false;
     }
@@ -193,11 +190,7 @@ class AvailabilityController extends GetxController {
   // ── Sélection de date ───────────────────────────────────────────────────────
   void onDaySelected(DateTime day, DateTime focused) {
     if (!canAccessDate(day)) {
-      Get.snackbar(
-        'Semaine limitée',
-        'Le contrôleur peut consulter uniquement les créneaux de la semaine en cours.',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.info('Vous pouvez consulter uniquement les créneaux de la semaine en cours.');
       return;
     }
     final clampedDay = _clampToAllowedRange(day);
@@ -213,11 +206,7 @@ class AvailabilityController extends GetxController {
   void goToAdjacentDay(int delta) {
     final target = selectedDate.value.add(Duration(days: delta));
     if (!canAccessDate(target)) {
-      Get.snackbar(
-        'Semaine limitée',
-        'Le contrôleur reste limité à la semaine en cours.',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.info('Vous êtes limité à la semaine en cours.');
       return;
     }
     onDaySelected(target, target);
@@ -299,11 +288,7 @@ class AvailabilityController extends GetxController {
     } catch (e) {
       if (requestId != _slotsRequestId) return;
       errorMessage.value = 'Impossible de charger les créneaux';
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les créneaux',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de charger les créneaux. Réessayez.');
     } finally {
       if (requestId == _slotsRequestId) {
         isLoading.value = false;
@@ -355,11 +340,7 @@ class AvailabilityController extends GetxController {
       );
       slots.refresh();
       if (!silent) {
-        Get.snackbar(
-          'Erreur',
-          'Impossible de modifier le créneau',
-          snackPosition: SnackPosition.TOP,
-        );
+        AppSnackbar.error('Impossible de modifier ce créneau. Réessayez.');
       }
       return false;
     }
@@ -395,11 +376,7 @@ class AvailabilityController extends GetxController {
   }) async {
     if (!canToggleRange(time, slotCount)) {
       if (!silent) {
-        Get.snackbar(
-          'Durée indisponible',
-          'Saisis une plage continue valide de $slotCount créneau${slotCount > 1 ? 'x' : ''}.',
-          snackPosition: SnackPosition.TOP,
-        );
+        AppSnackbar.warning('Sélectionnez une plage continue de $slotCount créneau${slotCount > 1 ? 'x' : ''} libre${slotCount > 1 ? 's' : ''}.');
       }
       return false;
     }
@@ -449,11 +426,7 @@ class AvailabilityController extends GetxController {
       }
       slots.refresh();
       if (!silent) {
-        Get.snackbar(
-          'Erreur',
-          'Impossible de modifier la plage sélectionnée',
-          snackPosition: SnackPosition.TOP,
-        );
+        AppSnackbar.error('Impossible de modifier la plage sélectionnée. Réessayez.');
       }
       return false;
     }

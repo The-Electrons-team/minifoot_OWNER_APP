@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/reservations_controller.dart';
 
 class ReservationDetailScreen extends StatefulWidget {
@@ -295,11 +296,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                                 await Clipboard.setData(
                                   ClipboardData(text: reservation.phone),
                                 );
-                                Get.snackbar(
-                                  'Copié',
-                                  'Numéro copié',
-                                  snackPosition: SnackPosition.TOP,
-                                );
+                                AppSnackbar.info('Numéro copié dans le presse-papiers.');
                               },
                               icon: Icon(
                                 PhosphorIcons.copy(PhosphorIconsStyle.duotone),

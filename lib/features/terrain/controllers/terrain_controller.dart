@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/services/terrain_service.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../routes/app_routes.dart';
 
 class SubTerrainModel {
@@ -305,11 +306,7 @@ class TerrainController extends GetxController {
       allTerrains.value = list;
       _applyFilters();
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de charger les terrains',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de charger vos terrains. Vérifiez votre connexion.');
     } finally {
       isLoading.value = false;
     }
@@ -373,11 +370,7 @@ class TerrainController extends GetxController {
       if (allIdx != -1) allTerrains[allIdx].isActive = newStatus;
       _applyFilters();
     } catch (e) {
-      Get.snackbar(
-        'Erreur',
-        'Impossible de modifier le statut',
-        snackPosition: SnackPosition.TOP,
-      );
+      AppSnackbar.error('Impossible de modifier le statut du terrain. Réessayez.');
     }
   }
 
@@ -393,17 +386,9 @@ class TerrainController extends GetxController {
           await _service.supprimerTerrain(id);
           terrains.removeWhere((t) => t.id == id);
           allTerrains.removeWhere((t) => t.id == id);
-          Get.snackbar(
-            'Succès',
-            'Terrain supprimé',
-            snackPosition: SnackPosition.TOP,
-          );
+          AppSnackbar.success('Terrain supprimé avec succès.');
         } catch (e) {
-          Get.snackbar(
-            'Erreur',
-            'Impossible de supprimer le terrain',
-            snackPosition: SnackPosition.TOP,
-          );
+          AppSnackbar.error('Impossible de supprimer ce terrain. Réessayez.');
         }
       },
     );
@@ -424,8 +409,8 @@ class TerrainController extends GetxController {
       reviews.value = data
           .map((e) => TerrainReviewModel.fromJson(e as Map<String, dynamic>))
           .toList();
-    } catch (e) {
-      print('Erreur chargement avis: $e');
+    } catch (_) {
+      // Erreur silencieuse — les avis ne sont pas bloquants
     } finally {
       isLoadingReviews.value = false;
     }
