@@ -150,7 +150,7 @@ class RevenueService {
       terrain: (terrain?['name'] ?? 'Terrain').toString(),
       amount: _ownerNetPaymentAmount(payment, reservation),
       method: _formatMethod(payment['method'] ?? reservation['paymentMethod']),
-      status: _ownerPaymentStatus(payment),
+      status: _ownerPaymentStatus(payment, reservation),
       timeSlot: _formatSlot(reservation['startSlot'], reservation['endSlot']),
       reference: (reservation['reference'] ?? '').toString(),
     );
@@ -337,8 +337,16 @@ class RevenueService {
     }
   }
 
-  static String _ownerPaymentStatus(Map<String, dynamic> payment) {
+  static String _ownerPaymentStatus(
+    Map<String, dynamic> payment,
+    Map<String, dynamic> reservation,
+  ) {
+    // Réservation annulée → le paiement ne compte pas, peu importe son statut
+    final reservationStatus = reservation['status']?.toString();
+    if (reservationStatus == 'CANCELLED') return 'failed';
+
     final rawStatus = payment['status']?.toString();
+    // Paiement complété mais fonds pas encore débloqués (en attente scan QR)
     if (rawStatus == 'COMPLETED' && payment['ownerReleasedAt'] == null) {
       return 'pending';
     }

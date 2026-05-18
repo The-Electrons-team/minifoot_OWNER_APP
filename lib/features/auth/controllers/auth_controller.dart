@@ -46,19 +46,17 @@ class AuthController extends GetxController {
       final userData = await _authService.getProfile(savedToken);
       token.value = savedToken;
       user.value = UserModel.fromJson(userData);
-      
-      // Si l'utilisateur est maintenant approuvé, on le redirige vers le dashboard
-      if (user.value?.isOwnerApproved == true) {
-        goToPostAuthDestination();
-      }
 
+      // Vérifier le rôle avant toute navigation
       if (user.value?.canUseOwnerApp != true) {
         await prefs.remove('token');
         token.value = null;
         user.value = null;
         return false;
       }
+
       await NotificationService.syncToken(savedToken);
+      goToPostAuthDestination();
       return true;
     } catch (e) {
       prefs.remove('token');
