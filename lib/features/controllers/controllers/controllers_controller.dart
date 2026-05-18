@@ -248,7 +248,7 @@ class ControllersController extends GetxController {
           )
           .toList();
     } catch (_) {
-      AppSnackbar.error(‘Impossible de charger l\’activité. Réessayez.’);
+      AppSnackbar.error('Impossible de charger l\'activité. Réessayez.');
     } finally {
       isLoadingActivity.value = false;
     }

@@ -249,7 +249,7 @@ class AuthController extends GetxController {
         user.value = UserModel.fromJson(res['user'] as Map<String, dynamic>);
       }
     } catch (e) {
-      AppSnackbar.error(‘Impossible d\’envoyer les documents. Vérifiez votre connexion et réessayez.’);
+      AppSnackbar.error('Impossible d\'envoyer les documents. Vérifiez votre connexion et réessayez.');
       rethrow;
     } finally {
       isLoading.value = false;
