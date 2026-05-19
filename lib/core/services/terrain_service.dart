@@ -26,46 +26,9 @@ class TerrainService {
     );
     if (response.statusCode == 200) {
       final body = jsonDecode(response.body);
-      return (body['data'] as List<dynamic>)
-          .map((item) => _normalizeTerrain(item as Map<String, dynamic>))
-          .toList();
+      return (body['data'] as List<dynamic>).cast<Map<String, dynamic>>();
     }
     throw Exception('Erreur chargement terrains: ${response.body}');
-  }
-
-  Map<String, dynamic> _normalizeTerrain(Map<String, dynamic> terrain) {
-    final normalized = Map<String, dynamic>.from(terrain);
-    normalized['imageUrl'] = _normalizeStorageUrl(normalized['imageUrl']);
-    normalized['imageUrls'] = (normalized['imageUrls'] as List<dynamic>? ?? [])
-        .map(_normalizeStorageUrl)
-        .whereType<String>()
-        .toList();
-    return normalized;
-  }
-
-  String? _normalizeStorageUrl(dynamic value) {
-    if (value is! String || value.isEmpty) return null;
-
-    final uri = Uri.tryParse(value);
-    if (uri == null || uri.pathSegments.length < 2) return value;
-
-    final terrainBucketIndex = uri.pathSegments.indexWhere(
-      (segment) => segment == 'terrains' || segment == 'minifoot-terrains',
-    );
-    if (terrainBucketIndex >= 0 &&
-        terrainBucketIndex + 1 < uri.pathSegments.length) {
-      final key = uri.pathSegments.skip(terrainBucketIndex + 1).join('/');
-      return '$_base/storage/terrains/$key';
-    }
-
-    final bucket = uri.pathSegments.first;
-    final isLocalMinio =
-        (uri.host == 'localhost' || uri.host == '127.0.0.1') &&
-        uri.port == 9000;
-    if (!isLocalMinio || bucket != 'minifoot-terrains') return value;
-
-    final key = uri.pathSegments.skip(1).join('/');
-    return '$_base/storage/terrains/$key';
   }
 
   // ── POST /terrains ─────────────────────────────────────────────────────────

@@ -191,11 +191,7 @@ class AuthService {
     final streamed = await request.send().timeout(const Duration(seconds: 30));
     final body = await streamed.stream.bytesToString();
     if (streamed.statusCode == 200 || streamed.statusCode == 201) {
-      final decoded = jsonDecode(body) as Map<String, dynamic>;
-      if (decoded['user'] is Map) {
-        decoded['user'] = _normalizeUser(decoded['user']);
-      }
-      return decoded;
+      return jsonDecode(body) as Map<String, dynamic>;
     }
     throw Exception('Erreur upload documents: $body');
   }
@@ -250,7 +246,7 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      return _normalizeUser(jsonDecode(response.body));
+      return jsonDecode(response.body);
     } else {
       throw Exception('Erreur profil: ${response.body}');
     }
@@ -270,7 +266,7 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      return _normalizeUser(jsonDecode(response.body));
+      return jsonDecode(response.body);
     } else {
       throw Exception('Erreur mise à jour profil: ${response.body}');
     }
@@ -290,7 +286,7 @@ class AuthService {
     final streamed = await request.send();
     final body = await streamed.stream.bytesToString();
     if (streamed.statusCode == 200 || streamed.statusCode == 201) {
-      return _normalizeUser(jsonDecode(body));
+      return jsonDecode(body);
     }
     throw Exception('Erreur upload avatar: $body');
   }
@@ -414,7 +410,7 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      return _normalizeUser(jsonDecode(response.body));
+      return jsonDecode(response.body);
     }
     if (response.statusCode == 401) throw Exception('CODE_INVALIDE');
     if (response.statusCode == 409) throw Exception('PHONE_ALREADY_USED');
@@ -469,34 +465,4 @@ class AuthService {
     }
   }
 
-  Map<String, dynamic> _normalizeUser(dynamic value) {
-    final user = Map<String, dynamic>.from(value as Map);
-    user['avatarUrl'] = _normalizeStorageUrl(user['avatarUrl']);
-    user['cniFrontUrl'] = _normalizeStorageUrl(user['cniFrontUrl']);
-    user['cniBackUrl'] = _normalizeStorageUrl(user['cniBackUrl']);
-    return user;
-  }
-
-  String? _normalizeStorageUrl(dynamic value) {
-    if (value is! String || value.isEmpty) return null;
-
-    final uri = Uri.tryParse(value);
-    if (uri == null || uri.pathSegments.length < 2) return value;
-
-    final isLocalMinio =
-        (uri.host == 'localhost' || uri.host == '127.0.0.1') &&
-        uri.port == 9000;
-    final bucket = uri.pathSegments.first;
-    if (!isLocalMinio ||
-        (bucket != 'minifoot-avatars' &&
-            bucket != 'minifoot-owner-documents')) {
-      return value;
-    }
-
-    final key = uri.pathSegments.skip(1).join('/');
-    final proxyBucket = bucket == 'minifoot-owner-documents'
-        ? 'ownerDocuments'
-        : 'avatars';
-    return '$_baseUrl/storage/$proxyBucket/$key';
-  }
 }
