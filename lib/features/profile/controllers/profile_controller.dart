@@ -117,11 +117,12 @@ class ProfileController extends GetxController {
 
     isSaving.value = true;
     try {
-      final updated = await _authService.updateProfile(token, {
+      await _authService.updateProfile(token, {
         'firstName': nextFirstName,
         'lastName': nextLastName,
       });
-      final user = UserModel.fromJson(updated);
+      final profileData = await _authService.getProfile(token);
+      final user = UserModel.fromJson(profileData);
       _authController.user.value = user;
       _syncUser(user);
       AppSnackbar.success('Profil mis à jour avec succès.');
@@ -147,11 +148,12 @@ class ProfileController extends GetxController {
       if (image == null) return;
 
       isUploadingAvatar.value = true;
-      final updated = await _authService.uploadAvatar(
+      await _authService.uploadAvatar(
         token: token,
         image: File(image.path),
       );
-      final user = UserModel.fromJson(updated);
+      final profileData = await _authService.getProfile(token);
+      final user = UserModel.fromJson(profileData);
       _authController.user.value = user;
       _syncUser(user);
       AppSnackbar.success('Photo de profil mise à jour.');
@@ -279,12 +281,13 @@ class ProfileController extends GetxController {
 
     isChangingPhone.value = true;
     try {
-      final updated = await _authService.confirmPhoneChange(
+      await _authService.confirmPhoneChange(
         token: token,
         phone: nextPhone,
         code: code,
       );
-      final user = UserModel.fromJson(updated);
+      final profileData = await _authService.getProfile(token);
+      final user = UserModel.fromJson(profileData);
       _authController.user.value = user;
       _syncUser(user);
       resetPhoneChangeForm();
