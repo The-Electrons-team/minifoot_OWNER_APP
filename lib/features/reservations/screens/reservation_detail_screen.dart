@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_snackbar.dart';
@@ -235,14 +235,10 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(
+                            PhosphorIcon(
                               reservation.isCheckedIn
-                                  ? PhosphorIcons.sealCheck(
-                                      PhosphorIconsStyle.duotone,
-                                    )
-                                  : PhosphorIcons.clockCountdown(
-                                      PhosphorIconsStyle.duotone,
-                                    ),
+                                  ? PhosphorIconsDuotone.sealCheck
+                                  : PhosphorIconsDuotone.clockCountdown,
                               color: reservation.isCheckedIn ? kGreen : kGold,
                               size: 22,
                             ),
@@ -284,7 +280,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                   title: 'Infos client',
                   children: [
                     _DetailRow(
-                      icon: PhosphorIcons.phone(PhosphorIconsStyle.duotone),
+                      icon: PhosphorIconsDuotone.phone,
                       label: 'Téléphone',
                       value: reservation.phone.isEmpty
                           ? 'Non renseigné'
@@ -298,17 +294,14 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                                 );
                                 AppSnackbar.info('Numéro copié dans le presse-papiers.');
                               },
-                              icon: Icon(
-                                PhosphorIcons.copy(PhosphorIconsStyle.duotone),
+                              icon: PhosphorIcon(PhosphorIconsDuotone.copy,
                                 color: kTextSub,
                                 size: 16,
                               ),
                             ),
                     ),
                     _DetailRow(
-                      icon: PhosphorIcons.identificationCard(
-                        PhosphorIconsStyle.duotone,
-                      ),
+                      icon: PhosphorIconsDuotone.identificationCard,
                       label: 'Alias',
                       value: reservation.teamName,
                     ),
@@ -319,32 +312,28 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                   title: 'Infos réservation',
                   children: [
                     _DetailRow(
-                      icon: PhosphorIcons.courtBasketball(
-                        PhosphorIconsStyle.duotone,
-                      ),
+                      icon: PhosphorIconsDuotone.courtBasketball,
                       label: 'Terrain',
                       value: terrainLabel,
                     ),
                     _DetailRow(
-                      icon: PhosphorIcons.calendarBlank(
-                        PhosphorIconsStyle.duotone,
-                      ),
+                      icon: PhosphorIconsDuotone.calendarBlank,
                       label: 'Date',
                       value: reservation.date,
                     ),
                     _DetailRow(
-                      icon: PhosphorIcons.clock(PhosphorIconsStyle.duotone),
+                      icon: PhosphorIconsDuotone.clock,
                       label: 'Créneau',
                       value: reservation.timeSlot,
                     ),
                     _DetailRow(
-                      icon: PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
+                      icon: PhosphorIconsDuotone.wallet,
                       label: 'Paiement',
                       value:
                           '${reservation.paymentMethod} · ${reservation.paymentStatus}',
                     ),
                     _DetailRow(
-                      icon: PhosphorIcons.money(PhosphorIconsStyle.duotone),
+                      icon: PhosphorIconsDuotone.money,
                       label: 'Montant',
                       value: _formatAmount(reservation.amount),
                     ),
@@ -356,8 +345,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: () => _confirmCancel(reservation),
-                      icon: Icon(
-                        PhosphorIcons.xCircle(PhosphorIconsStyle.duotone),
+                      icon: PhosphorIcon(PhosphorIconsDuotone.xCircle,
                         size: 18,
                       ),
                       label: const Text('Refuser la réservation'),
@@ -416,7 +404,7 @@ class _SectionCard extends StatelessWidget {
 }
 
 class _DetailRow extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String label;
   final String value;
   final Widget? trailing;
@@ -442,7 +430,7 @@ class _DetailRow extends StatelessWidget {
               color: kBgSurface,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: kTextSub, size: 17),
+            child: PhosphorIcon(icon, color: kTextSub, size: 17),
           ),
           const SizedBox(width: 10),
           Expanded(

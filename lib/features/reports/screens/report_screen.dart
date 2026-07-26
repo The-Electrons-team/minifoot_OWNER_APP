@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -577,8 +577,7 @@ class _ReportScreenState extends State<ReportScreen> {
         elevation: 0,
         leading: IconButton(
           onPressed: Get.back,
-          icon: Icon(
-            PhosphorIcons.arrowLeft(PhosphorIconsStyle.duotone),
+          icon: PhosphorIcon(PhosphorIconsDuotone.arrowLeft,
             color: kTextPrim,
             size: 18,
           ),
@@ -597,8 +596,7 @@ class _ReportScreenState extends State<ReportScreen> {
           if (_pdfBytes != null) ...[
             IconButton(
               onPressed: _sharePdf,
-              icon: Icon(
-                PhosphorIcons.shareNetwork(PhosphorIconsStyle.duotone),
+              icon: PhosphorIcon(PhosphorIconsDuotone.shareNetwork,
                 color: kGreen,
                 size: 22,
               ),
@@ -606,8 +604,7 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
             IconButton(
               onPressed: _printPdf,
-              icon: Icon(
-                PhosphorIcons.printer(PhosphorIconsStyle.duotone),
+              icon: PhosphorIcon(PhosphorIconsDuotone.printer,
                 color: kGreen,
                 size: 22,
               ),
@@ -695,14 +692,14 @@ class _ReportScreenState extends State<ReportScreen> {
         children: [
           _ReportChip(
             label: 'Revenus',
-            icon: PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
+            icon: PhosphorIconsDuotone.wallet,
             selected: _reportType == _ReportType.revenues,
             onTap: () => _changeReportType(_ReportType.revenues),
           ),
           const SizedBox(width: 10),
           _ReportChip(
             label: 'Réservations',
-            icon: PhosphorIcons.calendarBlank(PhosphorIconsStyle.duotone),
+            icon: PhosphorIconsDuotone.calendarBlank,
             selected: _reportType == _ReportType.reservations,
             onTap: () => _changeReportType(_ReportType.reservations),
           ),
@@ -731,8 +728,7 @@ class _ReportScreenState extends State<ReportScreen> {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: _printPdf,
-                icon: Icon(
-                  PhosphorIcons.printer(PhosphorIconsStyle.duotone),
+                icon: PhosphorIcon(PhosphorIconsDuotone.printer,
                   color: kGreen,
                   size: 20,
                 ),
@@ -746,8 +742,7 @@ class _ReportScreenState extends State<ReportScreen> {
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: _sharePdf,
-                icon: Icon(
-                  PhosphorIcons.shareNetwork(PhosphorIconsStyle.duotone),
+                icon: PhosphorIcon(PhosphorIconsDuotone.shareNetwork,
                   size: 20,
                 ),
                 label: const Text(
@@ -769,8 +764,7 @@ class _ReportScreenState extends State<ReportScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              PhosphorIcons.warningCircle(PhosphorIconsStyle.duotone),
+            PhosphorIcon(PhosphorIconsDuotone.warningCircle,
               size: 64,
               color: kRed,
             ),
@@ -944,7 +938,7 @@ class _PdfReservation {
 
 class _ReportChip extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final dynamic icon;
   final bool selected;
   final VoidCallback onTap;
 
@@ -972,7 +966,7 @@ class _ReportChip extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: selected ? Colors.white : kTextSub, size: 18),
+              PhosphorIcon(icon, color: selected ? Colors.white : kTextSub, size: 18),
               const SizedBox(width: 8),
               Text(
                 label,

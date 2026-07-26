@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../controllers/notifications_controller.dart';
 
@@ -23,22 +23,26 @@ class NotificationsScreen extends GetView<NotificationsController> {
             color: kTextPrim,
           ),
         ),
-        leading: IconButton(
-          icon: Icon(
-            PhosphorIcons.arrowLeft(PhosphorIconsStyle.duotone),
-            color: kTextPrim,
+        leading: GestureDetector(
+          onTap: () => Get.back(),
+          behavior: HitTestBehavior.opaque,
+          child: const Center(
+            child: PhosphorIcon(PhosphorIcons.caretLeft,
+              color: kTextPrim,
+              size: 24,
+            ),
           ),
-          onPressed: () => Get.back(),
         ),
         actions: [
-          TextButton(
-            onPressed: () => controller.markAllRead(),
-            child: const Text(
-              'Tout lire',
-              style: TextStyle(
+          GestureDetector(
+            onTap: () => controller.markAllRead(),
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.center,
+              child: PhosphorIcon(PhosphorIconsDuotone.checkCircle,
                 color: kGreen,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+                size: 22,
               ),
             ),
           ),
@@ -70,7 +74,7 @@ class NotificationsScreen extends GetView<NotificationsController> {
                 color: kGreen,
                 onRefresh: controller.refreshNotifications,
                 child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                   itemCount: items.length,
                   itemBuilder: (context, index) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
@@ -89,90 +93,62 @@ class NotificationsScreen extends GetView<NotificationsController> {
   }
 }
 
-// ─── Filtres chips ────────────────────────────────────────────────────────────
+// ─── Filtre toggle compact ───────────────────────────────────────────────────
 
 class _FilterChips extends GetView<NotificationsController> {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: kBgCard,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Obx(() {
-          final selected = controller.selectedFilter.value;
-          final unread = controller.unreadCount;
-          return Row(
-            children: [
-              _FilterChip(
-                label: unread > 0 ? 'Toutes ($unread)' : 'Toutes',
-                value: 'all',
-                isSelected: selected == 'all',
-                onTap: () => controller.setFilter('all'),
-              ),
-              const SizedBox(width: 8),
-              _FilterChip(
-                label: 'Réservations',
-                value: 'booking',
-                isSelected: selected == 'booking',
-                onTap: () => controller.setFilter('booking'),
-              ),
-              const SizedBox(width: 8),
-              _FilterChip(
-                label: 'Paiements',
-                value: 'payment',
-                isSelected: selected == 'payment',
-                onTap: () => controller.setFilter('payment'),
-              ),
-              const SizedBox(width: 8),
-              _FilterChip(
-                label: 'Système',
-                value: 'system',
-                isSelected: selected == 'system',
-                onTap: () => controller.setFilter('system'),
-              ),
-            ],
-          );
-        }),
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _FilterChip({
-    required this.label,
-    required this.value,
-    required this.isSelected,
-    required this.onTap,
-  });
+  static const _filters = [
+    ('all', 'Tout'),
+    ('booking', 'Réserv.'),
+    ('payment', 'Paiem.'),
+    ('system', 'Sys.'),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? kGreen : kBgSurface,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : kTextSub,
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
+      child: Obx(() {
+        final selected = controller.selectedFilter.value;
+        final unread = controller.unreadCount;
+        return Container(
+          decoration: BoxDecoration(
+            color: kBgSurface,
+            borderRadius: BorderRadius.circular(12),
           ),
-        ),
-      ),
+          padding: const EdgeInsets.all(3),
+          child: Row(
+            children: _filters.map((f) {
+              final isActive = selected == f.$1;
+              final label = f.$1 == 'all' && unread > 0
+                  ? '${f.$2} ($unread)'
+                  : f.$2;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => controller.setFilter(f.$1),
+                  behavior: HitTestBehavior.opaque,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isActive ? kGreen : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isActive ? Colors.white : kTextSub,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      }),
     );
   }
 }
@@ -194,7 +170,7 @@ class _NotificationTile extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: item.isRead ? kBgCard : kGreenLight.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: item.isRead
                 ? Colors.transparent
@@ -273,39 +249,42 @@ class _TypeIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (IconData icon, Color iconColor, Color bgColor) = switch (type) {
+    final (dynamic icon, Color iconColor, Color bgColor) = switch (type) {
       'booking' => (
-        PhosphorIcons.calendarBlank(PhosphorIconsStyle.duotone),
+        PhosphorIconsDuotone.calendarBlank,
         kBlue,
         kBlueLight,
       ),
       'payment' => (
-        PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
+        PhosphorIconsDuotone.wallet,
         kGreen,
         kGreenLight,
       ),
       'chat' => (
-        PhosphorIcons.chatCircleText(PhosphorIconsStyle.duotone),
+        PhosphorIconsDuotone.chatCircleText,
         kGold,
         kGoldLight,
       ),
       'system' => (
-        PhosphorIcons.info(PhosphorIconsStyle.duotone),
+        PhosphorIconsDuotone.info,
         kTextSub,
         kBgSurface,
       ),
       _ => (
-        PhosphorIcons.bell(PhosphorIconsStyle.duotone),
+        PhosphorIconsDuotone.bell,
         kTextSub,
         kBgSurface,
       ),
     };
 
     return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
-      child: Icon(icon, color: iconColor, size: 22),
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: PhosphorIcon(icon, color: iconColor, size: 22),
     );
   }
 }
@@ -319,8 +298,7 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            PhosphorIcons.bellSlash(PhosphorIconsStyle.duotone),
+          PhosphorIcon(PhosphorIconsDuotone.bellSlash,
             size: 64,
             color: kTextLight,
           ),
@@ -353,8 +331,7 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              PhosphorIcons.warningCircle(PhosphorIconsStyle.duotone),
+            PhosphorIcon(PhosphorIconsDuotone.warningCircle,
               size: 56,
               color: kTextLight,
             ),
@@ -378,7 +355,7 @@ class _ErrorState extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              child: const Text('Reessayer'),
+              child: const Text('Réessayer'),
             ),
           ],
         ),

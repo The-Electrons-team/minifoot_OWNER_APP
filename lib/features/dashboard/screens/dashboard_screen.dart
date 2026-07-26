@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/owner_ui.dart';
 import '../../../routes/app_routes.dart';
@@ -50,7 +50,7 @@ class DashboardScreen extends GetView<DashboardController> {
                   _buildQuickActions(),
                   _buildWeeklyChart(),
                   _buildRecentBookings(),
-                  const SizedBox(height: 100),
+                  const SizedBox(height: 84),
                 ],
               ),
             ),
@@ -90,8 +90,7 @@ class DashboardScreen extends GetView<DashboardController> {
         ),
         child: Row(
           children: [
-            Icon(
-              PhosphorIcons.warningCircle(PhosphorIconsStyle.duotone),
+            PhosphorIcon(PhosphorIconsDuotone.warningCircle,
               color: kRed,
               size: 18,
             ),
@@ -121,9 +120,7 @@ class DashboardScreen extends GetView<DashboardController> {
           children: [
             Expanded(
                   child: _StatMiniCard(
-                    icon: PhosphorIcons.calendarBlank(
-                      PhosphorIconsStyle.duotone,
-                    ),
+                    icon: PhosphorIconsDuotone.calendarBlank,
                     iconBgColor: kBlueLight,
                     iconColor: kBlue,
                     value: '${controller.todayBookings.value}',
@@ -136,7 +133,7 @@ class DashboardScreen extends GetView<DashboardController> {
             const SizedBox(width: 10),
             Expanded(
                   child: _StatMiniCard(
-                    icon: PhosphorIcons.star(PhosphorIconsStyle.duotone),
+                    icon: PhosphorIconsDuotone.star,
                     iconBgColor: kGoldLight,
                     iconColor: kGold,
                     value: '${controller.rating.value}',
@@ -149,7 +146,7 @@ class DashboardScreen extends GetView<DashboardController> {
             const SizedBox(width: 10),
             Expanded(
                   child: _StatMiniCard(
-                    icon: PhosphorIcons.chartPie(PhosphorIconsStyle.duotone),
+                    icon: PhosphorIconsDuotone.chartPie,
                     iconBgColor: kGreenLight,
                     iconColor: kGreen,
                     value: '${(controller.occupancyRate.value * 100).round()}%',
@@ -194,7 +191,7 @@ class DashboardScreen extends GetView<DashboardController> {
 
             final actions = [
               _ActionData(
-                icon: PhosphorIcons.calendarCheck(PhosphorIconsStyle.duotone),
+                icon: PhosphorIconsDuotone.calendarCheck,
                 label: 'Réservations',
                 subtitle: reservationSubtitle,
                 color: kBlue,
@@ -202,7 +199,7 @@ class DashboardScreen extends GetView<DashboardController> {
                 onTap: controller.goToReservations,
               ),
               _ActionData(
-                icon: PhosphorIcons.clockCountdown(PhosphorIconsStyle.duotone),
+                icon: PhosphorIconsDuotone.clockCountdown,
                 label: 'Créneaux',
                 subtitle: 'Disponibilités',
                 color: kGold,
@@ -210,16 +207,16 @@ class DashboardScreen extends GetView<DashboardController> {
                 onTap: controller.goToAvailability,
               ),
               _ActionData(
-                icon: PhosphorIcons.qrCode(PhosphorIconsStyle.duotone),
+                icon: PhosphorIconsDuotone.qrCode,
                 label: 'Scanner',
                 subtitle: 'QR réservation',
-                color: kGreen,
-                bgColor: kGreenLight,
+                color: kOrange,
+                bgColor: const Color(0xFFFFF3E0),
                 onTap: controller.goToQrCheckIn,
               ),
               if (!controller.isController) ...[
                 _ActionData(
-                  icon: PhosphorIcons.soccerBall(PhosphorIconsStyle.duotone),
+                  icon: PhosphorIconsDuotone.soccerBall,
                   label: 'Terrains',
                   subtitle: terrainSubtitle,
                   color: kGreen,
@@ -227,7 +224,7 @@ class DashboardScreen extends GetView<DashboardController> {
                   onTap: controller.goToTerrains,
                 ),
                 _ActionData(
-                  icon: PhosphorIcons.usersThree(PhosphorIconsStyle.duotone),
+                  icon: PhosphorIconsDuotone.usersThree,
                   label: 'Contrôleurs',
                   subtitle: 'Accès & suivi',
                   color: kBlue,
@@ -235,7 +232,7 @@ class DashboardScreen extends GetView<DashboardController> {
                   onTap: controller.goToControllers,
                 ),
                 _ActionData(
-                  icon: PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
+                  icon: PhosphorIconsDuotone.wallet,
                   label: 'Paiements',
                   subtitle: paymentSubtitle,
                   color: kOrange,
@@ -252,7 +249,7 @@ class DashboardScreen extends GetView<DashboardController> {
                   final itemWidth = (constraints.maxWidth - 12) / 2;
                   return Wrap(
                     spacing: 12,
-                    runSpacing: 12,
+                    runSpacing: 14,
                     children: List.generate(actions.length, (index) {
                       final a = actions[index];
                       return GestureDetector(
@@ -275,7 +272,7 @@ class DashboardScreen extends GetView<DashboardController> {
                                       color: a.bgColor,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: Icon(
+                                    child: PhosphorIcon(
                                       a.icon,
                                       color: a.color,
                                       size: 22,
@@ -330,7 +327,7 @@ class DashboardScreen extends GetView<DashboardController> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: kBgCard,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(18),
           boxShadow: kCardShadow,
         ),
         child: Obx(() {
@@ -542,7 +539,7 @@ class DashboardScreen extends GetView<DashboardController> {
                   ),
                   decoration: BoxDecoration(
                     color: kBgSurface,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
@@ -555,8 +552,8 @@ class DashboardScreen extends GetView<DashboardController> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Icon(
-                        PhosphorIcons.caretRight(PhosphorIconsStyle.bold),
+                      PhosphorIcon(
+                        PhosphorIconsBold.caretRight,
                         color: kGreen,
                         size: 18,
                       ),
@@ -614,17 +611,13 @@ class DashboardScreen extends GetView<DashboardController> {
                 child: Row(
                   children: [
                     _NavItem(
-                      icon: PhosphorIcons.squaresFour(
-                        PhosphorIconsStyle.duotone,
-                      ),
+                      icon: PhosphorIconsDuotone.squaresFour,
                       label: 'Accueil',
                       isSelected: controller.selectedTab.value == 0,
                       onTap: () => controller.changeTab(0),
                     ),
                     _NavItem(
-                      icon: PhosphorIcons.courtBasketball(
-                        PhosphorIconsStyle.duotone,
-                      ),
+                      icon: PhosphorIconsDuotone.courtBasketball,
                       label: controller.isController ? 'Réserv.' : 'Terrains',
                       isSelected: controller.selectedTab.value == 1,
                       onTap: () => controller.openBottomTab(
@@ -637,10 +630,8 @@ class DashboardScreen extends GetView<DashboardController> {
                     const SizedBox(width: 72),
                     _NavItem(
                       icon: controller.isController
-                          ? PhosphorIcons.clockCountdown(
-                              PhosphorIconsStyle.duotone,
-                            )
-                          : PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
+                          ? PhosphorIconsDuotone.clockCountdown
+                          : PhosphorIconsDuotone.wallet,
                       label: controller.isController ? 'Créneaux' : 'Paiements',
                       isSelected: controller.selectedTab.value == 3,
                       onTap: () => controller.openBottomTab(
@@ -651,7 +642,7 @@ class DashboardScreen extends GetView<DashboardController> {
                       ),
                     ),
                     _NavItem(
-                      icon: PhosphorIcons.user(PhosphorIconsStyle.duotone),
+                      icon: PhosphorIconsDuotone.user,
                       label: 'Profil',
                       isSelected: controller.selectedTab.value == 4,
                       onTap: () =>
@@ -674,7 +665,7 @@ class DashboardScreen extends GetView<DashboardController> {
                       border: Border.all(
                         color: controller.selectedTab.value == 2
                             ? kGreen
-                            : Colors.black12,
+                            : kBorder,
                         width: 2,
                       ),
                       boxShadow: [
@@ -836,7 +827,7 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
                             height: 34,
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(11),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: Center(
                               child: Obx(
@@ -885,31 +876,15 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   Widget _buildHeaderContent(BuildContext context) {
-    final hour = DateTime.now().hour;
-    final greeting = hour < 12
-        ? 'Bonjour'
-        : hour < 18
-        ? 'Bon après-midi'
-        : 'Bonsoir';
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Gauche : salutation + titre
+          // Gauche : titre + nom
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                greeting,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 3),
               const Text(
                 'MINIFOOT',
                 style: TextStyle(
@@ -924,11 +899,10 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
               Obx(
                 () => Text(
                   controller.ownerName.value,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.75),
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    letterSpacing: 0.3,
                   ),
                 ),
               ),
@@ -942,18 +916,21 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
               // Accès profil
               GestureDetector(
                 onTap: controller.goToProfile,
-                child: Container(
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Container(
                   width: 42,
                   height: 42,
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    PhosphorIcons.user(PhosphorIconsStyle.duotone),
+                  child: PhosphorIcon(PhosphorIconsDuotone.user,
                     color: kGreen,
                     size: 22,
                   ),
+                ),
                 ),
               ),
             ],
@@ -976,10 +953,12 @@ class _NotifBell extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: controller.goToNotifications,
-      child: Stack(
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Cercle blanc avec icône verte — même style que minifoot_mobile
           Container(
             width: 42,
             height: 42,
@@ -987,8 +966,7 @@ class _NotifBell extends StatelessWidget {
               color: Colors.white,
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              PhosphorIcons.bell(PhosphorIconsStyle.duotone),
+            child: PhosphorIcon(PhosphorIconsDuotone.bell,
               color: kGreen,
               size: 22,
             ),
@@ -1002,7 +980,7 @@ class _NotifBell extends StatelessWidget {
                       width: 14,
                       height: 14,
                       decoration: BoxDecoration(
-                        color: Colors.red,
+                        color: kRed,
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 1.5),
                       ),
@@ -1023,6 +1001,7 @@ class _NotifBell extends StatelessWidget {
                 : const SizedBox.shrink(),
           ),
         ],
+      ),
       ),
     );
   }
@@ -1047,25 +1026,31 @@ class _RevenueCardAnimated extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isExpanded = t > 0.4;
+    // Ombre plus forte quand collapsed (card au-dessus du contenu blanc)
+    final shadowOpacity = 0.12 + (1.0 - t) * 0.14;
+    final shadowBlur = 20.0 + (1.0 - t) * 16.0;
     return Obx(
-      () => ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          decoration: BoxDecoration(
-            color: kBgCard,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: kElevatedShadow,
+      () => Container(
+        decoration: BoxDecoration(
+          color: kBgCard,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: shadowOpacity),
+              blurRadius: shadowBlur,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: isExpanded ? 14 : 11,
           ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: isExpanded ? 14 : 11,
-            ),
-            child: OverflowBox(
-              alignment: Alignment.topCenter,
-              maxHeight: double.infinity,
-              child: isExpanded ? _buildExpanded() : _buildCompact(),
-            ),
+          child: OverflowBox(
+            alignment: Alignment.topCenter,
+            maxHeight: double.infinity,
+            child: isExpanded ? _buildExpanded() : _buildCompact(),
           ),
         ),
       ),
@@ -1083,7 +1068,7 @@ class _RevenueCardAnimated extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 gradient: kGoldGradient,
-                borderRadius: BorderRadius.circular(13),
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
                     color: kGold.withValues(alpha: 0.3),
@@ -1092,10 +1077,9 @@ class _RevenueCardAnimated extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(
-                PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
+              child: PhosphorIcon(PhosphorIconsDuotone.wallet,
                 color: Colors.white,
-                size: 20,
+                size: 22,
               ),
             ),
             const SizedBox(width: 12),
@@ -1118,8 +1102,7 @@ class _RevenueCardAnimated extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    PhosphorIcons.checkCircle(PhosphorIconsStyle.duotone),
+                  PhosphorIcon(PhosphorIconsDuotone.checkCircle,
                     color: kGreen,
                     size: 13,
                   ),
@@ -1205,8 +1188,8 @@ class _RevenueCardAnimated extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 3),
-                  Icon(
-                    PhosphorIcons.caretRight(PhosphorIconsStyle.bold),
+                  PhosphorIcon(
+                    PhosphorIconsBold.caretRight,
                     color: kGreen,
                     size: 18,
                   ),
@@ -1223,16 +1206,15 @@ class _RevenueCardAnimated extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 38,
-          height: 38,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
             gradient: kGoldGradient,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
+          child: PhosphorIcon(PhosphorIconsDuotone.wallet,
             color: Colors.white,
-            size: 20,
+            size: 22,
           ),
         ),
         const SizedBox(width: 12),
@@ -1271,8 +1253,7 @@ class _RevenueCardAnimated extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                PhosphorIcons.checkCircle(PhosphorIconsStyle.duotone),
+              PhosphorIcon(PhosphorIconsDuotone.checkCircle,
                 color: kGreen,
                 size: 13,
               ),
@@ -1298,7 +1279,7 @@ class _RevenueCardAnimated extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _ActionData {
-  final IconData icon;
+  final dynamic icon;
   final String label;
   final String subtitle;
   final Color color;
@@ -1323,13 +1304,12 @@ class _EmptyChartState extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: kBgSurface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            PhosphorIcons.chartBar(PhosphorIconsStyle.duotone),
+          PhosphorIcon(PhosphorIconsDuotone.chartBar,
             color: kTextLight,
             size: 30,
           ),
@@ -1364,13 +1344,13 @@ class _EmptyRecentBookings extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
               color: kGreenLight,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.event_available_rounded, color: kGreen),
+            child: PhosphorIcon(PhosphorIconsDuotone.calendarCheck, color: kGreen, size: 22),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -1400,7 +1380,7 @@ class _EmptyRecentBookings extends StatelessWidget {
 }
 
 class _StatMiniCard extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final Color iconBgColor;
   final Color iconColor;
   final String value;
@@ -1431,16 +1411,16 @@ class _StatMiniCard extends StatelessWidget {
             height: 36,
             decoration: BoxDecoration(
               color: iconBgColor,
-              borderRadius: BorderRadius.circular(11),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: iconColor, size: 18),
+            child: PhosphorIcon(icon, color: iconColor, size: 18),
           ),
           const SizedBox(height: 10),
           Text(
             value,
             style: const TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w900,
               color: kTextPrim,
             ),
           ),
@@ -1448,7 +1428,7 @@ class _StatMiniCard extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              fontSize: 10,
+              fontSize: 12,
               color: kTextSub,
               fontWeight: FontWeight.w500,
             ),
@@ -1494,7 +1474,7 @@ class _BookingTile extends StatelessWidget {
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: kBgCard,
@@ -1508,14 +1488,14 @@ class _BookingTile extends StatelessWidget {
             height: 46,
             decoration: BoxDecoration(
               color: statusBgColor,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
+            child: PhosphorIcon(
               isConfirmed
-                  ? PhosphorIcons.checkCircle(PhosphorIconsStyle.duotone)
+                  ? PhosphorIconsDuotone.checkCircle
                   : isCancelled
-                  ? PhosphorIcons.xCircle(PhosphorIconsStyle.duotone)
-                  : PhosphorIcons.clock(PhosphorIconsStyle.duotone),
+                  ? PhosphorIconsDuotone.xCircle
+                  : PhosphorIconsDuotone.clock,
               color: statusColor,
               size: 22,
             ),
@@ -1536,8 +1516,7 @@ class _BookingTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(
-                      PhosphorIcons.mapPin(PhosphorIconsStyle.duotone),
+                    PhosphorIcon(PhosphorIconsDuotone.mapPin,
                       size: 13,
                       color: kTextLight,
                     ),
@@ -1555,8 +1534,7 @@ class _BookingTile extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                     ),
-                    Icon(
-                      PhosphorIcons.clock(PhosphorIconsStyle.duotone),
+                    PhosphorIcon(PhosphorIconsDuotone.clock,
                       size: 13,
                       color: kTextLight,
                     ),
@@ -1580,7 +1558,7 @@ class _BookingTile extends StatelessWidget {
                 '$amountStr F',
                 style: const TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: kTextPrim,
                 ),
               ),
@@ -1592,7 +1570,7 @@ class _BookingTile extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: statusBgColor,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   statusText,
@@ -1631,7 +1609,7 @@ class _ChartToggle extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
         decoration: BoxDecoration(
           color: isActive ? kGreen : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           label,
@@ -1647,7 +1625,7 @@ class _ChartToggle extends StatelessWidget {
 }
 
 class _NavItem extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
@@ -1674,9 +1652,9 @@ class _NavItem extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isSelected ? kGreen : Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
+              child: PhosphorIcon(
                 icon,
                 color: isSelected ? Colors.white : kTextLight,
                 size: 22,
@@ -1686,7 +1664,7 @@ class _NavItem extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: 9,
+                fontSize: 11,
                 color: isSelected ? kGreen : kTextLight,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               ),

@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_snackbar.dart';
@@ -91,8 +91,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
                           : kGreenLight,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
+                    child: PhosphorIcon(PhosphorIconsDuotone.wallet,
                       color: hasBalance ? Colors.white : kGreen,
                       size: 20,
                     ),
@@ -222,7 +221,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
                           ),
                         )
                       : Icon(
-                          PhosphorIcons.arrowLineDown(PhosphorIconsStyle.bold),
+                          PhosphorIconsBold.arrowLineDown,
                           size: 18,
                         ),
                   label: Text(
@@ -308,10 +307,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
                           child: SizedBox(
                             width: 48,
                             height: 48,
-                            child: Icon(
-                              PhosphorIcons.creditCard(
-                                PhosphorIconsStyle.duotone,
-                              ),
+                            child: PhosphorIcon(PhosphorIconsDuotone.creditCard,
                               color: kGold,
                               size: 23,
                             ),
@@ -367,8 +363,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Icon(
-                        PhosphorIcons.caretRight(PhosphorIconsStyle.duotone),
+                      PhosphorIcon(PhosphorIconsDuotone.caretRight,
                         color: kGreen,
                         size: 16,
                       ),
@@ -412,8 +407,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
         ),
         child: Row(
           children: [
-            Icon(
-              PhosphorIcons.warningCircle(PhosphorIconsStyle.duotone),
+            PhosphorIcon(PhosphorIconsDuotone.warningCircle,
               color: kRed,
               size: 18,
             ),
@@ -460,8 +454,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
                     color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    PhosphorIcons.caretLeft(PhosphorIconsStyle.duotone),
+                  child: PhosphorIcon(PhosphorIconsDuotone.caretLeft,
                     color: Colors.white,
                     size: 20,
                   ),
@@ -552,7 +545,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _HeaderStat(
-                  icon: PhosphorIcons.calendarBlank(PhosphorIconsStyle.duotone),
+                  icon: PhosphorIconsDuotone.calendarBlank,
                   label: 'Ce mois',
                   value: '${_fmt(controller.monthlyRevenue.value)} F',
                 ),
@@ -563,7 +556,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
                   color: Colors.white.withValues(alpha: 0.25),
                 ),
                 _HeaderStat(
-                  icon: PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
+                  icon: PhosphorIconsDuotone.wallet,
                   label: 'À retirer',
                   value: '${_fmt(controller.availableBalance.value)} F',
                 ),
@@ -748,8 +741,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         child: Row(
           children: [
-            Icon(
-              PhosphorIcons.listDashes(PhosphorIconsStyle.duotone),
+            PhosphorIcon(PhosphorIconsDuotone.listDashes,
               size: 20,
               color: kTextPrim,
             ),
@@ -881,8 +873,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
                 color: kBgSurface,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(
-                PhosphorIcons.magnifyingGlass(PhosphorIconsStyle.duotone),
+              child: PhosphorIcon(PhosphorIconsDuotone.magnifyingGlass,
                 size: 32,
                 color: kTextLight,
               ),
@@ -974,7 +965,7 @@ class _PeriodTab extends StatelessWidget {
 }
 
 class _HeaderStat extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String label;
   final String value;
 
@@ -989,7 +980,7 @@ class _HeaderStat extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: Colors.white.withValues(alpha: 0.8), size: 16),
+        PhosphorIcon(icon, color: Colors.white.withValues(alpha: 0.8), size: 16),
         const SizedBox(width: 6),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1075,8 +1066,7 @@ class _TransactionCard extends StatelessWidget {
       case 'Yas Money':
         return const PaymentBrandBadge(method: 'FREE_MONEY', size: 44);
       default:
-        return Icon(
-          PhosphorIcons.creditCard(PhosphorIconsStyle.duotone),
+        return PhosphorIcon(PhosphorIconsDuotone.creditCard,
           color: kTextSub,
           size: 22,
         );
@@ -1109,16 +1099,16 @@ class _TransactionCard extends StatelessWidget {
     }
   }
 
-  IconData get _statusIcon {
+  dynamic get _statusIcon {
     switch (transaction.status) {
       case 'paid':
-        return PhosphorIcons.checkCircle(PhosphorIconsStyle.duotone);
+        return PhosphorIconsDuotone.checkCircle;
       case 'pending':
-        return PhosphorIcons.clock(PhosphorIconsStyle.duotone);
+        return PhosphorIconsDuotone.clock;
       case 'failed':
-        return PhosphorIcons.xCircle(PhosphorIconsStyle.duotone);
+        return PhosphorIconsDuotone.xCircle;
       default:
-        return PhosphorIcons.question(PhosphorIconsStyle.duotone);
+        return PhosphorIconsDuotone.question;
     }
   }
 
@@ -1180,8 +1170,7 @@ class _TransactionCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Row(
                     children: [
-                      Icon(
-                        PhosphorIcons.mapPin(PhosphorIconsStyle.duotone),
+                      PhosphorIcon(PhosphorIconsDuotone.mapPin,
                         size: 12,
                         color: kTextLight,
                       ),
@@ -1247,7 +1236,7 @@ class _TransactionCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(_statusIcon, size: 11, color: _statusColor),
+                      PhosphorIcon(_statusIcon, size: 11, color: _statusColor),
                       const SizedBox(width: 3),
                       Text(
                         _statusLabel,
@@ -1287,22 +1276,22 @@ class _TransactionDetailSheet extends StatelessWidget {
 
     Color statusColor;
     Color statusBg;
-    IconData statusIcon;
+    dynamic statusIcon;
     String statusLabel;
     if (isPaid) {
       statusColor = kGreen;
       statusBg = kGreenLight;
-      statusIcon = PhosphorIcons.checkCircle(PhosphorIconsStyle.duotone);
+      statusIcon = PhosphorIconsDuotone.checkCircle;
       statusLabel = 'Payé';
     } else if (isPending) {
       statusColor = kGold;
       statusBg = kGoldLight;
-      statusIcon = PhosphorIcons.clock(PhosphorIconsStyle.duotone);
+      statusIcon = PhosphorIconsDuotone.clock;
       statusLabel = 'En attente';
     } else {
       statusColor = kRed;
       statusBg = kRedLight;
-      statusIcon = PhosphorIcons.xCircle(PhosphorIconsStyle.duotone);
+      statusIcon = PhosphorIconsDuotone.xCircle;
       statusLabel = 'Échoué';
     }
 
@@ -1333,7 +1322,7 @@ class _TransactionDetailSheet extends StatelessWidget {
             width: 68,
             height: 68,
             decoration: BoxDecoration(color: statusBg, shape: BoxShape.circle),
-            child: Icon(statusIcon, color: statusColor, size: 32),
+            child: PhosphorIcon(statusIcon, color: statusColor, size: 32),
           ),
           const SizedBox(height: 14),
 
@@ -1380,13 +1369,13 @@ class _TransactionDetailSheet extends StatelessWidget {
                   _DetailRow(
                     label: 'Client',
                     value: transaction.client,
-                    icon: PhosphorIcons.user(PhosphorIconsStyle.duotone),
+                    icon: PhosphorIconsDuotone.user,
                   ),
                   const _DetailDivider(),
                   _DetailRow(
                     label: 'Terrain',
                     value: transaction.terrain,
-                    icon: PhosphorIcons.mapPin(PhosphorIconsStyle.duotone),
+                    icon: PhosphorIconsDuotone.mapPin,
                   ),
                   const _DetailDivider(),
                   _DetailRow(
@@ -1394,19 +1383,19 @@ class _TransactionDetailSheet extends StatelessWidget {
                     value: transaction.timeSlot.isNotEmpty
                         ? transaction.timeSlot
                         : '-',
-                    icon: PhosphorIcons.clock(PhosphorIconsStyle.duotone),
+                    icon: PhosphorIconsDuotone.clock,
                   ),
                   const _DetailDivider(),
                   _DetailRow(
                     label: 'Méthode',
                     value: transaction.method,
-                    icon: PhosphorIcons.creditCard(PhosphorIconsStyle.duotone),
+                    icon: PhosphorIconsDuotone.creditCard,
                   ),
                   const _DetailDivider(),
                   _DetailRow(
                     label: 'Date',
                     value: transaction.date,
-                    icon: PhosphorIcons.calendar(PhosphorIconsStyle.duotone),
+                    icon: PhosphorIconsDuotone.calendar,
                   ),
                 ],
               ),
@@ -1461,10 +1450,7 @@ class _TransactionDetailSheet extends StatelessWidget {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                          icon: Icon(
-                            PhosphorIcons.bellRinging(
-                              PhosphorIconsStyle.duotone,
-                            ),
+                          icon: PhosphorIcon(PhosphorIconsDuotone.bellRinging,
                             size: 18,
                           ),
                           label: const Text(
@@ -1586,8 +1572,7 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                   color: kGreenLight,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(
-                  PhosphorIcons.arrowLineDown(PhosphorIconsStyle.duotone),
+                child: PhosphorIcon(PhosphorIconsDuotone.arrowLineDown,
                   color: kGreen,
                   size: 22,
                 ),
@@ -1678,11 +1663,9 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                 child: Row(
                   children: [
                     Icon(
-                      PhosphorIcons.checkCircle(
-                        _useConfigured
-                            ? PhosphorIconsStyle.fill
-                            : PhosphorIconsStyle.regular,
-                      ),
+                      _useConfigured
+                          ? PhosphorIconsFill.checkCircle
+                          : PhosphorIconsRegular.checkCircle,
                       color: _useConfigured ? kGreen : kTextLight,
                       size: 20,
                     ),
@@ -1741,11 +1724,9 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                 child: Row(
                   children: [
                     Icon(
-                      PhosphorIcons.checkCircle(
-                        !_useConfigured
-                            ? PhosphorIconsStyle.fill
-                            : PhosphorIconsStyle.regular,
-                      ),
+                      !_useConfigured
+                          ? PhosphorIconsFill.checkCircle
+                          : PhosphorIconsRegular.checkCircle,
                       color: !_useConfigured ? kGreen : kTextLight,
                       size: 20,
                     ),
@@ -1773,8 +1754,7 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                 hintStyle: const TextStyle(color: kTextLight, fontSize: 14),
                 filled: true,
                 fillColor: kBgSurface,
-                prefixIcon: Icon(
-                  PhosphorIcons.phone(PhosphorIconsStyle.duotone),
+                prefixIcon: PhosphorIcon(PhosphorIconsDuotone.phone,
                   color: kTextSub,
                   size: 20,
                 ),
@@ -1903,7 +1883,7 @@ class _CommissionDot extends StatelessWidget {
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
-  final IconData icon;
+  final dynamic icon;
 
   const _DetailRow({
     required this.label,
@@ -1915,7 +1895,7 @@ class _DetailRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: kTextLight),
+        PhosphorIcon(icon, size: 16, color: kTextLight),
         const SizedBox(width: 10),
         Text(label, style: const TextStyle(fontSize: 12, color: kTextLight)),
         const Spacer(),

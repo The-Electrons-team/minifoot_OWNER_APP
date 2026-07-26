@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../theme/app_theme.dart';
 
@@ -183,8 +183,7 @@ class PaymentBrandBadge extends StatelessWidget {
           fit: BoxFit.contain,
         );
       default:
-        return Icon(
-          PhosphorIcons.creditCard(PhosphorIconsStyle.duotone),
+        return PhosphorIcon(PhosphorIconsDuotone.creditCard,
           color: kTextSub,
           size: 22,
         );

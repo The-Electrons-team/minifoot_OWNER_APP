@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/owner_ui.dart';
 import '../controllers/profile_controller.dart';
 
 class EditProfileScreen extends GetView<ProfileController> {
@@ -17,20 +17,23 @@ class EditProfileScreen extends GetView<ProfileController> {
       appBar: AppBar(
         backgroundColor: kBg,
         elevation: 0,
-        leading: IconButton(
-          onPressed: _close,
-          icon: Icon(
-            PhosphorIcons.arrowLeft(PhosphorIconsStyle.duotone),
-            size: 18,
+        leading: GestureDetector(
+          onTap: _close,
+          behavior: HitTestBehavior.opaque,
+          child: const Center(
+            child: PhosphorIcon(PhosphorIcons.caretLeft,
+              color: kTextPrim,
+              size: 24,
+            ),
           ),
-          color: kTextPrim,
         ),
         title: const Text(
           'Modifier le profil',
           style: TextStyle(
+            fontFamily: 'Orbitron',
             color: kTextPrim,
             fontSize: 18,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
           ),
         ),
         centerTitle: true,
@@ -38,10 +41,10 @@ class EditProfileScreen extends GetView<ProfileController> {
       body: Obx(
         () => ListView(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 34),
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
           children: [
             _buildProfileHero(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
             _buildFormCard(),
             const SizedBox(height: 24),
             SizedBox(
@@ -55,7 +58,7 @@ class EditProfileScreen extends GetView<ProfileController> {
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                 ),
                 child: controller.isSaving.value
@@ -86,78 +89,122 @@ class EditProfileScreen extends GetView<ProfileController> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFFFFF), Color(0xFFF8F5EF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
+        color: kBgCard,
+        borderRadius: BorderRadius.circular(18),
         boxShadow: kCardShadow,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 62,
-                height: 62,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: kGreenGradient,
-                  boxShadow: [
-                    BoxShadow(
-                      color: kGreen.withValues(alpha: 0.20),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
+          // Avatar cliquable
+          GestureDetector(
+            onTap: _showAvatarPicker,
+            behavior: HitTestBehavior.opaque,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Obx(() {
+                  final hasImage = (controller.avatarUrl.value ?? '').isNotEmpty;
+                  return Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: hasImage ? null : kGreenGradient,
+                      boxShadow: [
+                        BoxShadow(
+                          color: kGreen.withValues(alpha: 0.20),
+                          blurRadius: 14,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
                     ),
-                  ],
+                    clipBehavior: Clip.antiAlias,
+                    child: hasImage
+                        ? Image.network(
+                            controller.avatarUrl.value!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => Center(
+                              child: Text(
+                                controller.initials,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Center(
+                            child: Text(
+                              controller.initials,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                  );
+                }),
+                // Upload indicator
+                Obx(() => controller.isUploadingAvatar.value
+                    ? Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(24),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
                 ),
-                child: Center(
-                  child: Text(
-                    controller.initials,
-                    style: const TextStyle(
+                // Camera badge
+                Positioned(
+                  right: -2,
+                  bottom: -2,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: kGreen,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: kBgCard, width: 2.5),
+                    ),
+                    child: PhosphorIcon(PhosphorIcons.camera,
                       color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
+                      size: 14,
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      controller.ownerName.value,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: kTextPrim,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      controller.phone.value,
-                      style: const TextStyle(
-                        color: kTextSub,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          const OwnerSectionHeader(
-            title: 'Informations du compte',
-            subtitle:
-                'Mettez à jour votre identité visible dans l’espace propriétaire.',
+          const SizedBox(height: 14),
+          Text(
+            controller.ownerName.value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: kTextPrim,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            controller.phone.value,
+            style: const TextStyle(
+              color: kTextSub,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -169,60 +216,52 @@ class EditProfileScreen extends GetView<ProfileController> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: kBgCard,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: kCardShadow,
-        border: Border.all(color: kBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const OwnerSectionHeader(
-            title: 'Modifier vos coordonnées',
-            subtitle:
-                'Gardez un nom professionnel clair pour vos terrains et réservations.',
-          ),
-          const SizedBox(height: 18),
           _ProfileTextField(
             label: 'Prénom',
             controller: controller.firstNameCtrl,
-            icon: PhosphorIcons.user(PhosphorIconsStyle.duotone),
+            icon: PhosphorIconsDuotone.user,
           ),
           const Divider(height: 24, color: kDivider),
           _ProfileTextField(
             label: 'Nom',
             controller: controller.lastNameCtrl,
-            icon: PhosphorIcons.identificationBadge(PhosphorIconsStyle.duotone),
+            icon: PhosphorIconsDuotone.identificationBadge,
           ),
           const Divider(height: 24, color: kDivider),
           _ReadOnlyProfileField(
             label: 'Téléphone',
             value: controller.phone.value,
-            icon: PhosphorIcons.phone(PhosphorIconsStyle.duotone),
+            icon: PhosphorIconsDuotone.phone,
           ),
-          const SizedBox(height: 10),
-          InkWell(
+          const SizedBox(height: 12),
+          GestureDetector(
             onTap: _showPhoneChangeSheet,
-            borderRadius: BorderRadius.circular(16),
+            behavior: HitTestBehavior.opaque,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: kBgSurface,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: kBorder),
               ),
               child: Row(
                 children: [
                   Container(
-                    width: 34,
-                    height: 34,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
                       color: kGreenLight,
-                      borderRadius: BorderRadius.circular(11),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      PhosphorIcons.shieldCheck(PhosphorIconsStyle.duotone),
+                    child: PhosphorIcon(PhosphorIcons.shieldCheck,
                       color: kGreen,
-                      size: 17,
+                      size: 18,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -243,17 +282,16 @@ class EditProfileScreen extends GetView<ProfileController> {
                           'Validation sécurisée par code OTP',
                           style: TextStyle(
                             color: kTextSub,
-                            fontSize: 11,
+                            fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Icon(
-                    PhosphorIcons.caretRight(PhosphorIconsStyle.bold),
+                  PhosphorIcon(PhosphorIcons.caretRight,
                     color: kGreen,
-                    size: 16,
+                    size: 18,
                   ),
                 ],
               ),
@@ -269,14 +307,74 @@ class EditProfileScreen extends GetView<ProfileController> {
     Get.back();
   }
 
+  void _showAvatarPicker() {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.fromLTRB(24, 14, 24, 26),
+        decoration: const BoxDecoration(
+          color: kBgCard,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: kBorder,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Photo de profil',
+                  style: TextStyle(
+                    color: kTextPrim,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              _AvatarSourceTile(
+                icon: PhosphorIconsDuotone.camera,
+                title: 'Prendre une photo',
+                onTap: () {
+                  Get.back();
+                  controller.pickAndUploadAvatar(ImageSource.camera);
+                },
+              ),
+              const SizedBox(height: 10),
+              _AvatarSourceTile(
+                icon: PhosphorIconsDuotone.images,
+                title: 'Choisir depuis la galerie',
+                onTap: () {
+                  Get.back();
+                  controller.pickAndUploadAvatar(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
   void _showPhoneChangeSheet() {
     controller.resetPhoneChangeForm();
     Get.bottomSheet(
       Container(
-        padding: const EdgeInsets.fromLTRB(22, 16, 22, 26),
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 26),
         decoration: const BoxDecoration(
           color: kBgCard,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: SafeArea(
           top: false,
@@ -309,12 +407,11 @@ class EditProfileScreen extends GetView<ProfileController> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: kBlueLight,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        PhosphorIcons.info(PhosphorIconsStyle.duotone),
+                      PhosphorIcon(PhosphorIconsDuotone.info,
                         color: kBlue,
                         size: 18,
                       ),
@@ -325,7 +422,7 @@ class EditProfileScreen extends GetView<ProfileController> {
                           style: TextStyle(
                             color: kBlue,
                             fontSize: 12,
-                            height: 1.35,
+                            height: 1.4,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -402,10 +499,66 @@ class EditProfileScreen extends GetView<ProfileController> {
   }
 }
 
+class _AvatarSourceTile extends StatelessWidget {
+  final dynamic icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const _AvatarSourceTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: kBgSurface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: kBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: kGreenLight,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: PhosphorIcon(icon, color: kGreen, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: kTextPrim,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            PhosphorIcon(PhosphorIcons.caretRight,
+              color: kTextLight,
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ProfileTextField extends StatelessWidget {
   final String label;
   final TextEditingController controller;
-  final IconData icon;
+  final dynamic icon;
 
   const _ProfileTextField({
     required this.label,
@@ -427,37 +580,43 @@ class _ProfileTextField extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Container(
-          height: 58,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: kBgSurface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: kBorder),
+        TextField(
+          controller: controller,
+          enableInteractiveSelection: false,
+          textCapitalization: TextCapitalization.words,
+          textInputAction: TextInputAction.next,
+          style: const TextStyle(
+            color: kTextPrim,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
           ),
-          child: Row(
-            children: [
-              _FieldIcon(icon: icon),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  enableInteractiveSelection: false,
-                  textCapitalization: TextCapitalization.words,
-                  textInputAction: TextInputAction.next,
-                  style: const TextStyle(
-                    color: kTextPrim,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-              ),
-            ],
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: kBgCard,
+            prefixIcon: Padding(
+              padding: const EdgeInsets.only(left: 14, right: 10),
+              child: _FieldIcon(icon: icon),
+            ),
+            prefixIconConstraints: const BoxConstraints(
+              minWidth: 0,
+              minHeight: 0,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 18,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: kBorder),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: kBorder),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: kGreen, width: 1.5),
+            ),
           ),
         ),
       ],
@@ -468,7 +627,7 @@ class _ProfileTextField extends StatelessWidget {
 class _ReadOnlyProfileField extends StatelessWidget {
   final String label;
   final String value;
-  final IconData icon;
+  final dynamic icon;
 
   const _ReadOnlyProfileField({
     required this.label,
@@ -491,16 +650,16 @@ class _ReadOnlyProfileField extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
           decoration: BoxDecoration(
-            color: kBgSurface,
-            borderRadius: BorderRadius.circular(16),
+            color: kBgCard,
+            borderRadius: BorderRadius.circular(14),
             border: Border.all(color: kBorder),
           ),
           child: Row(
             children: [
               _FieldIcon(icon: icon),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   value,
@@ -511,8 +670,7 @@ class _ReadOnlyProfileField extends StatelessWidget {
                   ),
                 ),
               ),
-              Icon(
-                PhosphorIcons.lockKey(PhosphorIconsStyle.duotone),
+              PhosphorIcon(PhosphorIcons.lockKey,
                 color: kTextLight,
                 size: 18,
               ),
@@ -525,20 +683,20 @@ class _ReadOnlyProfileField extends StatelessWidget {
 }
 
 class _FieldIcon extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
 
   const _FieldIcon({required this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 34,
-      height: 34,
+      width: 36,
+      height: 36,
       decoration: BoxDecoration(
         color: kGreenLight,
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(icon, color: kGreen, size: 17),
+      child: PhosphorIcon(icon, color: kGreen, size: 18),
     );
   }
 }

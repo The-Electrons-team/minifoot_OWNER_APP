@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 
 class ChatListScreen extends StatelessWidget {
@@ -44,8 +44,7 @@ class ChatListScreen extends StatelessWidget {
                   color: kBgSurface,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  PhosphorIcons.chatCircleDots(PhosphorIconsStyle.duotone),
+                child: PhosphorIcon(PhosphorIconsDuotone.chatCircleDots,
                   size: 44,
                   color: kTextLight,
                 ),

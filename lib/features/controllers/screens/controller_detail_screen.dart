@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_snackbar.dart';
@@ -71,7 +71,7 @@ class _ControllerDetailScreenState extends State<ControllerDetailScreen> {
                   child: _MetricCard(
                     label: 'Scans',
                     value: '${item.scans}',
-                    icon: PhosphorIcons.qrCode(PhosphorIconsStyle.duotone),
+                    icon: PhosphorIconsDuotone.qrCode,
                     color: kBlue,
                   ),
                 ),
@@ -80,7 +80,7 @@ class _ControllerDetailScreenState extends State<ControllerDetailScreen> {
                   child: _MetricCard(
                     label: 'Présences',
                     value: '${item.confirmed}',
-                    icon: PhosphorIcons.sealCheck(PhosphorIconsStyle.duotone),
+                    icon: PhosphorIconsDuotone.sealCheck,
                     color: kGreen,
                   ),
                 ),
@@ -93,7 +93,7 @@ class _ControllerDetailScreenState extends State<ControllerDetailScreen> {
                   child: _MetricCard(
                     label: 'Créneaux bloqués',
                     value: '${item.blockedSlots}',
-                    icon: PhosphorIcons.lock(PhosphorIconsStyle.duotone),
+                    icon: PhosphorIconsDuotone.lock,
                     color: kGold,
                   ),
                 ),
@@ -290,8 +290,7 @@ class _IdentityCard extends StatelessWidget {
           CircleAvatar(
             radius: 28,
             backgroundColor: item.isActive ? kGreenLight : kBgSurface,
-            child: Icon(
-              PhosphorIcons.identificationBadge(PhosphorIconsStyle.duotone),
+            child: PhosphorIcon(PhosphorIconsDuotone.identificationBadge,
               color: item.isActive ? kGreen : kTextSub,
               size: 28,
             ),
@@ -341,7 +340,7 @@ class _IdentityCard extends StatelessWidget {
 class _MetricCard extends StatelessWidget {
   final String label;
   final String value;
-  final IconData icon;
+  final dynamic icon;
   final Color color;
 
   const _MetricCard({
@@ -363,7 +362,7 @@ class _MetricCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 20),
+          PhosphorIcon(icon, color: color, size: 20),
           const SizedBox(height: 10),
           Text(
             value,
@@ -480,8 +479,7 @@ class _ActivityTile extends StatelessWidget {
               color: _resultColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(
-              PhosphorIcons.clockCounterClockwise(PhosphorIconsStyle.duotone),
+            child: PhosphorIcon(PhosphorIconsDuotone.clockCounterClockwise,
               color: _resultColor,
               size: 18,
             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../controllers/profile_controller.dart';
@@ -14,73 +15,32 @@ class SecurityScreen extends GetView<ProfileController> {
       appBar: AppBar(
         backgroundColor: kBg,
         elevation: 0,
-        leading: IconButton(
-          onPressed: Get.back,
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-          color: kTextPrim,
+        leading: GestureDetector(
+          onTap: () => Get.back(),
+          behavior: HitTestBehavior.opaque,
+          child: const Center(
+            child: PhosphorIcon(PhosphorIcons.caretLeft,
+              color: kTextPrim,
+              size: 24,
+            ),
+          ),
         ),
         title: const Text(
           'Sécurité',
           style: TextStyle(
+            fontFamily: 'Orbitron',
             color: kTextPrim,
             fontSize: 18,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
           ),
         ),
         centerTitle: true,
       ),
       body: ListView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 34),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
         children: [
-          _buildIntroCard(),
-          const SizedBox(height: 14),
           _buildPasswordCard(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIntroCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: kBgCard,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: kCardShadow,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: kGreenLight,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(Icons.lock_outline_rounded, color: kGreen),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Mot de passe du compte',
-                  style: TextStyle(
-                    color: kTextPrim,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Utilisez votre mot de passe actuel pour en définir un nouveau.',
-                  style: TextStyle(color: kTextSub, fontSize: 12, height: 1.35),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -110,7 +70,6 @@ class SecurityScreen extends GetView<ProfileController> {
             () => _PasswordField(
               controller: controller.currentPasswordCtrl,
               label: 'Mot de passe actuel',
-              hint: 'Votre mot de passe actuel',
               obscure: controller.obscureCurrentPassword.value,
               onToggle: () => controller.obscureCurrentPassword.toggle(),
             ),
@@ -120,7 +79,7 @@ class SecurityScreen extends GetView<ProfileController> {
             () => _PasswordField(
               controller: controller.newPasswordCtrl,
               label: 'Nouveau mot de passe',
-              hint: 'Minimum 6 caractères',
+              hint: 'Min. 6 caractères',
               obscure: controller.obscureNewPassword.value,
               onToggle: () => controller.obscureNewPassword.toggle(),
             ),
@@ -130,16 +89,15 @@ class SecurityScreen extends GetView<ProfileController> {
             () => _PasswordField(
               controller: controller.confirmPasswordCtrl,
               label: 'Confirmation',
-              hint: 'Retapez le nouveau mot de passe',
               obscure: controller.obscureConfirmPassword.value,
               onToggle: () => controller.obscureConfirmPassword.toggle(),
             ),
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 24),
           Obx(
             () => SizedBox(
               width: double.infinity,
-              height: 52,
+              height: 54,
               child: ElevatedButton(
                 onPressed: controller.isChangingPassword.value
                     ? null
@@ -150,7 +108,7 @@ class SecurityScreen extends GetView<ProfileController> {
                   disabledBackgroundColor: kGreen.withValues(alpha: 0.5),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                 ),
                 child: controller.isChangingPassword.value
@@ -158,16 +116,15 @@ class SecurityScreen extends GetView<ProfileController> {
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                          strokeWidth: 2.4,
+                          strokeWidth: 2,
                           color: Colors.white,
                         ),
                       )
                     : const Text(
                         'Mettre à jour',
                         style: TextStyle(
-                          color: Colors.white,
                           fontSize: 15,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
               ),
@@ -182,14 +139,14 @@ class SecurityScreen extends GetView<ProfileController> {
 class _PasswordField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
-  final String hint;
+  final String? hint;
   final bool obscure;
   final VoidCallback onToggle;
 
   const _PasswordField({
     required this.controller,
     required this.label,
-    required this.hint,
+    this.hint,
     required this.obscure,
     required this.onToggle,
   });
@@ -215,17 +172,27 @@ class _PasswordField extends StatelessWidget {
           style: const TextStyle(color: kTextPrim, fontSize: 15),
           decoration: InputDecoration(
             hintText: hint,
-            prefixIcon: const Icon(
-              Icons.lock_outline_rounded,
-              color: kTextLight,
-            ),
-            suffixIcon: IconButton(
-              onPressed: onToggle,
-              icon: Icon(
-                obscure
-                    ? Icons.visibility_off_outlined
-                    : Icons.visibility_outlined,
+            prefixIcon: const Padding(
+              padding: EdgeInsets.only(left: 14, right: 10),
+              child: PhosphorIcon(PhosphorIcons.lock,
                 color: kTextLight,
+                size: 20,
+              ),
+            ),
+            prefixIconConstraints: const BoxConstraints(
+              minWidth: 0,
+              minHeight: 0,
+            ),
+            suffixIcon: GestureDetector(
+              onTap: onToggle,
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: PhosphorIcon(
+                  obscure ? PhosphorIcons.eyeSlash : PhosphorIcons.eye,
+                  color: kTextLight,
+                  size: 20,
+                ),
               ),
             ),
           ),

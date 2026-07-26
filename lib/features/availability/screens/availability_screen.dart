@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart' show CupertinoDatePicker, CupertinoDateP
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_snackbar.dart';
@@ -675,8 +675,7 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
                   color: Colors.white,
                 ),
               )
-            : Icon(
-                PhosphorIcons.slidersHorizontal(PhosphorIconsStyle.duotone),
+            : PhosphorIcon(PhosphorIconsDuotone.slidersHorizontal,
                 color: Colors.white,
                 size: 20,
               ),
@@ -809,7 +808,7 @@ class _SlotCard extends StatelessWidget {
                   color: softColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, size: 19, color: accentColor),
+                child: PhosphorIcon(icon, size: 19, color: accentColor),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -954,7 +953,7 @@ class _OverviewPill extends StatelessWidget {
 
 class _PeriodHeader extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final dynamic icon;
   final Color color;
   final int count;
   final int total;
@@ -971,7 +970,7 @@ class _PeriodHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: color),
+        PhosphorIcon(icon, size: 16, color: color),
         const SizedBox(width: 6),
         Text(
           label,
@@ -1132,7 +1131,7 @@ class _TerrainSelectorChip extends StatelessWidget {
 }
 
 class _AvailabilityEmptyState extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String title;
   final String message;
   final bool showCreateButton;
@@ -1158,7 +1157,7 @@ class _AvailabilityEmptyState extends StatelessWidget {
               color: kGreenLight,
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: kGreen, size: 34),
+            child: PhosphorIcon(icon, color: kGreen, size: 34),
           ),
           const SizedBox(height: 18),
           Text(
@@ -1630,7 +1629,7 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
 class _PeriodFieldButton extends StatelessWidget {
   final String label;
   final String value;
-  final IconData icon;
+  final dynamic icon;
   final VoidCallback onTap;
 
   const _PeriodFieldButton({
@@ -1656,7 +1655,7 @@ class _PeriodFieldButton extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(icon, size: 16, color: kTextSub),
+              PhosphorIcon(icon, size: 16, color: kTextSub),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
@@ -1816,7 +1815,7 @@ class _BulkActionSheet extends StatelessWidget {
 }
 
 class _BulkActionTile extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final Color iconColor;
   final Color iconBg;
   final String title;
@@ -1847,7 +1846,7 @@ class _BulkActionTile extends StatelessWidget {
                 color: iconBg,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, color: iconColor, size: 24),
+              child: PhosphorIcon(icon, color: iconColor, size: 24),
             ),
             const SizedBox(width: 14),
             Expanded(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/owner_ui.dart';
@@ -18,13 +18,15 @@ class ProfileScreen extends GetView<ProfileController> {
       appBar: AppBar(
         backgroundColor: kBg,
         elevation: 0,
-        leading: IconButton(
-          onPressed: Get.back,
-          icon: Icon(
-            PhosphorIcons.arrowLeft(PhosphorIconsStyle.duotone),
-            size: 18,
+        leading: GestureDetector(
+          onTap: () => Get.back(),
+          behavior: HitTestBehavior.opaque,
+          child: const Center(
+            child: PhosphorIcon(PhosphorIcons.caretLeft,
+              color: kTextPrim,
+              size: 24,
+            ),
           ),
-          color: kTextPrim,
         ),
         title: const Text(
           'Profil',
@@ -36,13 +38,17 @@ class ProfileScreen extends GetView<ProfileController> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: _openEditProfile,
-            icon: Icon(
-              PhosphorIcons.pencilSimpleLine(PhosphorIconsStyle.duotone),
-              size: 20,
+          GestureDetector(
+            onTap: _openEditProfile,
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.center,
+              child: PhosphorIcon(PhosphorIconsDuotone.pencilSimpleLine,
+                color: kGreen,
+                size: 22,
+              ),
             ),
-            color: kGreen,
           ),
         ],
       ),
@@ -62,13 +68,10 @@ class ProfileScreen extends GetView<ProfileController> {
             const SizedBox(height: 14),
             _buildRevenueCard(),
             const SizedBox(height: 14),
-            _buildQuickActions(),
-            const SizedBox(height: 24),
             _buildAccountCard(),
             const SizedBox(height: 16),
             _buildLogoutButton(),
-            const SizedBox(height: 24),
-            _buildVersion(),
+            const SizedBox(height: 10),
           ],
         ),
       ),
@@ -151,7 +154,7 @@ class ProfileScreen extends GetView<ProfileController> {
           _StatCard(
             value: '${controller.totalTerrains.value}',
             label: 'Terrains',
-            icon: PhosphorIcons.soccerBall(PhosphorIconsStyle.duotone),
+            icon: PhosphorIconsDuotone.soccerBall,
             color: kGreen,
             bgColor: kGreenLight,
           ),
@@ -159,7 +162,7 @@ class ProfileScreen extends GetView<ProfileController> {
           _StatCard(
             value: '${controller.totalBookings.value}',
             label: 'Réservations',
-            icon: PhosphorIcons.calendarBlank(PhosphorIconsStyle.duotone),
+            icon: PhosphorIconsDuotone.calendarBlank,
             color: kBlue,
             bgColor: kBlueLight,
           ),
@@ -167,7 +170,7 @@ class ProfileScreen extends GetView<ProfileController> {
           _StatCard(
             value: controller.rating.value.toStringAsFixed(1),
             label: 'Note',
-            icon: PhosphorIcons.star(PhosphorIconsStyle.duotone),
+            icon: PhosphorIconsDuotone.star,
             color: kGold,
             bgColor: kGoldLight,
           ),
@@ -194,8 +197,7 @@ class ProfileScreen extends GetView<ProfileController> {
                 color: kGoldLight,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(
-                PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
+              child: PhosphorIcon(PhosphorIconsDuotone.wallet,
                 color: kGold,
                 size: 24,
               ),
@@ -221,8 +223,7 @@ class ProfileScreen extends GetView<ProfileController> {
                 ],
               ),
             ),
-            Icon(
-              PhosphorIcons.trendUp(PhosphorIconsStyle.duotone),
+            PhosphorIcon(PhosphorIconsDuotone.trendUp,
               color: kGold,
               size: 22,
             ),
@@ -244,21 +245,21 @@ class ProfileScreen extends GetView<ProfileController> {
         Row(
           children: [
             _QuickAction(
-              icon: PhosphorIcons.soccerBall(PhosphorIconsStyle.duotone),
+              icon: PhosphorIconsDuotone.soccerBall,
               label: 'Terrains',
               color: kGreen,
               onTap: () => Get.toNamed(Routes.terrainList),
             ),
             const SizedBox(width: 10),
             _QuickAction(
-              icon: PhosphorIcons.calendarBlank(PhosphorIconsStyle.duotone),
+              icon: PhosphorIconsDuotone.calendarBlank,
               label: 'Réservations',
               color: kBlue,
               onTap: () => Get.toNamed(Routes.reservations),
             ),
             const SizedBox(width: 10),
             _QuickAction(
-              icon: PhosphorIcons.clockCountdown(PhosphorIconsStyle.duotone),
+              icon: PhosphorIconsDuotone.clockCountdown,
               label: 'Créneaux',
               color: kGold,
               onTap: () => Get.toNamed(Routes.availability),
@@ -281,60 +282,39 @@ class ProfileScreen extends GetView<ProfileController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                const Expanded(
-                  child: OwnerSectionHeader(
-                    title: 'Informations du compte',
-                    subtitle:
-                        'Identité, sécurité et coordonnées de reversement',
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: _openEditProfile,
-                  icon: Icon(
-                    PhosphorIcons.pencilSimpleLine(PhosphorIconsStyle.duotone),
-                    size: 16,
-                  ),
-                  label: const Text('Modifier'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: kGreen,
-                    textStyle: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                ),
-              ],
+            const OwnerSectionHeader(
+              title: 'Informations du compte',
+              subtitle:
+                  'Identité, sécurité et coordonnées de reversement',
             ),
             const SizedBox(height: 10),
             _InfoRow(
-              icon: PhosphorIcons.identificationBadge(
-                PhosphorIconsStyle.duotone,
-              ),
+              icon: PhosphorIconsDuotone.identificationBadge,
               label: 'Nom complet',
               value: controller.ownerName.value,
             ),
             const Divider(height: 22, color: kDivider),
             _InfoRow(
-              icon: PhosphorIcons.phone(PhosphorIconsStyle.duotone),
+              icon: PhosphorIconsDuotone.phone,
               label: 'Téléphone',
               value: controller.phone.value,
-              helper: 'Lecture seule',
             ),
             const Divider(height: 22, color: kDivider),
             _InfoRow(
-              icon: PhosphorIcons.calendarDots(PhosphorIconsStyle.duotone),
+              icon: PhosphorIconsDuotone.calendarDots,
               label: 'Membre depuis',
               value: controller.memberSince.value,
             ),
             const Divider(height: 22, color: kDivider),
             _AccountAction(
-              icon: PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
+              icon: PhosphorIcons.wallet,
               title: 'Reversements',
               subtitle: 'Wave, Orange Money, Yas Money',
               onTap: _openPaymentMethods,
             ),
             const Divider(height: 22, color: kDivider),
             _AccountAction(
-              icon: PhosphorIcons.shieldCheck(PhosphorIconsStyle.duotone),
+              icon: PhosphorIcons.shieldCheck,
               title: 'Sécurité',
               subtitle: 'Changer le mot de passe',
               onTap: _openSecurity,
@@ -395,7 +375,7 @@ class ProfileScreen extends GetView<ProfileController> {
               ),
               const SizedBox(height: 14),
               _AvatarSourceTile(
-                icon: PhosphorIcons.camera(PhosphorIconsStyle.duotone),
+                icon: PhosphorIconsDuotone.camera,
                 title: 'Prendre une photo',
                 onTap: () {
                   Get.back();
@@ -404,7 +384,7 @@ class ProfileScreen extends GetView<ProfileController> {
               ),
               const SizedBox(height: 10),
               _AvatarSourceTile(
-                icon: PhosphorIcons.images(PhosphorIconsStyle.duotone),
+                icon: PhosphorIconsDuotone.images,
                 title: 'Choisir depuis la galerie',
                 onTap: () {
                   Get.back();
@@ -434,8 +414,7 @@ class ProfileScreen extends GetView<ProfileController> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              PhosphorIcons.signOut(PhosphorIconsStyle.duotone),
+            PhosphorIcon(PhosphorIconsDuotone.signOut,
               color: kRed,
               size: 18,
             ),
@@ -450,21 +429,6 @@ class ProfileScreen extends GetView<ProfileController> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildVersion() {
-    return Center(
-      child: Column(
-        children: [
-          Image.asset('assets/images/minifoot.png', width: 28, height: 28),
-          const SizedBox(height: 8),
-          const Text(
-            'MiniFoot Owner · v1.3.0',
-            style: TextStyle(fontSize: 12, color: kTextLight),
-          ),
-        ],
       ),
     );
   }
@@ -490,8 +454,7 @@ class ProfileScreen extends GetView<ProfileController> {
                   color: kRedLight,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  PhosphorIcons.signOut(PhosphorIconsStyle.duotone),
+                child: PhosphorIcon(PhosphorIconsDuotone.signOut,
                   color: kRed,
                   size: 28,
                 ),
@@ -570,7 +533,7 @@ class ProfileScreen extends GetView<ProfileController> {
 }
 
 class _QuickAction extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
@@ -598,7 +561,7 @@ class _QuickAction extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: color, size: 22),
+              PhosphorIcon(icon, color: color, size: 22),
               const SizedBox(height: 7),
               Text(
                 label,
@@ -621,7 +584,7 @@ class _QuickAction extends StatelessWidget {
 class _StatCard extends StatelessWidget {
   final String value;
   final String label;
-  final IconData icon;
+  final dynamic icon;
   final Color color;
   final Color bgColor;
 
@@ -653,7 +616,7 @@ class _StatCard extends StatelessWidget {
                 color: bgColor,
                 borderRadius: BorderRadius.circular(11),
               ),
-              child: Icon(icon, color: color, size: 18),
+              child: PhosphorIcon(icon, color: color, size: 18),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -759,7 +722,7 @@ class _ProfileAvatar extends StatelessWidget {
                 border: Border.all(color: kBgCard, width: 2),
               ),
               child: Icon(
-                PhosphorIcons.camera(PhosphorIconsStyle.bold),
+                PhosphorIconsBold.camera,
                 color: Colors.white,
                 size: 13,
               ),
@@ -792,7 +755,7 @@ class _AvatarInitials extends StatelessWidget {
 }
 
 class _AvatarSourceTile extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String title;
   final VoidCallback onTap;
 
@@ -823,7 +786,7 @@ class _AvatarSourceTile extends StatelessWidget {
                 color: kGreenLight,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: kGreen, size: 19),
+              child: PhosphorIcon(icon, color: kGreen, size: 19),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -836,8 +799,7 @@ class _AvatarSourceTile extends StatelessWidget {
                 ),
               ),
             ),
-            Icon(
-              PhosphorIcons.caretRight(PhosphorIconsStyle.duotone),
+            PhosphorIcon(PhosphorIcons.caretRight,
               color: kTextLight,
             ),
           ],
@@ -848,7 +810,7 @@ class _AvatarSourceTile extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String label;
   final String value;
   final String? helper;
@@ -871,7 +833,7 @@ class _InfoRow extends StatelessWidget {
             color: kBgSurface,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: kTextSub, size: 18),
+          child: PhosphorIcon(icon, color: kTextSub, size: 18),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -922,7 +884,7 @@ class _InfoRow extends StatelessWidget {
 }
 
 class _AccountAction extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
@@ -950,7 +912,7 @@ class _AccountAction extends StatelessWidget {
                 color: kGreenLight,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: kGreen, size: 18),
+              child: PhosphorIcon(icon, color: kGreen, size: 18),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -977,8 +939,7 @@ class _AccountAction extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
-              PhosphorIcons.caretRight(PhosphorIconsStyle.duotone),
+            PhosphorIcon(PhosphorIcons.caretRight,
               color: kTextLight,
             ),
           ],

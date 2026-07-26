@@ -39,18 +39,20 @@ class AuthController extends GetxController {
 
   Future<bool> checkAuthStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedToken = prefs.getString('token');
+    var savedToken = prefs.getString('token');
 
     if (savedToken == null) return false;
 
     try {
       final userData = await _authService.getProfile(savedToken);
+      // After authenticatedRequest, the token in prefs may have been refreshed
+      savedToken = prefs.getString('token') ?? savedToken;
       token.value = savedToken;
       user.value = UserModel.fromJson(userData);
 
       // Vérifier le rôle avant toute navigation
       if (user.value?.canUseOwnerApp != true) {
-        await prefs.remove('token');
+        await _authService.clearTokens();
         token.value = null;
         user.value = null;
         return false;
@@ -60,7 +62,7 @@ class AuthController extends GetxController {
       goToPostAuthDestination();
       return true;
     } catch (e) {
-      prefs.remove('token');
+      await _authService.clearTokens();
       return false;
     }
   }
@@ -78,8 +80,10 @@ class AuthController extends GetxController {
           throw Exception('ROLE_NON_AUTORISE');
         }
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', token.value!);
+        await _authService.saveTokens(
+          token.value!,
+          res['refreshToken'] as String?,
+        );
         await NotificationService.syncToken(token.value!);
 
         goToPostAuthDestination();
@@ -197,8 +201,10 @@ class AuthController extends GetxController {
           user.value = null;
           throw Exception('ROLE_NON_AUTORISE');
         }
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', token.value!);
+        await _authService.saveTokens(
+          token.value!,
+          res['refreshToken'] as String?,
+        );
         await NotificationService.syncToken(token.value!);
         if (redirect) goToPostAuthDestination();
       } else {
@@ -305,8 +311,7 @@ class AuthController extends GetxController {
   Future<void> logout() async {
     token.value = null;
     user.value = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
+    await _authService.clearTokens();
     Get.offAllNamed(Routes.login);
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -89,7 +89,7 @@ class ControllersScreen extends GetView<ControllersController> {
         backgroundColor: kGreen,
         onPressed: () => _showCreateSheet(context),
         icon: Icon(
-          PhosphorIcons.plus(PhosphorIconsStyle.bold),
+          PhosphorIconsBold.plus,
           color: Colors.white,
         ),
         label: const Text(
@@ -278,10 +278,7 @@ class _ControllerCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     backgroundColor: item.isActive ? kGreenLight : kBgSurface,
-                    child: Icon(
-                      PhosphorIcons.identificationBadge(
-                        PhosphorIconsStyle.duotone,
-                      ),
+                    child: PhosphorIcon(PhosphorIconsDuotone.identificationBadge,
                       color: item.isActive ? kGreen : kTextSub,
                     ),
                   ),
@@ -350,8 +347,7 @@ class _EmptyControllerIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Icon(
-      PhosphorIcons.identificationBadge(PhosphorIconsStyle.duotone),
+    return PhosphorIcon(PhosphorIconsDuotone.identificationBadge,
       color: kGreen,
       size: 54,
     );

@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_snackbar.dart';
@@ -56,12 +56,12 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
               ),
               const SizedBox(height: 14),
               _SourceTile(
-                icon: PhosphorIcons.camera(PhosphorIconsStyle.duotone),
+                icon: PhosphorIconsDuotone.camera,
                 label: 'Prendre une photo',
                 onTap: () => Get.back(result: ImageSource.camera),
               ),
               _SourceTile(
-                icon: PhosphorIcons.image(PhosphorIconsStyle.duotone),
+                icon: PhosphorIconsDuotone.image,
                 label: 'Choisir depuis la galerie',
                 onTap: () => Get.back(result: ImageSource.gallery),
               ),
@@ -151,8 +151,7 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
               color: kOrange.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              PhosphorIcons.identificationCard(PhosphorIconsStyle.duotone),
+            child: PhosphorIcon(PhosphorIconsDuotone.identificationCard,
               color: kOrange,
               size: 48,
             ),
@@ -198,7 +197,7 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
           ],
           decoration: InputDecoration(
             hintText: 'Ex: 1773199901827',
-            prefixIcon: Icon(PhosphorIcons.creditCard(), size: 20, color: kTextLight),
+            prefixIcon: Icon(PhosphorIconsRegular.creditCard, size: 20, color: kTextLight),
           ),
         ),
         const SizedBox(height: 24),
@@ -215,7 +214,7 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
               child: _UploadBox(
                 label: 'Profil',
                 file: _profile,
-                icon: PhosphorIcons.user(PhosphorIconsStyle.duotone),
+                icon: PhosphorIconsDuotone.user,
                 onTap: () => _pickImage((f) => _profile = f),
               ),
             ),
@@ -224,7 +223,7 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
               child: _UploadBox(
                 label: 'CNI Recto',
                 file: _cniFront,
-                icon: PhosphorIcons.identificationCard(PhosphorIconsStyle.duotone),
+                icon: PhosphorIconsDuotone.identificationCard,
                 onTap: () => _pickImage((f) => _cniFront = f),
               ),
             ),
@@ -233,7 +232,7 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
               child: _UploadBox(
                 label: 'CNI Verso',
                 file: _cniBack,
-                icon: PhosphorIcons.identificationCard(PhosphorIconsStyle.duotone),
+                icon: PhosphorIconsDuotone.identificationCard,
                 onTap: () => _pickImage((f) => _cniBack = f),
               ),
             ),
@@ -251,8 +250,7 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
                 onPressed: controller.isLoading.value ? null : _submitDocuments,
                 icon: controller.isLoading.value
                     ? const SizedBox.shrink()
-                    : Icon(
-                        PhosphorIcons.cloudArrowUp(PhosphorIconsStyle.duotone),
+                    : PhosphorIcon(PhosphorIconsDuotone.cloudArrowUp,
                         color: Colors.white,
                         size: 22,
                       ),
@@ -272,7 +270,7 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
         const SizedBox(height: 12),
         TextButton.icon(
           onPressed: controller.logout,
-          icon: Icon(PhosphorIcons.signOut(), size: 18),
+          icon: Icon(PhosphorIconsRegular.signOut, size: 18),
           label: const Text(
             'Se déconnecter',
             style: TextStyle(fontWeight: FontWeight.w700),
@@ -297,10 +295,10 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
             color: (isRejected ? kRed : kGreen).withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(
+          child: PhosphorIcon(
             isRejected
-                ? PhosphorIcons.warningCircle(PhosphorIconsStyle.duotone)
-                : PhosphorIcons.hourglassMedium(PhosphorIconsStyle.duotone),
+                ? PhosphorIconsDuotone.warningCircle
+                : PhosphorIconsDuotone.hourglassMedium,
             color: isRejected ? kRed : kGreen,
             size: 44,
           ),
@@ -369,8 +367,7 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
           height: 54,
           child: ElevatedButton.icon(
             onPressed: controller.logout,
-            icon: Icon(
-              PhosphorIcons.signOut(PhosphorIconsStyle.duotone),
+            icon: PhosphorIcon(PhosphorIconsDuotone.signOut,
               color: Colors.white,
               size: 20,
             ),
@@ -397,7 +394,7 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
 class _UploadBox extends StatelessWidget {
   final String label;
   final File? file;
-  final IconData icon;
+  final dynamic icon;
   final VoidCallback onTap;
 
   const _UploadBox({
@@ -452,8 +449,8 @@ class _UploadBox extends StatelessWidget {
                       color: (hasFile ? kGreen : kBgSurface).withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      hasFile ? PhosphorIcons.check() : icon,
+                    child: PhosphorIcon(
+                      hasFile ? PhosphorIconsRegular.check : icon,
                       color: hasFile ? Colors.white : kTextSub,
                       size: 20,
                     ),
@@ -482,7 +479,7 @@ class _UploadBox extends StatelessWidget {
                     shape: BoxShape.circle,
                     border: Border.all(color: kBorder),
                   ),
-                  child: Icon(PhosphorIcons.pencilSimple(), size: 10, color: kTextPrim),
+                  child: Icon(PhosphorIconsRegular.pencilSimple, size: 10, color: kTextPrim),
                 ),
               ),
           ],
@@ -493,7 +490,7 @@ class _UploadBox extends StatelessWidget {
 }
 
 class _SourceTile extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String label;
   final VoidCallback onTap;
 
@@ -507,7 +504,7 @@ class _SourceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       onTap: onTap,
-      leading: Icon(icon, color: kGreen),
+      leading: PhosphorIcon(icon, color: kGreen),
       title: Text(
         label,
         style: const TextStyle(

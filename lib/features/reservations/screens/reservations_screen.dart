@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/owner_ui.dart';
 import '../../../core/widgets/shimmer_loading.dart';
@@ -43,8 +43,7 @@ class ReservationsScreen extends GetView<ReservationsController> {
               () => const ReportScreen(),
               arguments: {'reportType': 'reservations'},
             ),
-            icon: Icon(
-              PhosphorIcons.filePdf(PhosphorIconsStyle.duotone),
+            icon: PhosphorIcon(PhosphorIconsDuotone.filePdf,
               color: kGreen,
             ),
             tooltip: 'Rapport PDF',
@@ -198,7 +197,7 @@ class ReservationsScreen extends GetView<ReservationsController> {
                 children: [
                   Expanded(
                     child: _SummaryMetric(
-                      icon: PhosphorIcons.wallet(PhosphorIconsStyle.duotone),
+                      icon: PhosphorIconsDuotone.wallet,
                       label: 'Montant',
                       value: _formatAmount(totalAmount),
                       accent: kGreen,
@@ -208,7 +207,7 @@ class ReservationsScreen extends GetView<ReservationsController> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _SummaryMetric(
-                      icon: PhosphorIcons.sealCheck(PhosphorIconsStyle.duotone),
+                      icon: PhosphorIconsDuotone.sealCheck,
                       label: 'Présences',
                       value: '$checkedInCount',
                       accent: kBlue,
@@ -218,9 +217,7 @@ class ReservationsScreen extends GetView<ReservationsController> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _SummaryMetric(
-                      icon: PhosphorIcons.hourglassMedium(
-                        PhosphorIconsStyle.duotone,
-                      ),
+                      icon: PhosphorIconsDuotone.hourglassMedium,
                       label: 'À traiter',
                       value: '$pendingActionCount',
                       accent: kGold,
@@ -441,8 +438,7 @@ class _ReservationCard extends StatelessWidget {
                           const SizedBox(height: 2),
                           Row(
                             children: [
-                              Icon(
-                                PhosphorIcons.phone(PhosphorIconsStyle.duotone),
+                              PhosphorIcon(PhosphorIconsDuotone.phone,
                                 size: 12,
                                 color: kTextLight,
                               ),
@@ -495,7 +491,7 @@ class _ReservationCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
-                            PhosphorIcons.caretRight(PhosphorIconsStyle.bold),
+                            PhosphorIconsBold.caretRight,
                             size: 14,
                             color: kTextSub,
                           ),
@@ -516,10 +512,7 @@ class _ReservationCard extends StatelessWidget {
                         color: kBlueLight,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(
-                        PhosphorIcons.courtBasketball(
-                          PhosphorIconsStyle.duotone,
-                        ),
+                      child: PhosphorIcon(PhosphorIconsDuotone.courtBasketball,
                         color: kBlue,
                         size: 16,
                       ),
@@ -547,15 +540,11 @@ class _ReservationCard extends StatelessWidget {
                         runSpacing: 8,
                         children: [
                           _MetaText(
-                            icon: PhosphorIcons.calendarBlank(
-                              PhosphorIconsStyle.duotone,
-                            ),
+                            icon: PhosphorIconsDuotone.calendarBlank,
                             label: reservation.date,
                           ),
                           _MetaText(
-                            icon: PhosphorIcons.clock(
-                              PhosphorIconsStyle.duotone,
-                            ),
+                            icon: PhosphorIconsDuotone.clock,
                             label: reservation.timeSlot,
                           ),
                         ],
@@ -587,9 +576,7 @@ class _ReservationCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _InlineState(
-                          icon: PhosphorIcons.creditCard(
-                            PhosphorIconsStyle.duotone,
-                          ),
+                          icon: PhosphorIconsDuotone.creditCard,
                           label: reservation.paymentStatus,
                           value: reservation.paymentMethod,
                         ),
@@ -599,12 +586,8 @@ class _ReservationCard extends StatelessWidget {
                       Expanded(
                         child: _InlineState(
                           icon: reservation.isCheckedIn
-                              ? PhosphorIcons.sealCheck(
-                                  PhosphorIconsStyle.duotone,
-                                )
-                              : PhosphorIcons.mapPinLine(
-                                  PhosphorIconsStyle.duotone,
-                                ),
+                              ? PhosphorIconsDuotone.sealCheck
+                              : PhosphorIconsDuotone.mapPinLine,
                           label: reservation.isCheckedIn
                               ? 'Présence confirmée'
                               : 'Check-in en attente',
@@ -626,7 +609,7 @@ class _ReservationCard extends StatelessWidget {
 }
 
 class _SummaryMetric extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String label;
   final String value;
   final Color accent;
@@ -658,7 +641,7 @@ class _SummaryMetric extends StatelessWidget {
               color: accent.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(9),
             ),
-            child: Icon(icon, size: 16, color: accent),
+            child: PhosphorIcon(icon, size: 16, color: accent),
           ),
           const SizedBox(height: 12),
           Text(
@@ -687,7 +670,7 @@ class _SummaryMetric extends StatelessWidget {
 }
 
 class _InlineState extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String label;
   final String value;
 
@@ -708,7 +691,7 @@ class _InlineState extends StatelessWidget {
             color: kBgCard,
             borderRadius: BorderRadius.circular(9),
           ),
-          child: Icon(icon, size: 15, color: kTextSub),
+          child: PhosphorIcon(icon, size: 15, color: kTextSub),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -743,7 +726,7 @@ class _InlineState extends StatelessWidget {
 }
 
 class _MetaText extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String label;
 
   const _MetaText({required this.icon, required this.label});
@@ -753,7 +736,7 @@ class _MetaText extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: kTextLight, size: 14),
+        PhosphorIcon(icon, color: kTextLight, size: 14),
         const SizedBox(width: 5),
         Text(
           label,

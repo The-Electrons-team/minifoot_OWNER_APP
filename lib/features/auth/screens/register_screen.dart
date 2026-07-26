@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_snackbar.dart';
@@ -132,12 +132,12 @@ class _RegisterFlowState extends State<_RegisterFlow> {
               ),
               const SizedBox(height: 14),
               _SourceTile(
-                icon: PhosphorIcons.camera(PhosphorIconsStyle.duotone),
+                icon: PhosphorIconsDuotone.camera,
                 label: 'Prendre une photo',
                 onTap: () => Get.back(result: ImageSource.camera),
               ),
               _SourceTile(
-                icon: PhosphorIcons.image(PhosphorIconsStyle.duotone),
+                icon: PhosphorIconsDuotone.image,
                 label: 'Choisir depuis la galerie',
                 onTap: () => Get.back(result: ImageSource.gallery),
               ),
@@ -245,7 +245,7 @@ class _RegisterFlowState extends State<_RegisterFlow> {
                     child: Padding(
                       padding: const EdgeInsets.only(right: 12),
                       child: Icon(
-                        PhosphorIcons.caretLeft(PhosphorIconsStyle.bold),
+                        PhosphorIconsBold.caretLeft,
                         color: kTextPrim,
                         size: 24,
                       ),
@@ -393,14 +393,14 @@ class _InfoStep extends StatelessWidget {
             controller: firstNameCtrl,
             label: 'Prénom',
             hint: 'Mamadou',
-            icon: PhosphorIcons.user(PhosphorIconsStyle.duotone),
+            icon: PhosphorIconsDuotone.user,
           ),
           const SizedBox(height: 14),
           _InputField(
             controller: lastNameCtrl,
             label: 'Nom',
             hint: 'Diallo',
-            icon: PhosphorIcons.userCircle(PhosphorIconsStyle.duotone),
+            icon: PhosphorIconsDuotone.userCircle,
           ),
           const SizedBox(height: 14),
           _PhoneField(controller: phoneCtrl),
@@ -439,7 +439,7 @@ class _DocumentStep extends StatelessWidget {
             controller: cniCtrl,
             label: 'Numéro CNI',
             hint: '13 chiffres',
-            icon: PhosphorIcons.identificationCard(PhosphorIconsStyle.duotone),
+            icon: PhosphorIconsDuotone.identificationCard,
             keyboardType: TextInputType.number,
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
@@ -450,21 +450,21 @@ class _DocumentStep extends StatelessWidget {
           _DocumentPicker(
             label: 'Photo de profil',
             file: profilePhoto,
-            icon: PhosphorIcons.userCircle(PhosphorIconsStyle.duotone),
+            icon: PhosphorIconsDuotone.userCircle,
             onTap: onProfile,
           ),
           const SizedBox(height: 12),
           _DocumentPicker(
             label: 'CNI recto',
             file: cniFront,
-            icon: PhosphorIcons.cardholder(PhosphorIconsStyle.duotone),
+            icon: PhosphorIconsDuotone.cardholder,
             onTap: onFront,
           ),
           const SizedBox(height: 12),
           _DocumentPicker(
             label: 'CNI verso',
             file: cniBack,
-            icon: PhosphorIcons.cardholder(PhosphorIconsStyle.duotone),
+            icon: PhosphorIconsDuotone.cardholder,
             onTap: onBack,
           ),
         ],
@@ -491,14 +491,14 @@ class _PasswordStep extends StatelessWidget {
               controller: passwordCtrl,
               label: 'Mot de passe',
               hint: 'Minimum 8 caractères',
-              icon: PhosphorIcons.lockSimple(PhosphorIconsStyle.duotone),
+              icon: PhosphorIconsDuotone.lockSimple,
               obscureText: obscure.value,
               suffix: IconButton(
                 onPressed: obscure.toggle,
                 icon: Icon(
                   obscure.value
-                      ? PhosphorIcons.eyeClosed()
-                      : PhosphorIcons.eye(),
+                      ? PhosphorIconsRegular.eyeClosed
+                      : PhosphorIconsRegular.eye,
                   color: kTextLight,
                 ),
               ),
@@ -510,7 +510,7 @@ class _PasswordStep extends StatelessWidget {
               controller: confirmCtrl,
               label: 'Confirmer le mot de passe',
               hint: 'Retapez le mot de passe',
-              icon: PhosphorIcons.lockKey(PhosphorIconsStyle.duotone),
+              icon: PhosphorIconsDuotone.lockKey,
               obscureText: obscure.value,
             ),
           ),
@@ -572,7 +572,7 @@ class _InputField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final String? hint;
-  final IconData icon;
+  final dynamic icon;
   final bool obscureText;
   final Widget? suffix;
   final TextInputType? keyboardType;
@@ -611,7 +611,7 @@ class _InputField extends StatelessWidget {
           style: const TextStyle(color: kTextPrim, fontSize: 16),
           decoration: InputDecoration(
             hintText: hint,
-            prefixIcon: Icon(icon, color: kGreen, size: 20),
+            prefixIcon: PhosphorIcon(icon, color: kGreen, size: 20),
             suffixIcon: suffix,
           ),
         ),
@@ -623,7 +623,7 @@ class _InputField extends StatelessWidget {
 class _DocumentPicker extends StatelessWidget {
   final String label;
   final File? file;
-  final IconData icon;
+  final dynamic icon;
   final VoidCallback onTap;
 
   const _DocumentPicker({
@@ -656,7 +656,7 @@ class _DocumentPicker extends StatelessWidget {
                     ? Image.file(file!, fit: BoxFit.cover)
                     : Container(
                         color: kBorder.withValues(alpha: 0.35),
-                        child: Icon(icon, color: kTextLight, size: 24),
+                        child: PhosphorIcon(icon, color: kTextLight, size: 24),
                       ),
               ),
             ),
@@ -684,10 +684,10 @@ class _DocumentPicker extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
+            PhosphorIcon(
               hasFile
-                  ? PhosphorIcons.checkCircle(PhosphorIconsStyle.duotone)
-                  : PhosphorIcons.plusCircle(PhosphorIconsStyle.duotone),
+                  ? PhosphorIconsDuotone.checkCircle
+                  : PhosphorIconsDuotone.plusCircle,
               color: hasFile ? kGreen : kTextLight,
             ),
           ],
@@ -698,7 +698,7 @@ class _DocumentPicker extends StatelessWidget {
 }
 
 class _SourceTile extends StatelessWidget {
-  final IconData icon;
+  final dynamic icon;
   final String label;
   final VoidCallback onTap;
 
@@ -712,7 +712,7 @@ class _SourceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       onTap: onTap,
-      leading: Icon(icon, color: kGreen),
+      leading: PhosphorIcon(icon, color: kGreen),
       title: Text(
         label,
         style: const TextStyle(fontWeight: FontWeight.w700, color: kTextPrim),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/auth_controller.dart';
@@ -210,16 +210,15 @@ class LoginScreen extends GetView<AuthController> {
                     hintText: '••••••••',
                     prefixIcon: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Icon(
-                        PhosphorIcons.lock(PhosphorIconsStyle.duotone),
+                      child: PhosphorIcon(PhosphorIconsDuotone.lock,
                         color: kGreen,
                       ),
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         controller.obscurePass.value
-                            ? PhosphorIcons.eyeClosed()
-                            : PhosphorIcons.eye(),
+                            ? PhosphorIconsRegular.eyeClosed
+                            : PhosphorIconsRegular.eye,
                         color: kTextSub,
                       ),
                       onPressed: controller.toggleObscure,
@@ -292,10 +291,7 @@ class LoginScreen extends GetView<AuthController> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Icon(
-                                PhosphorIcons.signIn(
-                                  PhosphorIconsStyle.duotone,
-                                ),
+                              PhosphorIcon(PhosphorIconsDuotone.signIn,
                                 color: Colors.white,
                                 size: 20,
                               ),
@@ -410,19 +406,15 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
+    return Container(
+      padding: const EdgeInsets.fromLTRB(22, 18, 22, 26),
+      decoration: const BoxDecoration(
+        color: kBgCard,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(22, 18, 22, 26),
-        decoration: const BoxDecoration(
-          color: kBgCard,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: SingleChildScrollView(
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -586,10 +578,11 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 }
+
+
 
 class _Label extends StatelessWidget {
   final String text;

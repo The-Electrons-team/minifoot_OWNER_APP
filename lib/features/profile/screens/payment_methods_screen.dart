@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/owner_ui.dart';
@@ -17,20 +17,23 @@ class PaymentMethodsScreen extends GetView<ProfileController> {
       appBar: AppBar(
         backgroundColor: kBg,
         elevation: 0,
-        leading: IconButton(
-          onPressed: Get.back,
-          icon: Icon(
-            PhosphorIcons.arrowLeft(PhosphorIconsStyle.duotone),
-            size: 18,
+        leading: GestureDetector(
+          onTap: () => Get.back(),
+          behavior: HitTestBehavior.opaque,
+          child: const Center(
+            child: PhosphorIcon(PhosphorIcons.caretLeft,
+              color: kTextPrim,
+              size: 24,
+            ),
           ),
-          color: kTextPrim,
         ),
         title: const Text(
           'Reversements',
           style: TextStyle(
+            fontFamily: 'Orbitron',
             color: kTextPrim,
             fontSize: 18,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
           ),
         ),
         centerTitle: true,
@@ -38,15 +41,15 @@ class PaymentMethodsScreen extends GetView<ProfileController> {
       body: Obx(
         () => ListView(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 34),
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 36),
           children: [
             _PayoutMethodCard(
               title: 'Wave',
-              subtitle: 'Numéro de réception Wave',
+              subtitle: 'Numéro Wave',
               color: const Color(0xFF00B0F0),
               bgColor: kBlueLight,
               method: 'WAVE',
-              controller: controller.wavePhoneCtrl,
+              textController: controller.wavePhoneCtrl,
               selected: controller.preferredPayoutMethod.value == 'WAVE',
               onSelect: controller.selectPreferredPayoutMethod,
             ),
@@ -57,7 +60,7 @@ class PaymentMethodsScreen extends GetView<ProfileController> {
               color: kOrange,
               bgColor: const Color(0xFFFFF3E0),
               method: 'ORANGE_MONEY',
-              controller: controller.orangePhoneCtrl,
+              textController: controller.orangePhoneCtrl,
               selected:
                   controller.preferredPayoutMethod.value == 'ORANGE_MONEY',
               onSelect: controller.selectPreferredPayoutMethod,
@@ -65,17 +68,17 @@ class PaymentMethodsScreen extends GetView<ProfileController> {
             const SizedBox(height: 12),
             _PayoutMethodCard(
               title: 'Yas Money',
-              subtitle: 'Numéro Yas / Free Money',
+              subtitle: 'Numéro Free / Yas',
               color: kGold,
               bgColor: kGoldLight,
               method: 'FREE_MONEY',
-              controller: controller.freePhoneCtrl,
+              textController: controller.freePhoneCtrl,
               selected: controller.preferredPayoutMethod.value == 'FREE_MONEY',
               onSelect: controller.selectPreferredPayoutMethod,
             ),
             const SizedBox(height: 18),
             _buildNotice(),
-            const SizedBox(height: 22),
+            const SizedBox(height: 24),
             SizedBox(
               height: 54,
               child: ElevatedButton(
@@ -88,7 +91,7 @@ class PaymentMethodsScreen extends GetView<ProfileController> {
                   disabledBackgroundColor: kGreen.withValues(alpha: 0.5),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                 ),
                 child: controller.isSavingPayout.value
@@ -101,7 +104,7 @@ class PaymentMethodsScreen extends GetView<ProfileController> {
                         ),
                       )
                     : const Text(
-                        'Enregistrer les coordonnées',
+                        'Enregistrer',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w900,
@@ -120,23 +123,22 @@ class PaymentMethodsScreen extends GetView<ProfileController> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: kBlueLight,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          Icon(
-            PhosphorIcons.info(PhosphorIconsStyle.duotone),
+          PhosphorIcon(PhosphorIconsDuotone.info,
             color: kBlue,
-            size: 20,
+            size: 18,
           ),
           const SizedBox(width: 10),
           const Expanded(
             child: Text(
-              'Vous pouvez renseigner un ou plusieurs numéros. Sélectionnez la méthode préférée pour vos futurs reversements.',
+              'Renseignez au moins un numéro et choisissez votre méthode préférée.',
               style: TextStyle(
                 color: kBlue,
                 fontSize: 12,
-                height: 1.35,
+                height: 1.4,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -147,13 +149,13 @@ class PaymentMethodsScreen extends GetView<ProfileController> {
   }
 }
 
-class _PayoutMethodCard extends StatelessWidget {
+class _PayoutMethodCard extends StatefulWidget {
   final String title;
   final String subtitle;
   final Color color;
   final Color bgColor;
   final String method;
-  final TextEditingController controller;
+  final TextEditingController textController;
   final bool selected;
   final ValueChanged<String> onSelect;
 
@@ -163,21 +165,42 @@ class _PayoutMethodCard extends StatelessWidget {
     required this.color,
     required this.bgColor,
     required this.method,
-    required this.controller,
+    required this.textController,
     required this.selected,
     required this.onSelect,
   });
 
   @override
+  State<_PayoutMethodCard> createState() => _PayoutMethodCardState();
+}
+
+class _PayoutMethodCardState extends State<_PayoutMethodCard> {
+  @override
+  void initState() {
+    super.initState();
+    widget.textController.addListener(_onTextChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.textController.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  void _onTextChanged() => setState(() {});
+
+  @override
   Widget build(BuildContext context) {
+    final hasText = widget.textController.text.isNotEmpty;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: kBgCard,
         borderRadius: BorderRadius.circular(18),
         boxShadow: kCardShadow,
-        border: selected
-            ? Border.all(color: color.withValues(alpha: 0.45), width: 1.4)
+        border: widget.selected
+            ? Border.all(color: widget.color.withValues(alpha: 0.45), width: 1.4)
             : Border.all(color: kBorder),
       ),
       child: Column(
@@ -188,7 +211,7 @@ class _PayoutMethodCard extends StatelessWidget {
                 width: 46,
                 height: 46,
                 alignment: Alignment.center,
-                child: PaymentBrandBadge(method: method, size: 46),
+                child: PaymentBrandBadge(method: widget.method, size: 46),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -196,7 +219,7 @@ class _PayoutMethodCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      widget.title,
                       style: const TextStyle(
                         color: kTextPrim,
                         fontSize: 15,
@@ -205,38 +228,42 @@ class _PayoutMethodCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      subtitle,
-                      style: const TextStyle(color: kTextSub, fontSize: 12),
+                      widget.subtitle,
+                      style: const TextStyle(
+                        color: kTextSub,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
               ),
-              InkWell(
-                onTap: () => onSelect(method),
-                borderRadius: BorderRadius.circular(18),
+              GestureDetector(
+                onTap: () => widget.onSelect(widget.method),
+                behavior: HitTestBehavior.opaque,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 7,
+                    horizontal: 12,
+                    vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: selected ? bgColor : kBgSurface,
-                    borderRadius: BorderRadius.circular(18),
+                    color: widget.selected ? widget.bgColor : kBgSurface,
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        selected
-                            ? PhosphorIcons.checkCircle(PhosphorIconsStyle.fill)
-                            : PhosphorIcons.circle(PhosphorIconsStyle.duotone),
+                      PhosphorIcon(
+                        widget.selected
+                            ? PhosphorIconsFill.checkCircle
+                            : PhosphorIconsDuotone.circle,
                         size: 15,
-                        color: selected ? color : kTextLight,
+                        color: widget.selected ? widget.color : kTextLight,
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        selected ? 'Préféré' : 'Choisir',
+                        widget.selected ? 'Préféré' : 'Choisir',
                         style: TextStyle(
-                          color: selected ? color : kTextSub,
+                          color: widget.selected ? widget.color : kTextSub,
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
                         ),
@@ -249,7 +276,7 @@ class _PayoutMethodCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           TextField(
-            controller: controller,
+            controller: widget.textController,
             enableInteractiveSelection: false,
             keyboardType: TextInputType.phone,
             inputFormatters: [
@@ -263,15 +290,19 @@ class _PayoutMethodCard extends StatelessWidget {
                 color: kTextPrim,
                 fontWeight: FontWeight.w800,
               ),
-              suffixIcon: controller.text.isEmpty
-                  ? null
-                  : IconButton(
-                      onPressed: controller.clear,
-                      icon: Icon(
-                        PhosphorIcons.x(PhosphorIconsStyle.bold),
-                        color: kTextLight,
+              suffixIcon: hasText
+                  ? GestureDetector(
+                      onTap: widget.textController.clear,
+                      behavior: HitTestBehavior.opaque,
+                      child: const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: PhosphorIcon(PhosphorIcons.x,
+                          color: kTextLight,
+                          size: 18,
+                        ),
                       ),
-                    ),
+                    )
+                  : null,
             ),
           ),
         ],

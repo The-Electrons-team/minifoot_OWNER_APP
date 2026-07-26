@@ -47,6 +47,88 @@ class AuthService {
     return prefs.getString('token');
   }
 
+  Future<String?> savedRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('refreshToken');
+  }
+
+  Future<void> saveTokens(String token, String? refreshToken) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
+    if (refreshToken != null) {
+      await prefs.setString('refreshToken', refreshToken);
+    }
+  }
+
+  Future<void> clearTokens() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('refreshToken');
+  }
+
+  Future<Map<String, dynamic>?> refreshTokens(String refreshToken) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refreshToken': refreshToken}),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<http.Response> authenticatedRequest(
+    Future<http.Response> Function(String token) request,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    var token = prefs.getString('token');
+    if (token == null) throw Exception('Non authentifié');
+
+    var response = await request(token);
+
+    if (response.statusCode == 401) {
+      final refresh = prefs.getString('refreshToken');
+      if (refresh != null) {
+        final result = await refreshTokens(refresh);
+        if (result != null) {
+          token = result['token'] as String;
+          await saveTokens(token, result['refreshToken'] as String?);
+          response = await request(token);
+        }
+      }
+    }
+
+    return response;
+  }
+
+  Future<http.StreamedResponse> authenticatedMultipartRequest(
+    Future<http.StreamedResponse> Function(String token) request,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    var token = prefs.getString('token');
+    if (token == null) throw Exception('Non authentifié');
+
+    var response = await request(token);
+
+    if (response.statusCode == 401) {
+      final refresh = prefs.getString('refreshToken');
+      if (refresh != null) {
+        final result = await refreshTokens(refresh);
+        if (result != null) {
+          token = result['token'] as String;
+          await saveTokens(token, result['refreshToken'] as String?);
+          response = await request(token);
+        }
+      }
+    }
+
+    return response;
+  }
+
   Future<Map<String, dynamic>> login(String phone, String password) async {
     late final http.Response response;
     try {
@@ -156,39 +238,42 @@ class AuthService {
     required File cniFront,
     required File cniBack,
   }) async {
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$_baseUrl/auth/owner/documents'),
-    );
-    request.headers['Authorization'] = 'Bearer $token';
     final cleanCni = cniNumber.replaceAll(RegExp(r'\D'), '');
-    request.fields['cniNumber'] = cleanCni;
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'profilePhoto',
-        profilePhoto.path,
-        filename: 'owner_profile_$cleanCni.${_fileExtension(profilePhoto)}',
-        contentType: _imageContentType(profilePhoto),
-      ),
-    );
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'cniFront',
-        cniFront.path,
-        filename: 'cni_recto_$cleanCni.${_fileExtension(cniFront)}',
-        contentType: _imageContentType(cniFront),
-      ),
-    );
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'cniBack',
-        cniBack.path,
-        filename: 'cni_verso_$cleanCni.${_fileExtension(cniBack)}',
-        contentType: _imageContentType(cniBack),
-      ),
-    );
 
-    final streamed = await request.send().timeout(const Duration(seconds: 30));
+    final streamed = await authenticatedMultipartRequest((t) async {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$_baseUrl/auth/owner/documents'),
+      );
+      request.headers['Authorization'] = 'Bearer $t';
+      request.fields['cniNumber'] = cleanCni;
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'profilePhoto',
+          profilePhoto.path,
+          filename: 'owner_profile_$cleanCni.${_fileExtension(profilePhoto)}',
+          contentType: _imageContentType(profilePhoto),
+        ),
+      );
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'cniFront',
+          cniFront.path,
+          filename: 'cni_recto_$cleanCni.${_fileExtension(cniFront)}',
+          contentType: _imageContentType(cniFront),
+        ),
+      );
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'cniBack',
+          cniBack.path,
+          filename: 'cni_verso_$cleanCni.${_fileExtension(cniBack)}',
+          contentType: _imageContentType(cniBack),
+        ),
+      );
+      return request.send().timeout(const Duration(seconds: 30));
+    });
+
     final body = await streamed.stream.bytesToString();
     if (streamed.statusCode == 200 || streamed.statusCode == 201) {
       return jsonDecode(body) as Map<String, dynamic>;
@@ -237,13 +322,13 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> getProfile(String token) async {
-    final response = await http.get(
+    final response = await authenticatedRequest((t) => http.get(
       Uri.parse('$_baseUrl/users/me?t=${DateTime.now().millisecondsSinceEpoch}'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $t',
       },
-    );
+    ));
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -256,14 +341,14 @@ class AuthService {
     String token,
     Map<String, dynamic> data,
   ) async {
-    final response = await http.patch(
+    final response = await authenticatedRequest((t) => http.patch(
       Uri.parse('$_baseUrl/users/me'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $t',
       },
       body: jsonEncode(data),
-    );
+    ));
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -276,14 +361,16 @@ class AuthService {
     required String token,
     required File image,
   }) async {
-    final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('$_baseUrl/users/me/avatar'),
-    );
-    request.headers['Authorization'] = 'Bearer $token';
-    request.files.add(await http.MultipartFile.fromPath('file', image.path));
+    final streamed = await authenticatedMultipartRequest((t) async {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$_baseUrl/users/me/avatar'),
+      );
+      request.headers['Authorization'] = 'Bearer $t';
+      request.files.add(await http.MultipartFile.fromPath('file', image.path));
+      return request.send();
+    });
 
-    final streamed = await request.send();
     final body = await streamed.stream.bytesToString();
     if (streamed.statusCode == 200 || streamed.statusCode == 201) {
       return jsonDecode(body);
@@ -292,13 +379,13 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> getPayoutInfo(String token) async {
-    final response = await http.get(
+    final response = await authenticatedRequest((t) => http.get(
       Uri.parse('$_baseUrl/users/me/payout-info'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $t',
       },
-    );
+    ));
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -308,13 +395,13 @@ class AuthService {
 
   /// Solde disponible pour retrait (paiements débloqués après scan QR, non encore virés).
   Future<Map<String, dynamic>> getPayoutBalance(String token) async {
-    final response = await http.get(
+    final response = await authenticatedRequest((t) => http.get(
       Uri.parse('$_baseUrl/owner/payout/balance'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $t',
       },
-    );
+    ));
     if (response.statusCode == 200) return jsonDecode(response.body);
     throw Exception('Erreur solde retrait: ${response.body}');
   }
@@ -325,17 +412,17 @@ class AuthService {
     required String phone,
     int? amount,
   }) async {
-    final body = <String, dynamic>{'phone': phone};
-    if (amount != null) body['amount'] = amount;
+    final reqBody = <String, dynamic>{'phone': phone};
+    if (amount != null) reqBody['amount'] = amount;
 
-    final response = await http.post(
+    final response = await authenticatedRequest((t) => http.post(
       Uri.parse('$_baseUrl/owner/payout/withdraw'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $t',
       },
-      body: jsonEncode(body),
-    );
+      body: jsonEncode(reqBody),
+    ));
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     }
@@ -344,14 +431,14 @@ class AuthService {
   }
 
   Future<void> updateFcmToken(String token, String fcmToken) async {
-    final response = await http.patch(
+    final response = await authenticatedRequest((t) => http.patch(
       Uri.parse('$_baseUrl/users/me/fcm-token'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $t',
       },
       body: jsonEncode({'token': fcmToken}),
-    );
+    ));
 
     if (response.statusCode != 200) {
       throw Exception('Erreur token notification: ${response.body}');
@@ -362,14 +449,14 @@ class AuthService {
     String token,
     Map<String, dynamic> data,
   ) async {
-    final response = await http.patch(
+    final response = await authenticatedRequest((t) => http.patch(
       Uri.parse('$_baseUrl/users/me/payout-info'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $t',
       },
       body: jsonEncode(data),
-    );
+    ));
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -381,14 +468,14 @@ class AuthService {
     required String token,
     required String phone,
   }) async {
-    final response = await http.post(
+    final response = await authenticatedRequest((t) => http.post(
       Uri.parse('$_baseUrl/users/me/phone/request'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $t',
       },
       body: jsonEncode({'phone': _normalizePhone(phone)}),
-    );
+    ));
 
     if (response.statusCode == 200 || response.statusCode == 201) return;
     if (response.statusCode == 409) throw Exception('PHONE_ALREADY_USED');
@@ -400,14 +487,14 @@ class AuthService {
     required String phone,
     required String code,
   }) async {
-    final response = await http.patch(
+    final response = await authenticatedRequest((t) => http.patch(
       Uri.parse('$_baseUrl/users/me/phone/confirm'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $t',
       },
       body: jsonEncode({'phone': _normalizePhone(phone), 'code': code}),
-    );
+    ));
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -422,17 +509,17 @@ class AuthService {
     required String currentPassword,
     required String newPassword,
   }) async {
-    final response = await http.patch(
+    final response = await authenticatedRequest((t) => http.patch(
       Uri.parse('$_baseUrl/users/me/password'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $t',
       },
       body: jsonEncode({
         'currentPassword': currentPassword,
         'newPassword': newPassword,
       }),
-    );
+    ));
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -447,16 +534,16 @@ class AuthService {
     required String token,
     required String newPassword,
   }) async {
-    final response = await http.post(
+    final response = await authenticatedRequest((t) => http.post(
       Uri.parse('$_baseUrl/auth/change-password'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $t',
       },
       body: jsonEncode({
         'password': newPassword,
       }),
-    );
+    ));
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);

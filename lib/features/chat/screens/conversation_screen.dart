@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 
 class ConversationScreen extends StatelessWidget {
@@ -15,8 +15,7 @@ class ConversationScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           onPressed: Get.back,
-          icon: Icon(
-            PhosphorIcons.arrowLeft(PhosphorIconsStyle.duotone),
+          icon: PhosphorIcon(PhosphorIconsDuotone.arrowLeft,
             color: kTextPrim,
             size: 18,
           ),

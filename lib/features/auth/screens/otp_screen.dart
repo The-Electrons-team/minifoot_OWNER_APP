@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/auth_controller.dart';
@@ -191,8 +191,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   color: kGreen.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  PhosphorIcons.deviceMobile(PhosphorIconsStyle.duotone),
+                child: PhosphorIcon(PhosphorIconsDuotone.deviceMobile,
                   color: kGreen,
                   size: 36,
                 ),
@@ -347,10 +346,7 @@ class _OtpScreenState extends State<OtpScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Icon(
-                                    PhosphorIcons.checkCircle(
-                                      PhosphorIconsStyle.duotone,
-                                    ),
+                                  PhosphorIcon(PhosphorIconsDuotone.checkCircle,
                                     color: Colors.white,
                                     size: 20,
                                   ),

@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../controllers/qr_checkin_controller.dart';
@@ -74,15 +74,15 @@ class _QrCheckInScreenState extends State<QrCheckInScreen> {
   IconData _statusIcon(String status) {
     switch (status) {
       case 'checked_in':
-        return PhosphorIcons.checkCircle(PhosphorIconsStyle.fill);
+        return PhosphorIconsFill.checkCircle;
       case 'ready':
-        return PhosphorIcons.qrCode(PhosphorIconsStyle.fill);
+        return PhosphorIconsFill.qrCode;
       case 'already_checked_in':
-        return PhosphorIcons.sealCheck(PhosphorIconsStyle.fill);
+        return PhosphorIconsFill.sealCheck;
       case 'not_confirmed':
-        return PhosphorIcons.clockCountdown(PhosphorIconsStyle.fill);
+        return PhosphorIconsFill.clockCountdown;
       default:
-        return PhosphorIcons.warningCircle(PhosphorIconsStyle.fill);
+        return PhosphorIconsFill.warningCircle;
     }
   }
 
@@ -157,12 +157,8 @@ class _QrCheckInScreenState extends State<QrCheckInScreen> {
                           padding: const EdgeInsets.all(10),
                           child: Icon(
                             _torchEnabled
-                                ? PhosphorIcons.flashlight(
-                                    PhosphorIconsStyle.fill,
-                                  )
-                                : PhosphorIcons.flashlight(
-                                    PhosphorIconsStyle.regular,
-                                  ),
+                                ? PhosphorIconsFill.flashlight
+                                : PhosphorIconsRegular.flashlight,
                             color: _torchEnabled ? kGold : Colors.white,
                             size: 20,
                           ),
@@ -473,7 +469,7 @@ class _ResultPanel extends StatelessWidget {
                             color: color.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          child: Icon(statusIcon(status),
+                          child: PhosphorIcon(statusIcon(status),
                               color: color, size: 22),
                         ),
                         const SizedBox(width: 12),
