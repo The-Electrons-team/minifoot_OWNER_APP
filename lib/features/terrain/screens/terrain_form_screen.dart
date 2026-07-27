@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/lottie_success_dialog.dart';
@@ -428,11 +429,10 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
 
   Future<void> _reverseGeocode(LatLng point) async {
     try {
-      final uri = Uri.parse(
-        'https://nominatim.openstreetmap.org/reverse'
-        '?lat=${point.latitude}&lon=${point.longitude}&format=json',
-      );
-      final res = await http.get(uri, headers: {'Accept-Language': 'fr'});
+      final uri = AppConfig.reverseGeocode(point.latitude, point.longitude);
+      final res = await http
+          .get(uri, headers: {'Accept-Language': 'fr'})
+          .timeout(AppConfig.geocodingTimeout);
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         final address = data['display_name']?.toString() ?? '';

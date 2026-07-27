@@ -30,15 +30,42 @@ features/<name>/
   screens/<name>_screen.dart     # UI widgets
 ```
 
-**Entry point**: `main.dart` initializes Firebase, loads `.env` (Mapbox token), sets up French locale (`fr_FR`) for `table_calendar`, and inits FCM via `NotificationService`.
+**Entry point**: `main.dart` loads `.env` (failure tolerated), initializes Firebase, sets up French locale (`fr_FR`) for `table_calendar`, and inits FCM via `NotificationService`. Environment values are then read through `AppConfig`, never through `dotenv`.
 
 **Routing**: All routes defined in `lib/routes/app_routes.dart` as `GetPage` entries with custom transitions. Routes class has static string constants.
 
 **Core layer** (`lib/core/`):
+- `config/app_config.dart` — **Single source of truth for anything environment-dependent** (see below)
 - `theme/app_theme.dart` — All color constants (`kBg`, `kGreen`, `kGold`, etc.), shadows, gradients, and `ThemeData`
 - `services/in_app_notification_service.dart` — REST notifications in-app: list, mark read, mark all read
 - `services/notification_service.dart` — FCM push shell: permission, token, foreground banner, background handler, tap-to-navigate by notification `type` field
 - `widgets/` — Shared `shimmer_loading.dart`, `lottie_success_dialog.dart`
+
+## Configuration (`lib/core/config/app_config.dart`)
+
+**Never read `dotenv` outside `AppConfig`, and never hardcode an API URL in a service.**
+Every environment-dependent value goes through this class, which falls back to
+production defaults so a missing or incomplete `.env` cannot break the app.
+
+| Membre | Rôle |
+|---|---|
+| `AppConfig.apiBaseUrl` | Racine du backend, ex. `https://api.assanediallo.com` |
+| `AppConfig.apiUrl` | Base REST = `apiBaseUrl` + `/api/v1` (préfixe global NestJS) |
+| `AppConfig.api(path, [query])` | Construit une `Uri` ; les valeurs `null` de la query sont ignorées |
+| `AppConfig.requestTimeout` / `shortTimeout` / `uploadTimeout` / `geocodingTimeout` | 15 s / 10 s / 30 s / 12 s |
+| `AppConfig.tokenKey` / `refreshTokenKey` | Clés `SharedPreferences` |
+| `AppConfig.reverseGeocode(lat, lng)` | Géocodage inverse Nominatim |
+| `AppConfig.env(key)` | Lecture `.env` tolérante (vide = absent, ne lève jamais) |
+
+Clés `.env` : `API_BASE_URL` (racine, **sans** `/api/v1`), `MAPBOX_ACCESS_TOKEN`,
+`NOMINATIM_URL`, et les `FIREBASE_*` pour le web. `API_URL` reste accepté pour
+compatibilité : s'il contient déjà `/api/v1`, le préfixe est retiré puis rajouté,
+donc l'URL finale est identique.
+
+Pour pointer sur un backend local : `API_BASE_URL=http://10.0.2.2:3000` (émulateur
+Android) ou `http://localhost:3000` (simulateur iOS).
+
+La normalisation est verrouillée par `test/app_config_test.dart`.
 
 ## Key Conventions
 
@@ -184,7 +211,7 @@ features/<name>/
 - `NotificationService.init()` runs before `runApp()` — navigation from `getInitialMessage` is delayed 800ms via `Future.delayed` to wait for GetMaterialApp mount
 - `table_calendar` requires `initializeDateFormatting('fr_FR', null)` in `main()` or it throws `LocaleDataException`
 - Never use `shrinkWrap: true` + `NeverScrollableScrollPhysics()` on a GridView/ListView inside `Expanded` — causes massive overflow
-- `.env` file contains a Mapbox token and is bundled as a Flutter asset
+- `.env` is bundled as a Flutter asset and committed — it contains a Mapbox token, so treat it as public. `AppConfig` tolerates its absence, but the asset entry in `pubspec.yaml` must stay.
 
 ## Feature Status
 

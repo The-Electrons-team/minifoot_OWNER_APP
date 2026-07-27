@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/models/user_model.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/notification_service.dart';
@@ -39,14 +40,14 @@ class AuthController extends GetxController {
 
   Future<bool> checkAuthStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    var savedToken = prefs.getString('token');
+    var savedToken = prefs.getString(AppConfig.tokenKey);
 
     if (savedToken == null) return false;
 
     try {
       final userData = await _authService.getProfile(savedToken);
       // After authenticatedRequest, the token in prefs may have been refreshed
-      savedToken = prefs.getString('token') ?? savedToken;
+      savedToken = prefs.getString(AppConfig.tokenKey) ?? savedToken;
       token.value = savedToken;
       user.value = UserModel.fromJson(userData);
 

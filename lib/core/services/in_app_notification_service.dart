@@ -1,11 +1,12 @@
 import 'dart:convert';
 
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config/app_config.dart';
+
 class InAppNotificationService {
-  final String _base = dotenv.env['API_URL'] ?? 'http://localhost:3000/api/v1';
+  final String _base = AppConfig.apiUrl;
 
   Future<Map<String, dynamic>> getNotifications({int page = 1}) async {
     final response = await http.get(
@@ -48,6 +49,6 @@ class InAppNotificationService {
 
   Future<String> _token() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token') ?? '';
+    return prefs.getString(AppConfig.tokenKey) ?? '';
   }
 }

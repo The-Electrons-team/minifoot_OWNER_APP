@@ -1,8 +1,9 @@
 import 'dart:convert';
 
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../config/app_config.dart';
 
 class OwnerDashboardData {
   final String ownerName;
@@ -89,7 +90,7 @@ class OwnerDashboardData {
 }
 
 class DashboardService {
-  final String _base = dotenv.env['API_URL'] ?? 'http://localhost:3000/api/v1';
+  final String _base = AppConfig.apiUrl;
 
   Future<OwnerDashboardData> getOwnerDashboard() async {
     final response = await http.get(
@@ -110,6 +111,6 @@ class DashboardService {
 
   Future<String> _token() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token') ?? '';
+    return prefs.getString(AppConfig.tokenKey) ?? '';
   }
 }

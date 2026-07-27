@@ -5,26 +5,21 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'core/config/app_config.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/notification_service.dart';
 import 'features/auth/bindings/auth_binding.dart';
 import 'routes/app_routes.dart';
 
-String? _envValue(String key) {
-  final value = dotenv.env[key]?.trim();
-  if (value == null || value.isEmpty) return null;
-  return value;
-}
-
 Future<bool> _initializeFirebase() async {
   try {
     if (kIsWeb) {
-      final apiKey = _envValue('FIREBASE_API_KEY');
-      final authDomain = _envValue('FIREBASE_AUTH_DOMAIN');
-      final projectId = _envValue('FIREBASE_PROJECT_ID');
-      final storageBucket = _envValue('FIREBASE_STORAGE_BUCKET');
-      final messagingSenderId = _envValue('FIREBASE_MESSAGING_SENDER_ID');
-      final appId = _envValue('FIREBASE_APP_ID');
+      final apiKey = AppConfig.env('FIREBASE_API_KEY');
+      final authDomain = AppConfig.env('FIREBASE_AUTH_DOMAIN');
+      final projectId = AppConfig.env('FIREBASE_PROJECT_ID');
+      final storageBucket = AppConfig.env('FIREBASE_STORAGE_BUCKET');
+      final messagingSenderId = AppConfig.env('FIREBASE_MESSAGING_SENDER_ID');
+      final appId = AppConfig.env('FIREBASE_APP_ID');
 
       final hasWebConfig = [
         apiKey,
@@ -48,7 +43,7 @@ Future<bool> _initializeFirebase() async {
           storageBucket: storageBucket!,
           messagingSenderId: messagingSenderId!,
           appId: appId!,
-          measurementId: _envValue('FIREBASE_MEASUREMENT_ID'),
+          measurementId: AppConfig.env('FIREBASE_MEASUREMENT_ID'),
         ),
       );
       return true;
@@ -64,7 +59,14 @@ Future<bool> _initializeFirebase() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: '.env');
+  // `.env` est optionnel : AppConfig retombe sur ses valeurs de production si
+  // le fichier est absent du bundle.
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (e) {
+    debugPrint('.env introuvable, configuration par défaut utilisée: $e');
+  }
+  debugPrint('API: ${AppConfig.apiUrl}');
   final firebaseReady = await _initializeFirebase();
   await initializeDateFormatting('fr_FR', null); // pour le calendrier en français
   if (firebaseReady) {

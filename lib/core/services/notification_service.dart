@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../routes/app_routes.dart';
+import '../config/app_config.dart';
 import '../theme/app_theme.dart';
 import 'auth_service.dart';
 
@@ -90,7 +91,7 @@ class NotificationService {
 
   static Future<String?> _savedJwt() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token');
+    return prefs.getString(AppConfig.tokenKey);
   }
 
   static Future<void> _sendToken(String jwt, String fcmToken) async {

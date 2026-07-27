@@ -3,13 +3,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config/app_config.dart';
+
 class AuthService {
-  final String _baseUrl =
-      dotenv.env['API_URL'] ?? 'http://localhost:3000/api/v1';
+  final String _baseUrl = AppConfig.apiUrl;
 
   String _normalizePhone(String value) {
     var digits = value.replaceAll(RegExp(r'\D'), '');
@@ -44,26 +44,26 @@ class AuthService {
 
   Future<String?> savedToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token');
+    return prefs.getString(AppConfig.tokenKey);
   }
 
   Future<String?> savedRefreshToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('refreshToken');
+    return prefs.getString(AppConfig.refreshTokenKey);
   }
 
   Future<void> saveTokens(String token, String? refreshToken) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('token', token);
+    await prefs.setString(AppConfig.tokenKey, token);
     if (refreshToken != null) {
-      await prefs.setString('refreshToken', refreshToken);
+      await prefs.setString(AppConfig.refreshTokenKey, refreshToken);
     }
   }
 
   Future<void> clearTokens() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    await prefs.remove('refreshToken');
+    await prefs.remove(AppConfig.tokenKey);
+    await prefs.remove(AppConfig.refreshTokenKey);
   }
 
   Future<Map<String, dynamic>?> refreshTokens(String refreshToken) async {
@@ -72,7 +72,7 @@ class AuthService {
         Uri.parse('$_baseUrl/auth/refresh'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'refreshToken': refreshToken}),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(AppConfig.shortTimeout);
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
@@ -85,13 +85,13 @@ class AuthService {
     Future<http.Response> Function(String token) request,
   ) async {
     final prefs = await SharedPreferences.getInstance();
-    var token = prefs.getString('token');
+    var token = prefs.getString(AppConfig.tokenKey);
     if (token == null) throw Exception('Non authentifié');
 
     var response = await request(token);
 
     if (response.statusCode == 401) {
-      final refresh = prefs.getString('refreshToken');
+      final refresh = prefs.getString(AppConfig.refreshTokenKey);
       if (refresh != null) {
         final result = await refreshTokens(refresh);
         if (result != null) {
@@ -109,13 +109,13 @@ class AuthService {
     Future<http.StreamedResponse> Function(String token) request,
   ) async {
     final prefs = await SharedPreferences.getInstance();
-    var token = prefs.getString('token');
+    var token = prefs.getString(AppConfig.tokenKey);
     if (token == null) throw Exception('Non authentifié');
 
     var response = await request(token);
 
     if (response.statusCode == 401) {
-      final refresh = prefs.getString('refreshToken');
+      final refresh = prefs.getString(AppConfig.refreshTokenKey);
       if (refresh != null) {
         final result = await refreshTokens(refresh);
         if (result != null) {
@@ -141,7 +141,7 @@ class AuthService {
               'password': password,
             }),
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(AppConfig.requestTimeout);
     } on TimeoutException {
       throw Exception('SERVER_UNAVAILABLE');
     } on SocketException {
@@ -184,7 +184,7 @@ class AuthService {
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode(body),
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(AppConfig.requestTimeout);
     } on TimeoutException {
       throw Exception('SERVER_UNAVAILABLE');
     } on SocketException {
@@ -271,7 +271,7 @@ class AuthService {
           contentType: _imageContentType(cniBack),
         ),
       );
-      return request.send().timeout(const Duration(seconds: 30));
+      return request.send().timeout(AppConfig.uploadTimeout);
     });
 
     final body = await streamed.stream.bytesToString();
