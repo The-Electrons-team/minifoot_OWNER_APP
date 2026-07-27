@@ -9,8 +9,8 @@ import '../features/auth/screens/register_screen.dart';
 import '../features/auth/screens/otp_screen.dart';
 import '../features/auth/screens/owner_pending_screen.dart';
 import '../features/auth/screens/change_password_screen.dart';
-import '../features/dashboard/bindings/dashboard_binding.dart';
-import '../features/dashboard/screens/dashboard_screen.dart';
+import '../features/shell/bindings/shell_binding.dart';
+import '../features/shell/screens/app_shell.dart';
 import '../features/terrain/bindings/terrain_binding.dart';
 import '../features/terrain/screens/terrain_list_screen.dart';
 import '../features/terrain/screens/terrain_detail_screen.dart';
@@ -63,6 +63,7 @@ abstract class Routes {
   static const revenues = '/revenues';
   static const chat = '/chat';
   static const qrCheckIn = '/qr-check-in';
+  static const report = '/report';
   static const controllers = '/controllers';
   static const controllerDetail = '/controllers/detail';
   static const changePassword = '/auth/change-password';
@@ -106,11 +107,12 @@ final appPages = [
     transitionDuration: const Duration(milliseconds: 350),
   ),
 
-  // Dashboard — zoom in depuis le login
+  // Dashboard — la route pointe désormais sur la coquille à onglets, qui
+  // héberge l'accueil et les quatre autres destinations sans les empiler.
   GetPage(
     name: Routes.dashboard,
-    page: () => const DashboardScreen(),
-    binding: DashboardBinding(),
+    page: () => const AppShell(),
+    binding: ShellBinding(),
     transition: Transition.zoom,
     transitionDuration: const Duration(milliseconds: 500),
   ),

@@ -3,11 +3,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'core/config/app_config.dart';
 import 'core/theme/app_theme.dart';
+import 'core/services/connectivity_service.dart';
 import 'core/services/notification_service.dart';
+import 'core/widgets/offline_banner.dart';
 import 'features/auth/bindings/auth_binding.dart';
 import 'routes/app_routes.dart';
 
@@ -67,6 +70,9 @@ void main() async {
     debugPrint('.env introuvable, configuration par défaut utilisée: $e');
   }
   debugPrint('API: ${AppConfig.apiUrl}');
+  // Enregistré tôt et de façon permanente : la connexion réseau ne dépend pas
+  // de l'écran affiché.
+  await Get.putAsync(() => ConnectivityService().init(), permanent: true);
   final firebaseReady = await _initializeFirebase();
   await initializeDateFormatting('fr_FR', null); // pour le calendrier en français
   if (firebaseReady) {
@@ -93,11 +99,24 @@ class OwnerApp extends StatelessWidget {
       title: 'MiniFoot Owner',
       debugShowCheckedModeBanner: false,
       theme: appTheme,
+      // L'interface est intégralement en français : sans ces délégués, les
+      // widgets fournis par Material (showDatePicker, showTimePicker, menu
+      // copier/coller) s'affichent en anglais.
+      locale: const Locale('fr', 'FR'),
+      fallbackLocale: const Locale('fr', 'FR'),
+      supportedLocales: const [Locale('fr', 'FR')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       initialBinding: AuthBinding(),
       initialRoute: Routes.splash,
       getPages: appPages,
       defaultTransition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
+      // La bannière hors-ligne coiffe toute l'app, quel que soit l'écran.
+      builder: (context, child) => OfflineBanner(child: child ?? const SizedBox()),
     );
   }
 }

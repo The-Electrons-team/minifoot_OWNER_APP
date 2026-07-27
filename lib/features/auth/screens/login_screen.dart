@@ -4,20 +4,46 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_phone.dart';
+import '../../../core/utils/app_validators.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/auth_controller.dart';
 
-class LoginScreen extends GetView<AuthController> {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final AuthController controller = Get.find<AuthController>();
 
   static const double _headerHeight = 360;
   static const double _overlapAmount = 60.0;
 
+  // Les contrôleurs vivaient dans `build()` : recréés à chaque frame et jamais
+  // libérés, ils perdaient aussi la saisie à chaque reconstruction.
+  final _formKey = GlobalKey<FormState>();
+  final phoneCtrl = TextEditingController();
+  final passCtrl = TextEditingController();
+  final _passFocus = FocusNode();
+
+  @override
+  void dispose() {
+    phoneCtrl.dispose();
+    passCtrl.dispose();
+    _passFocus.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    controller.startLogin('+221${phoneCtrl.text.trim()}', passCtrl.text.trim());
+  }
+
   @override
   Widget build(BuildContext context) {
-    final phoneCtrl = TextEditingController();
-    final passCtrl = TextEditingController();
-
     return Scaffold(
       backgroundColor: kBg,
       body: SingleChildScrollView(
@@ -31,7 +57,7 @@ class LoginScreen extends GetView<AuthController> {
               offset: const Offset(0, -_overlapAmount),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: _buildFormCard(phoneCtrl, passCtrl),
+                child: _buildFormCard(),
               ),
             ),
           ],
@@ -109,7 +135,7 @@ class LoginScreen extends GetView<AuthController> {
                       ),
                     ),
                     child: const Text(
-                      'ESPACE PROPRIETAIRE',
+                      'ESPACE PROPRIÉTAIRE',
                       style: TextStyle(
                         fontFamily: 'Orbitron',
                         fontSize: 10,
@@ -128,10 +154,7 @@ class LoginScreen extends GetView<AuthController> {
     );
   }
 
-  Widget _buildFormCard(
-    TextEditingController phoneCtrl,
-    TextEditingController passCtrl,
-  ) {
+  Widget _buildFormCard() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
@@ -140,11 +163,16 @@ class LoginScreen extends GetView<AuthController> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: kElevatedShadow,
       ),
-      child: Column(
+      // `Form` + `AutofillGroup` : la validation s'affiche sous chaque champ,
+      // et le gestionnaire de mots de passe du téléphone reconnaît l'écran.
+      child: Form(
+        key: _formKey,
+        child: AutofillGroup(
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-                'Connectez-vous pour gerer vos terrains',
+                'Connectez-vous pour gérer vos terrains',
                 style: TextStyle(fontSize: 14, color: kTextSub, height: 1.5),
               )
               .animate()
@@ -153,18 +181,23 @@ class LoginScreen extends GetView<AuthController> {
 
           const SizedBox(height: 24),
 
-          const _Label('Numero de telephone'),
+          const _Label('Numéro de téléphone'),
           const SizedBox(height: 8),
-          TextField(
+          TextFormField(
                 controller: phoneCtrl,
                 keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => _passFocus.requestFocus(),
+                autofillHints: const [AutofillHints.telephoneNumber],
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: (value) => AppValidators.phone(value),
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(9),
+                  LengthLimitingTextInputFormatter(AppPhone.nationalLength),
                 ],
                 style: const TextStyle(color: kTextPrim, fontSize: 16),
                 decoration: InputDecoration(
-                  hintText: '77 000 00 00',
+                  hintText: '77 XXX XX XX',
                   prefixIcon: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Row(
@@ -202,9 +235,15 @@ class LoginScreen extends GetView<AuthController> {
           const _Label('Mot de passe'),
           const SizedBox(height: 8),
           Obx(
-                () => TextField(
+                () => TextFormField(
                   controller: passCtrl,
+                  focusNode: _passFocus,
                   obscureText: controller.obscurePass.value,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _submit(),
+                  autofillHints: const [AutofillHints.password],
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  validator: AppValidators.password,
                   style: const TextStyle(color: kTextPrim, fontSize: 16),
                   decoration: InputDecoration(
                     hintText: '••••••••',
@@ -257,18 +296,12 @@ class LoginScreen extends GetView<AuthController> {
                   child: ElevatedButton(
                     onPressed: controller.isLoading.value
                         ? null
-                        : () => controller.startLogin(
-                            '+221${phoneCtrl.text.trim()}',
-                            passCtrl.text.trim(),
-                          ),
+                        : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kGreen,
                       foregroundColor: Colors.white,
                       disabledBackgroundColor: kGreen.withValues(alpha: 0.5),
                       elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
                     ),
                     child: controller.isLoading.value
                         ? const SizedBox(
@@ -329,6 +362,8 @@ class LoginScreen extends GetView<AuthController> {
             ],
           ).animate().fadeIn(duration: 400.ms, delay: 450.ms),
         ],
+        ),
+        ),
       ),
     );
   }
@@ -385,8 +420,9 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
       return;
     }
 
-    if (password.length < 6) {
-      AppSnackbar.warning('Le mot de passe doit contenir au moins 6 caractères.');
+    final passwordError = AppValidators.password(password);
+    if (passwordError != null) {
+      AppSnackbar.warning('$passwordError.');
       return;
     }
 
@@ -461,7 +497,7 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
                       LengthLimitingTextInputFormatter(9),
                     ],
                     decoration: const InputDecoration(
-                      hintText: '77 000 00 00',
+                      hintText: '77 XXX XX XX',
                       prefixText: '+221 ',
                     ),
                   ),
@@ -512,15 +548,16 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
                   TextField(
                     controller: newPasswordCtrl,
                     obscureText: obscureNew,
+                    autofillHints: const [AutofillHints.newPassword],
                     decoration: InputDecoration(
-                      hintText: 'Minimum 6 caractères',
+                      hintText: AppValidators.passwordHint,
                       suffixIcon: IconButton(
                         onPressed: () =>
                             setState(() => obscureNew = !obscureNew),
                         icon: Icon(
                           obscureNew
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
+                              ? PhosphorIconsRegular.eyeSlash
+                              : PhosphorIconsRegular.eye,
                           color: kTextLight,
                         ),
                       ),
@@ -532,6 +569,7 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
                   TextField(
                     controller: confirmPasswordCtrl,
                     obscureText: obscureConfirm,
+                    autofillHints: const [AutofillHints.newPassword],
                     decoration: InputDecoration(
                       hintText: 'Retapez le mot de passe',
                       suffixIcon: IconButton(
@@ -539,8 +577,8 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
                             setState(() => obscureConfirm = !obscureConfirm),
                         icon: Icon(
                           obscureConfirm
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
+                              ? PhosphorIconsRegular.eyeSlash
+                              : PhosphorIconsRegular.eye,
                           color: kTextLight,
                         ),
                       ),

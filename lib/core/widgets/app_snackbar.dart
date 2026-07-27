@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:get/get.dart';
 import '../theme/app_theme.dart';
 
@@ -13,20 +14,29 @@ class AppSnackbar {
   AppSnackbar._();
 
   // ── Couleurs ────────────────────────────────────────────────────────────────
-  static const _kError   = Color(0xFFDC2626); // rouge vif
-  static const _kSuccess = Color(0xFF006F39); // vert principal
-  static const _kInfo    = Color(0xFF1565C0); // bleu info
-  static const _kWarning = Color(0xFFD97706); // orange avertissement
+  // Issues de la palette : ces teintes étaient recopiées en hexadécimal ici, et
+  // ne suivaient donc plus le thème.
+  static const _kError   = kRed;
+  static const _kSuccess = kGreen;
+  static const _kInfo    = kBlue;
+  static const _kWarning = kGoldDeep;
 
   // ── API publique ────────────────────────────────────────────────────────────
 
   /// Erreur — fond rouge, message simple et lisible.
-  static void error(String message, {String? title}) => _show(
+  ///
+  /// [onRetry] ajoute un bouton d'action. Pour un échec de chargement de page,
+  /// préférez toutefois `AppErrorState` : un toast disparaît en 4 secondes et
+  /// laisse l'utilisateur devant une liste vide sans moyen de réessayer.
+  static void error(String message, {String? title, VoidCallback? onRetry,
+      String retryLabel = 'Réessayer'}) => _show(
         title: title ?? 'Une erreur est survenue',
         message: message,
         background: _kError,
-        icon: Icons.error_rounded,
-        duration: const Duration(seconds: 4),
+        icon: PhosphorIconsFill.warningCircle,
+        duration: const Duration(seconds: 5),
+        onAction: onRetry,
+        actionLabel: retryLabel,
       );
 
   /// Succès — fond vert.
@@ -34,7 +44,7 @@ class AppSnackbar {
         title: title ?? 'Succès',
         message: message,
         background: _kSuccess,
-        icon: Icons.check_circle_rounded,
+        icon: PhosphorIconsFill.checkCircle,
         duration: const Duration(seconds: 3),
       );
 
@@ -43,7 +53,7 @@ class AppSnackbar {
         title: title ?? 'Information',
         message: message,
         background: _kInfo,
-        icon: Icons.info_rounded,
+        icon: PhosphorIconsFill.info,
         duration: const Duration(seconds: 3),
       );
 
@@ -52,7 +62,7 @@ class AppSnackbar {
         title: title ?? 'Attention',
         message: message,
         background: _kWarning,
-        icon: Icons.warning_rounded,
+        icon: PhosphorIconsFill.warning,
         duration: const Duration(seconds: 4),
       );
 
@@ -64,6 +74,8 @@ class AppSnackbar {
     required Color background,
     required IconData icon,
     required Duration duration,
+    VoidCallback? onAction,
+    String actionLabel = 'Réessayer',
   }) {
     // Fermer le snackbar précédent pour éviter l'empilement
     if (Get.isSnackbarOpen) Get.closeCurrentSnackbar();
@@ -80,13 +92,25 @@ class AppSnackbar {
       duration: duration,
       animationDuration: const Duration(milliseconds: 300),
       icon: Icon(icon, color: Colors.white, size: 24),
+      mainButton: onAction == null
+          ? null
+          : TextButton(
+              onPressed: () {
+                Get.closeCurrentSnackbar();
+                onAction();
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.white),
+              child: Text(
+                actionLabel,
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
       titleText: Text(
         title,
         style: const TextStyle(
           color: Colors.white,
           fontSize: 14,
           fontWeight: FontWeight.w700,
-          fontFamily: 'DMSans',
         ),
       ),
       messageText: Text(
@@ -95,7 +119,6 @@ class AppSnackbar {
           color: Colors.white,
           fontSize: 13,
           fontWeight: FontWeight.w500,
-          fontFamily: 'DMSans',
           height: 1.4,
         ),
       ),

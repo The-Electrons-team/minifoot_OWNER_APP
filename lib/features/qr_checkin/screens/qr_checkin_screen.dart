@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -97,11 +98,18 @@ class _QrCheckInScreenState extends State<QrCheckInScreen> {
           MobileScanner(
             controller: scannerController,
             onDetect: (capture) async {
+              // `barcodes` peut être vide : `.first` lèverait alors une
+              // StateError en plein scan.
+              if (capture.barcodes.isEmpty) return;
               final code = capture.barcodes.first.rawValue;
               if (code == null || code.isEmpty) return;
               await _pauseScanner();
+              HapticFeedback.mediumImpact();
               await controller.scanCode(code);
             },
+            // Sans ce builder, un refus de la caméra affiche l'erreur brute du
+            // plugin et le contrôleur reste bloqué devant un écran noir.
+            errorBuilder: (context, error) => _ScannerError(error: error),
           ),
 
           // ── Overlay sombre autour de la zone de scan ──────────────────
@@ -129,7 +137,7 @@ class _QrCheckInScreenState extends State<QrCheckInScreen> {
                         child: const Padding(
                           padding: EdgeInsets.all(10),
                           child: Icon(
-                            Icons.arrow_back_ios_new_rounded,
+                            PhosphorIconsRegular.caretLeft,
                             color: Colors.white,
                             size: 18,
                           ),
@@ -530,9 +538,6 @@ class _ResultPanel extends StatelessWidget {
                               side: const BorderSide(color: kBorder),
                               padding:
                                   const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
                             ),
                             child: const Text(
                               'Rescanner',
@@ -557,9 +562,6 @@ class _ResultPanel extends StatelessWidget {
                               elevation: 0,
                               padding:
                                   const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
                             ),
                             child: controller.isConfirming.value
                                 ? const SizedBox(
@@ -626,6 +628,85 @@ class _InfoRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Écran affiché quand la caméra n'est pas disponible.
+///
+/// Le cas dominant est un refus de la permission caméra. Sans ce widget, le
+/// plugin affiche son message d'erreur brut en anglais sur fond noir et le
+/// propriétaire, debout devant son client, n'a aucune idée de quoi faire.
+class _ScannerError extends StatelessWidget {
+  const _ScannerError({required this.error});
+
+  final MobileScannerException error;
+
+  bool get _isPermissionDenied =>
+      error.errorCode == MobileScannerErrorCode.permissionDenied;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = _isPermissionDenied
+        ? 'Accès à la caméra refusé'
+        : 'Caméra indisponible';
+    final message = _isPermissionDenied
+        ? 'Autorisez l\'accès à la caméra dans les réglages de votre téléphone '
+              'pour scanner les QR codes de réservation.'
+        : 'Impossible de démarrer la caméra. Fermez les autres applications '
+              'qui l\'utilisent, puis réessayez.';
+
+    return ColoredBox(
+      color: Colors.black,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PhosphorIcon(
+                PhosphorIconsDuotone.videoCameraSlash,
+                color: Colors.white.withValues(alpha: 0.85),
+                size: 56,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: 'Orbitron',
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.75),
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              OutlinedButton(
+                onPressed: () => Get.back(),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.4)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 14,
+                  ),
+                ),
+                child: const Text('Retour'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

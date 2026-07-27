@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
+import '../../../core/utils/app_format.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/reservations_controller.dart';
 
@@ -34,15 +36,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
     });
   }
 
-  String _formatAmount(int amount) {
-    final str = amount.toString();
-    final buffer = StringBuffer();
-    for (int i = 0; i < str.length; i++) {
-      if (i > 0 && (str.length - i) % 3 == 0) buffer.write(' ');
-      buffer.write(str[i]);
-    }
-    return '${buffer.toString()} F CFA';
-  }
+  String _formatAmount(int amount) => AppFormat.amount(amount);
 
   String _statusLabel(String status) {
     switch (status) {
@@ -84,21 +78,22 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
   }
 
   Future<void> _confirmCancel(ReservationModel reservation) async {
-    Get.defaultDialog(
+    // Le même dialogue était recopié à l'identique dans le contrôleur de liste.
+    final confirmed = await AppDialog.confirm(
       title: 'Refuser la réservation',
-      middleText: 'Cette réservation passera en statut annulé.',
-      textCancel: 'Garder',
-      textConfirm: 'Refuser',
-      onConfirm: () async {
-        Get.back();
-        try {
-          await controller.cancelReservationDirect(reservation.id);
-          await controller.loadReservations();
-          if (!mounted) return;
-          Get.back(result: true);
-        } catch (_) {}
-      },
+      message: 'Cette réservation passera en statut annulé.',
+      confirmLabel: 'Refuser',
+      cancelLabel: 'Garder',
+      destructive: true,
     );
+    if (!confirmed) return;
+
+    try {
+      await controller.cancelReservationDirect(reservation.id);
+      await controller.loadReservations();
+      if (!mounted) return;
+      Get.back(result: true);
+    } catch (_) {}
   }
 
   @override
@@ -111,7 +106,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
         leading: IconButton(
           onPressed: () => Get.back(),
           icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
+            PhosphorIconsRegular.caretLeft,
             size: 18,
           ),
           color: kTextPrim,
@@ -353,9 +348,6 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                         foregroundColor: kRed,
                         side: const BorderSide(color: kRed),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
                       ),
                     ),
                   ),

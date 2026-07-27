@@ -87,6 +87,14 @@ class NotificationsController extends GetxController {
   final total = 0.obs;
   final unreadTotal = 0.obs;
 
+  /// Pagination. Le backend renvoie 30 éléments par page et le total : sans
+  /// chargement progressif, un propriétaire actif ne voyait jamais au-delà des
+  /// 30 dernières notifications.
+  final currentPage = 1.obs;
+  final isLoadingMore = false.obs;
+
+  bool get hasMore => notifications.length < total.value;
+
   @override
   void onInit() {
     super.onInit();
@@ -105,6 +113,7 @@ class NotificationsController extends GetxController {
   Future<void> loadNotifications() async {
     isLoading.value = true;
     errorMessage.value = '';
+    currentPage.value = 1;
     try {
       final body = await _service.getNotifications();
       final data = body['data'];
@@ -122,8 +131,8 @@ class NotificationsController extends GetxController {
       unreadTotal.value = _asInt(body['unreadCount']);
       _syncDashboardBadge();
     } catch (_) {
-      errorMessage.value = 'Impossible de charger les notifications';
-      AppSnackbar.error('Impossible de charger les notifications. Vérifiez votre connexion.');
+      errorMessage.value =
+          'Impossible de charger les notifications. Vérifiez votre connexion.';
     } finally {
       isLoading.value = false;
     }
@@ -131,6 +140,33 @@ class NotificationsController extends GetxController {
 
   Future<void> refreshNotifications() async {
     await loadNotifications();
+  }
+
+  /// Charge la page suivante et l'ajoute à la liste.
+  ///
+  /// Silencieux en cas d'échec : on ne remplace pas une liste déjà affichée par
+  /// un écran d'erreur — l'utilisateur garde ce qu'il a et peut réessayer en
+  /// continuant à faire défiler.
+  Future<void> loadMore() async {
+    if (isLoadingMore.value || isLoading.value || !hasMore) return;
+    isLoadingMore.value = true;
+    try {
+      final body = await _service.getNotifications(page: currentPage.value + 1);
+      final data = body['data'];
+      if (data is List) {
+        notifications.addAll(
+          data.whereType<Map>().map(
+            (item) => NotificationItem.fromJson(Map<String, dynamic>.from(item)),
+          ),
+        );
+        currentPage.value += 1;
+        total.value = _asInt(body['total']);
+      }
+    } catch (_) {
+      // volontairement silencieux
+    } finally {
+      isLoadingMore.value = false;
+    }
   }
 
   Future<void> markRead(NotificationItem item) async {

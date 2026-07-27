@@ -80,7 +80,7 @@ class RevenueService {
   final _reservationService = ReservationService();
 
   Future<OwnerRevenueData> getOwnerRevenueData() async {
-    final rawReservations = await _reservationService.getOwnerReservations();
+    final rawReservations = await _reservationService.getAllOwnerReservations();
     final reservations = rawReservations.cast<Map<String, dynamic>>();
     final transactions = <OwnerTransaction>[];
 

@@ -1,14 +1,13 @@
 import 'package:get/get.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../core/services/dashboard_service.dart';
-import '../../../core/widgets/app_snackbar.dart';
 import '../../../routes/app_routes.dart';
+import '../../shell/controllers/shell_controller.dart';
 
 class DashboardController extends GetxController {
   final _service = DashboardService();
   final _auth = Get.find<AuthController>();
 
-  final selectedTab = 0.obs;
 
   final isLoading = false.obs;
   final errorMessage = ''.obs;
@@ -94,8 +93,8 @@ class DashboardController extends GetxController {
       recentBookings.value = data.recentBookings;
       notificationCount.value = data.unreadNotifications;
     } catch (_) {
-      errorMessage.value = 'Impossible de charger le tableau de bord';
-      AppSnackbar.error('Impossible de charger le tableau de bord. Vérifiez votre connexion.');
+      errorMessage.value =
+          'Impossible de charger le tableau de bord. Vérifiez votre connexion.';
     } finally {
       isLoading.value = false;
     }
@@ -105,23 +104,48 @@ class DashboardController extends GetxController {
     await loadDashboard();
   }
 
-  void changeTab(int i) => selectedTab.value = i;
 
-  Future<void> openBottomTab(int tabIndex, String route) async {
-    selectedTab.value = tabIndex;
-    try {
-      await Get.toNamed(route);
-    } finally {
-      Future.microtask(() => selectedTab.value = 0);
+
+  /// Coquille de navigation, si le tableau de bord y est hébergé.
+  ///
+  /// `Get.find` lève quand la dépendance manque : le tableau de bord serait
+  /// alors inutilisable hors de la coquille, alors qu'il sait très bien
+  /// naviguer par routes. On dégrade au lieu de planter.
+  ShellController? get _shell =>
+      Get.isRegistered<ShellController>() ? Get.find<ShellController>() : null;
+
+  /// Bascule sur un onglet quand la destination en est un pour ce rôle,
+  /// sinon empile la route.
+  ///
+  /// Les onglets 1 et 3 changent de contenu selon le rôle : pour un
+  /// propriétaire ce sont Terrains et Paiements, pour un contrôleur
+  /// Réservations et Créneaux. Basculer aveuglément sur l'onglet 1 enverrait
+  /// un propriétaire sur ses terrains alors qu'il a demandé ses réservations.
+  void _goToTabOrRoute({
+    required bool isTab,
+    required int tab,
+    required String route,
+  }) {
+    final shell = _shell;
+    if (isTab && shell != null) {
+      shell.select(tab);
+    } else {
+      Get.toNamed(route);
     }
   }
 
-  void goToTerrains() => Get.toNamed(Routes.terrainList);
-  void goToReservations() => Get.toNamed(Routes.reservations);
-  void goToAvailability() => Get.toNamed(Routes.availability);
-  void goToPayments() => Get.toNamed(Routes.payments);
-  void goToProfile() => Get.toNamed(Routes.profile);
+  void goToTerrains() =>
+      _goToTabOrRoute(isTab: !isController, tab: 1, route: Routes.terrainList);
+  void goToReservations() =>
+      _goToTabOrRoute(isTab: isController, tab: 1, route: Routes.reservations);
+  void goToAvailability() =>
+      _goToTabOrRoute(isTab: isController, tab: 3, route: Routes.availability);
+  void goToPayments() =>
+      _goToTabOrRoute(isTab: !isController, tab: 3, route: Routes.payments);
+  void goToProfile() =>
+      _goToTabOrRoute(isTab: true, tab: 4, route: Routes.profile);
   void goToNotifications() => Get.toNamed(Routes.notifications);
-  void goToQrCheckIn() => Get.toNamed(Routes.qrCheckIn);
+  void goToQrCheckIn() =>
+      _goToTabOrRoute(isTab: true, tab: 2, route: Routes.qrCheckIn);
   void goToControllers() => Get.toNamed(Routes.controllers);
 }

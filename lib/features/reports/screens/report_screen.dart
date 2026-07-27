@@ -11,6 +11,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/utils/app_format.dart';
 import '../../../core/services/reservation_service.dart';
 import '../../../core/services/revenue_service.dart';
 import '../../../core/theme/app_theme.dart';
@@ -77,7 +78,7 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Future<List<_PdfReservation>> _loadReservations() async {
-    final rows = await _reservationService.getOwnerReservations();
+    final rows = await _reservationService.getAllOwnerReservations();
     final reservations = rows
         .whereType<Map<String, dynamic>>()
         .map(_PdfReservation.fromJson)
@@ -832,17 +833,12 @@ class _ReportScreenState extends State<ReportScreen> {
     return Get.find<AuthController>().user.value?.phone ?? '';
   }
 
-  static String _formatDate(DateTime d) => DateFormat('dd/MM/yyyy').format(d);
+  // La locale était omise ici : sur un téléphone anglophone, le rapport PDF
+  // sortait avec des dates au format système.
+  static String _formatDate(DateTime d) => AppFormat.numericDate(d);
 
-  static String _formatAmountFull(int amount) {
-    final str = amount.toString();
-    final buffer = StringBuffer();
-    for (int i = 0; i < str.length; i++) {
-      if (i > 0 && (str.length - i) % 3 == 0) buffer.write(' ');
-      buffer.write(str[i]);
-    }
-    return buffer.toString();
-  }
+  static String _formatAmountFull(int amount) =>
+      AppFormat.amount(amount, withSymbol: false);
 
   static String _formatPercent(double value) => '${(value * 100).round()}%';
 }

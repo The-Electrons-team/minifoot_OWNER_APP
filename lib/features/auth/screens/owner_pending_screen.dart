@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_image.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/auth_controller.dart';
 
@@ -74,8 +75,11 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
 
     try {
       final picked = await _picker.pickImage(source: source, imageQuality: 85);
+    // Compression avant envoi : une photo d'appareil pèse plusieurs Mo
+    // pour un affichage de quelques centaines de pixels.
       if (picked != null) {
-        setState(() => onPicked(File(picked.path)));
+        final compressed = await AppImage.compress(File(picked.path));
+        setState(() => onPicked(compressed));
       }
     } catch (e) {
       AppSnackbar.error('Impossible d\'accéder à la caméra ou la galerie. Vérifiez les permissions.');
@@ -170,7 +174,7 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
         ),
         IconButton(
           onPressed: controller.checkAuthStatus,
-          icon: const Icon(Icons.refresh_rounded, color: kGreen),
+          icon: const Icon(PhosphorIconsRegular.arrowClockwise, color: kGreen),
           tooltip: 'Actualiser mon statut',
         ),
         const SizedBox(height: 10),
@@ -317,7 +321,7 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
         ),
         IconButton(
           onPressed: controller.checkAuthStatus,
-          icon: const Icon(Icons.refresh_rounded, color: kGreen),
+          icon: const Icon(PhosphorIconsRegular.arrowClockwise, color: kGreen),
           tooltip: 'Actualiser mon statut',
         ),
         const SizedBox(height: 12),
@@ -379,9 +383,6 @@ class _OwnerPendingScreenState extends State<OwnerPendingScreen> {
               backgroundColor: kTextPrim,
               foregroundColor: Colors.white,
               elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
             ),
           ),
         ),

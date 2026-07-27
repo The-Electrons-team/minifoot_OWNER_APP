@@ -5,7 +5,10 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
+import '../../../core/utils/app_format.dart';
+import '../../../core/utils/app_motion.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_phone.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/owner_ui.dart';
 import '../controllers/payments_controller.dart';
@@ -13,15 +16,7 @@ import '../controllers/payments_controller.dart';
 class PaymentsScreen extends GetView<PaymentsController> {
   const PaymentsScreen({super.key});
 
-  String _fmt(int amount) {
-    final str = amount.toString();
-    final buf = StringBuffer();
-    for (int i = 0; i < str.length; i++) {
-      if (i > 0 && (str.length - i) % 3 == 0) buf.write(' ');
-      buf.write(str[i]);
-    }
-    return buf.toString();
-  }
+  String _fmt(int amount) => AppFormat.amount(amount, withSymbol: false);
 
   @override
   Widget build(BuildContext context) {
@@ -207,9 +202,6 @@ class PaymentsScreen extends GetView<PaymentsController> {
                     disabledBackgroundColor: Colors.white.withValues(alpha: 0.25),
                     disabledForegroundColor: Colors.white60,
                     elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
                   ),
                   icon: isWithdrawing
                       ? SizedBox(
@@ -652,11 +644,11 @@ class PaymentsScreen extends GetView<PaymentsController> {
   Color _methodColor(String method) {
     switch (method) {
       case 'Wave':
-        return const Color(0xFF00B0F0);
+        return kBrandWave;
       case 'Orange Money':
-        return const Color(0xFFFF6D00);
+        return kBrandOrangeMoney;
       case 'Yas Money':
-        return const Color(0xFFFFD100);
+        return kBrandYasMoney;
       default:
         return kTextSub;
     }
@@ -849,7 +841,10 @@ class PaymentsScreen extends GetView<PaymentsController> {
                             _showTransactionDetail(context, txEntry.value),
                       )
                       .animate()
-                      .fadeIn(delay: (txEntry.key * 60).ms, duration: 250.ms)
+                      .fadeIn(
+                        delay: AppMotion.stagger(txEntry.key, step: 60),
+                        duration: 250.ms,
+                      )
                       .slideX(begin: 0.03, duration: 250.ms);
                 }),
               ],
@@ -1049,7 +1044,7 @@ class _TransactionCard extends StatelessWidget {
       case 'Wave':
         return const Color(0xFFE0F4FD);
       case 'Orange Money':
-        return const Color(0xFF1A1A1A);
+        return kTextPrim;
       case 'Yas Money':
         return const Color(0xFFFFF8E0);
       default:
@@ -1417,9 +1412,6 @@ class _TransactionDetailSheet extends StatelessWidget {
                         onPressed: Navigator.of(context).pop,
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: kBorder),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
                         ),
                         child: const Text(
                           'Fermer',
@@ -1446,9 +1438,6 @@ class _TransactionDetailSheet extends StatelessWidget {
                             backgroundColor: kGold,
                             foregroundColor: Colors.white,
                             elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
                           ),
                           icon: PhosphorIcon(PhosphorIconsDuotone.bellRinging,
                             size: 18,
@@ -1519,16 +1508,21 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
   String get _phone =>
       _useConfigured ? (widget.payoutPhone ?? '') : _phoneCtrl.text.trim();
 
-  bool get _isValid {
-    final p = _phone;
-    return RegExp(r'^\+221[0-9]{9}$').hasMatch(p);
-  }
+  /// Le numéro normalisé, ou `null` s'il n'est pas exploitable.
+  ///
+  /// La saisie est normalisée avant d'être validée : le champ propose
+  /// « +221 77 000 00 00 » en exemple, refuser ce format-là reviendrait à
+  /// bloquer le retrait sans jamais dire pourquoi.
+  String? get _normalizedPhone => AppPhone.normalize(_phone);
+
+  bool get _isValid => _normalizedPhone != null;
 
   Future<void> _submit() async {
-    if (!_isValid || _submitting) return;
+    final phone = _normalizedPhone;
+    if (phone == null || _submitting) return;
     setState(() => _submitting = true);
     try {
-      await widget.onWithdraw(_phone);
+      await widget.onWithdraw(phone);
       if (mounted) Navigator.of(context).pop();
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -1748,9 +1742,16 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
               controller: _phoneCtrl,
               keyboardType: TextInputType.phone,
               autofocus: !_hasConfigured,
+              autofillHints: const [AutofillHints.telephoneNumber],
+              // La saisie reste normalisée à la validation (espaces, indicatif),
+              // mais on évite d'emblée les caractères qui n'ont rien à y faire.
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9 +]')),
+                LengthLimitingTextInputFormatter(17),
+              ],
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: '+221 77 000 00 00',
+                hintText: '+221 77 XXX XX XX',
                 hintStyle: const TextStyle(color: kTextLight, fontSize: 14),
                 filled: true,
                 fillColor: kBgSurface,
@@ -1774,6 +1775,16 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
               ),
             ),
             const SizedBox(height: 6),
+            // Un bouton grisé sans explication laisse l'utilisateur bloqué sans
+            // savoir quoi corriger : on dit ce qui manque dès que le champ est
+            // entamé.
+            if (_phoneCtrl.text.trim().isNotEmpty && !_isValid) ...[
+              const Text(
+                'Numéro incomplet — 9 chiffres après l\'indicatif (77 XXX XX XX)',
+                style: TextStyle(fontSize: 11, color: kRed, height: 1.4),
+              ),
+              const SizedBox(height: 6),
+            ],
             const Text(
               'DexPay détecte automatiquement l\'opérateur selon le numéro (Wave, Orange, WhatsApp…)',
               style: TextStyle(fontSize: 11, color: kTextSub, height: 1.4),
@@ -1794,9 +1805,6 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                 disabledBackgroundColor: kGreenLight,
                 disabledForegroundColor: kGreen.withValues(alpha: 0.4),
                 elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
               ),
               child: _submitting
                   ? const SizedBox(

@@ -8,6 +8,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_image.dart';
+import '../../../core/utils/app_validators.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/auth_controller.dart';
 import 'otp_screen.dart';
@@ -100,7 +103,7 @@ class _RegisterFlowState extends State<_RegisterFlow> {
       cniBack != null;
 
   bool get isPasswordValid =>
-      passCtrl.text.trim().length >= 8 &&
+      AppValidators.password(passCtrl.text.trim()) == null &&
       confirmPassCtrl.text.trim() == passCtrl.text.trim();
 
   bool get canContinue => step == 0
@@ -149,8 +152,11 @@ class _RegisterFlowState extends State<_RegisterFlow> {
     if (source == null) return;
 
     final picked = await _picker.pickImage(source: source, imageQuality: 85);
+    // Compression avant envoi : une photo d'appareil pèse plusieurs Mo
+    // pour un affichage de quelques centaines de pixels.
     if (picked != null) {
-      setState(() => onPicked(File(picked.path)));
+      final compressed = await AppImage.compress(File(picked.path));
+      setState(() => onPicked(compressed));
     }
   }
 
@@ -183,8 +189,9 @@ class _RegisterFlowState extends State<_RegisterFlow> {
 
   Future<void> submit() async {
     final password = passCtrl.text.trim();
-    if (password.length < 8) {
-      AppSnackbar.warning('Le mot de passe doit faire au moins 8 caractères.');
+    final passwordError = AppValidators.password(password);
+    if (passwordError != null) {
+      AppSnackbar.warning('$passwordError.');
       return;
     }
     if (password != confirmPassCtrl.text.trim()) {
@@ -215,8 +222,27 @@ class _RegisterFlowState extends State<_RegisterFlow> {
     );
   }
 
-  void back() {
+  /// `true` si l'utilisateur a commencé à remplir le dossier d'inscription.
+  bool get _hasUnsavedInput =>
+      step > 0 ||
+      prenomCtrl.text.trim().isNotEmpty ||
+      nomCtrl.text.trim().isNotEmpty ||
+      cniCtrl.text.trim().isNotEmpty ||
+      profilePhoto != null ||
+      phoneCtrl.text.trim().isNotEmpty ||
+      passCtrl.text.trim().isNotEmpty ||
+      cniFront != null ||
+      cniBack != null;
+
+  Future<void> back() async {
     if (step == 0) {
+      if (_hasUnsavedInput &&
+          !await AppDialog.confirmDiscard(
+            message:
+                'Vos informations et documents saisis seront perdus.',
+          )) {
+        return;
+      }
       Get.back();
       return;
     }
@@ -229,6 +255,19 @@ class _RegisterFlowState extends State<_RegisterFlow> {
 
   @override
   Widget build(BuildContext context) {
+    // Intercepte le retour matériel : sans cela l'inscription — pièces
+    // d'identité comprises — est détruite sans avertissement.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        back();
+      },
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     return Scaffold(
       backgroundColor: kBg,
       body: SafeArea(
@@ -473,46 +512,57 @@ class _DocumentStep extends StatelessWidget {
   }
 }
 
-class _PasswordStep extends StatelessWidget {
+/// Étape mot de passe.
+///
+/// `StatefulWidget` et non `StatelessWidget` : la bascule de visibilité est un
+/// état local. Elle vivait dans un `Rx` créé à chaque `build()`, donc recréé à
+/// chaque frame et jamais libéré.
+class _PasswordStep extends StatefulWidget {
   final TextEditingController passwordCtrl;
   final TextEditingController confirmCtrl;
 
   const _PasswordStep({required this.passwordCtrl, required this.confirmCtrl});
 
   @override
+  State<_PasswordStep> createState() => _PasswordStepState();
+}
+
+class _PasswordStepState extends State<_PasswordStep> {
+  bool _obscure = true;
+
+  @override
   Widget build(BuildContext context) {
-    final obscure = true.obs;
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 24),
       child: Column(
         children: [
-          Obx(
-            () => _InputField(
-              controller: passwordCtrl,
-              label: 'Mot de passe',
-              hint: 'Minimum 8 caractères',
-              icon: PhosphorIconsDuotone.lockSimple,
-              obscureText: obscure.value,
-              suffix: IconButton(
-                onPressed: obscure.toggle,
-                icon: Icon(
-                  obscure.value
-                      ? PhosphorIconsRegular.eyeClosed
-                      : PhosphorIconsRegular.eye,
-                  color: kTextLight,
-                ),
+          _InputField(
+            controller: widget.passwordCtrl,
+            label: 'Mot de passe',
+            hint: AppValidators.passwordHint,
+            icon: PhosphorIconsDuotone.lockSimple,
+            obscureText: _obscure,
+            autofillHints: const [AutofillHints.newPassword],
+            suffix: IconButton(
+              onPressed: () => setState(() => _obscure = !_obscure),
+              tooltip: _obscure
+                  ? 'Afficher le mot de passe'
+                  : 'Masquer le mot de passe',
+              icon: Icon(
+                _obscure
+                    ? PhosphorIconsRegular.eyeClosed
+                    : PhosphorIconsRegular.eye,
+                color: kTextLight,
               ),
             ),
           ),
           const SizedBox(height: 14),
-          Obx(
-            () => _InputField(
-              controller: confirmCtrl,
-              label: 'Confirmer le mot de passe',
-              hint: 'Retapez le mot de passe',
-              icon: PhosphorIconsDuotone.lockKey,
-              obscureText: obscure.value,
-            ),
+          _InputField(
+            controller: widget.confirmCtrl,
+            label: 'Confirmer le mot de passe',
+            hint: 'Retapez le mot de passe',
+            icon: PhosphorIconsDuotone.lockKey,
+            obscureText: _obscure,
           ),
         ],
       ),
@@ -548,7 +598,7 @@ class _PhoneField extends StatelessWidget {
           ],
           style: const TextStyle(color: kTextPrim, fontSize: 16),
           decoration: const InputDecoration(
-            hintText: '77 000 00 00',
+            hintText: '77 XXX XX XX',
             prefixIcon: Padding(
               padding: EdgeInsets.symmetric(horizontal: 12),
               child: Row(
@@ -574,6 +624,7 @@ class _InputField extends StatelessWidget {
   final String? hint;
   final dynamic icon;
   final bool obscureText;
+  final Iterable<String>? autofillHints;
   final Widget? suffix;
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
@@ -584,6 +635,7 @@ class _InputField extends StatelessWidget {
     this.hint,
     required this.icon,
     this.obscureText = false,
+    this.autofillHints,
     this.suffix,
     this.keyboardType,
     this.inputFormatters,
@@ -606,6 +658,7 @@ class _InputField extends StatelessWidget {
         TextField(
           controller: controller,
           obscureText: obscureText,
+          autofillHints: autofillHints,
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
           style: const TextStyle(color: kTextPrim, fontSize: 16),

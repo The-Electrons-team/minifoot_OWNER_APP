@@ -9,6 +9,7 @@ import '../../../core/models/user_model.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/reservation_service.dart';
 import '../../../core/services/terrain_service.dart';
+import '../../../core/utils/app_validators.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../auth/controllers/auth_controller.dart';
 
@@ -90,8 +91,10 @@ class ProfileController extends GetxController {
         _syncUser(user);
       }
 
-      final terrains = await _terrainService.getMesTerrains();
-      final reservations = await _reservationService.getOwnerReservations();
+      // Listes complètes : la note moyenne et le revenu total portent sur
+      // l'ensemble, une page tronquée donnerait des chiffres faux.
+      final terrains = await _terrainService.getAllMesTerrains();
+      final reservations = await _reservationService.getAllOwnerReservations();
 
       totalTerrains.value = terrains.length;
       totalBookings.value = reservations.length;
@@ -320,8 +323,9 @@ class ProfileController extends GetxController {
       return;
     }
 
-    if (newPassword.length < 6) {
-      AppSnackbar.warning('Le nouveau mot de passe doit contenir au moins 6 caractères.');
+    final passwordError = AppValidators.password(newPassword);
+    if (passwordError != null) {
+      AppSnackbar.warning('$passwordError.');
       return;
     }
 

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../controllers/terrain_controller.dart';
 
 class TerrainDetailScreen extends GetView<TerrainController> {
@@ -25,15 +26,21 @@ class TerrainDetailScreen extends GetView<TerrainController> {
           : [if (terrain.imageUrl != null) terrain.imageUrl!];
 
       return Scaffold(
-        backgroundColor: const Color(0xFFF5F0E8),
-        body: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
+        backgroundColor: kBg,
+        body: RefreshIndicator(
+          onRefresh: controller.refreshTerrains,
+          color: kGreen,
+          backgroundColor: kBgCard,
+          child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
           slivers: [
             // AppBar avec Image
             SliverAppBar(
               expandedHeight: 300,
               pinned: true,
-              backgroundColor: const Color(0xFF006F39),
+              backgroundColor: kGreen,
               elevation: 0,
               leading: Center(
                 child: GestureDetector(
@@ -46,8 +53,8 @@ class TerrainDetailScreen extends GetView<TerrainController> {
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: Color(0xFF1A1A1A),
+                      PhosphorIconsRegular.caretLeft,
+                      color: kTextPrim,
                       size: 16,
                     ),
                   ),
@@ -68,7 +75,7 @@ class TerrainDetailScreen extends GetView<TerrainController> {
                         ),
                         child: const Icon(
                           PhosphorIconsLight.pencilSimple,
-                          color: Color(0xFF006F39),
+                          color: kGreen,
                           size: 20,
                         ),
                       ),
@@ -85,15 +92,14 @@ class TerrainDetailScreen extends GetView<TerrainController> {
                         itemCount: images.length,
                         onPageChanged: (index) => controller.currentPhotoIndex.value = index,
                         itemBuilder: (context, index) {
-                          return Image.network(
-                            images[index],
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: const Color(0xFFEAF5ED),
+                          return AppNetworkImage(
+                            url: images[index],
+                            fallback: Container(
+                              color: kGreenLight,
                               child: const Icon(
                                 PhosphorIconsLight.soccerBall,
                                 size: 64,
-                                color: Color(0xFF006F39),
+                                color: kGreen,
                               ),
                             ),
                           );
@@ -101,11 +107,11 @@ class TerrainDetailScreen extends GetView<TerrainController> {
                       )
                     else
                       Container(
-                        color: const Color(0xFFEAF5ED),
+                        color: kGreenLight,
                         child: const Icon(
                           PhosphorIconsLight.soccerBall,
                           size: 64,
-                          color: Color(0xFF006F39),
+                          color: kGreen,
                         ),
                       ),
                     const DecoratedBox(
@@ -156,7 +162,7 @@ class TerrainDetailScreen extends GetView<TerrainController> {
               child: Container(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
                 decoration: const BoxDecoration(
-                  color: Color(0xFFF5F0E8),
+                  color: kBg,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: Column(
@@ -175,7 +181,7 @@ class TerrainDetailScreen extends GetView<TerrainController> {
                                 style: const TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.w900,
-                                  color: Color(0xFF1A1A1A),
+                                  color: kTextPrim,
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -183,7 +189,7 @@ class TerrainDetailScreen extends GetView<TerrainController> {
                                 children: [
                                   const Icon(
                                     PhosphorIconsLight.mapPin,
-                                    color: Color(0xFF6B7280),
+                                    color: kTextSub,
                                     size: 16,
                                   ),
                                   const SizedBox(width: 4),
@@ -191,7 +197,7 @@ class TerrainDetailScreen extends GetView<TerrainController> {
                                     child: Text(
                                       terrain.address,
                                       style: const TextStyle(
-                                        color: Color(0xFF6B7280),
+                                        color: kTextSub,
                                         fontSize: 14,
                                       ),
                                     ),
@@ -208,16 +214,16 @@ class TerrainDetailScreen extends GetView<TerrainController> {
                           ),
                           decoration: BoxDecoration(
                             color: terrain.isActive
-                                ? const Color(0xFFE8F5E9)
-                                : const Color(0xFFFEE2E2),
+                                ? kGreenLight
+                                : kRedLight,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             terrain.isActive ? 'Actif' : 'Pause',
                             style: TextStyle(
                               color: terrain.isActive
-                                  ? const Color(0xFF006F39)
-                                  : const Color(0xFFEF4444),
+                                  ? kGreen
+                                  : kRed,
                               fontWeight: FontWeight.w800,
                               fontSize: 12,
                             ),
@@ -233,7 +239,7 @@ class TerrainDetailScreen extends GetView<TerrainController> {
                           height: 45,
                           decoration: const BoxDecoration(
                             border: Border(
-                              bottom: BorderSide(color: Color(0xFFE5E0D8), width: 1),
+                              bottom: BorderSide(color: kBorder, width: 1),
                             ),
                           ),
                           child: Row(
@@ -270,6 +276,7 @@ class TerrainDetailScreen extends GetView<TerrainController> {
               ),
             ),
           ],
+          ),
         ),
         bottomNavigationBar: Container(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
@@ -291,12 +298,9 @@ class TerrainDetailScreen extends GetView<TerrainController> {
                   icon: const Icon(PhosphorIconsLight.pencilSimple, size: 18),
                   label: const Text('Modifier le complexe'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF006F39),
+                    backgroundColor: kGreen,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
                     elevation: 0,
                   ),
                 ),
@@ -326,7 +330,7 @@ class _SubTerrainTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE5E0D8)),
+        border: Border.all(color: kBorder),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -347,12 +351,12 @@ class _SubTerrainTile extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEAF5ED),
+                    color: kGreenLight,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(
                     PhosphorIconsLight.soccerBall,
-                    color: Color(0xFF006F39),
+                    color: kGreen,
                     size: 24,
                   ),
                 ),
@@ -366,7 +370,7 @@ class _SubTerrainTile extends StatelessWidget {
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 15,
-                          color: Color(0xFF1A1A1A),
+                          color: kTextPrim,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -374,7 +378,7 @@ class _SubTerrainTile extends StatelessWidget {
                         '${sub.type} • ${sub.capacity} Joueurs • ${sub.surface ?? 'Synthétique'}',
                         style: const TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF6B7280),
+                          color: kTextSub,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -389,7 +393,7 @@ class _SubTerrainTile extends StatelessWidget {
                         '${sub.pricePerHour} F',
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
-                          color: Color(0xFF006F39),
+                          color: kGreen,
                           fontSize: 16,
                         ),
                       ),
@@ -397,7 +401,7 @@ class _SubTerrainTile extends StatelessWidget {
                         'par heure',
                         style: TextStyle(
                           fontSize: 10,
-                          color: Color(0xFF9CA3AF),
+                          color: kTextLight,
                         ),
                       ),
                     ],
@@ -420,7 +424,7 @@ class _SubTerrainTile extends StatelessWidget {
                 children: [
                   const Row(
                     children: [
-                      Icon(PhosphorIconsLight.tag, size: 14, color: Color(0xFF006F39)),
+                      Icon(PhosphorIconsLight.tag, size: 14, color: kGreen),
                       const SizedBox(width: 6),
                       Text(
                         'GRILLE TARIFAIRE',
@@ -428,7 +432,7 @@ class _SubTerrainTile extends StatelessWidget {
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.5,
-                          color: Color(0xFF006F39),
+                          color: kGreen,
                         ),
                       ),
                     ],
@@ -460,25 +464,25 @@ class _SubTerrainTile extends StatelessWidget {
                                   Row(
                                     children: [
                                       const Icon(PhosphorIconsLight.clock,
-                                          size: 12, color: Color(0xFF6B7280)),
+                                          size: 12, color: kTextSub),
                                       const SizedBox(width: 4),
                                       Text(
                                         '${p.startTime} - ${p.endTime}',
                                         style: const TextStyle(
                                           fontSize: 11,
-                                          color: Color(0xFF6B7280),
+                                          color: kTextSub,
                                         ),
                                       ),
                                       const SizedBox(width: 8),
                                       const Icon(PhosphorIconsLight.calendar,
-                                          size: 12, color: Color(0xFF6B7280)),
+                                          size: 12, color: kTextSub),
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
                                           _formatDays(p.days),
                                           style: const TextStyle(
                                             fontSize: 11,
-                                            color: Color(0xFF6B7280),
+                                            color: kTextSub,
                                           ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -492,7 +496,7 @@ class _SubTerrainTile extends StatelessWidget {
                               '${p.pricePerHour} F',
                               style: const TextStyle(
                                 fontWeight: FontWeight.w900,
-                                color: Color(0xFF1A1A1A),
+                                color: kTextPrim,
                                 fontSize: 14,
                               ),
                             ),
@@ -500,7 +504,7 @@ class _SubTerrainTile extends StatelessWidget {
                               '/h',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Color(0xFF9CA3AF),
+                                color: kTextLight,
                               ),
                             ),
                           ],
@@ -531,19 +535,19 @@ class _FeatureBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E0D8)),
+        border: Border.all(color: kBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(PhosphorIconsLight.checkCircle, size: 16, color: Color(0xFF006F39)),
+          const Icon(PhosphorIconsLight.checkCircle, size: 16, color: kGreen),
           const SizedBox(width: 8),
           Text(
             label,
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1A1A1A),
+              color: kTextPrim,
             ),
           ),
         ],
@@ -564,22 +568,31 @@ class _ReviewCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E0D8)),
+        border: Border.all(color: kBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: const Color(0xFFEAF5ED),
-                backgroundImage: review.userAvatar != null
-                    ? NetworkImage(review.userAvatar!)
-                    : null,
-                child: review.userAvatar == null
-                    ? const Icon(PhosphorIconsLight.user, size: 16, color: Color(0xFF006F39))
-                    : null,
+              // `NetworkImage` ne gérait ni le cache ni l'échec : une URL
+              // cassée laissait un cercle vide et une exception non traitée.
+              AppNetworkImage(
+                url: review.userAvatar,
+                width: 36,
+                height: 36,
+                borderRadius: BorderRadius.circular(18),
+                fallback: Container(
+                  width: 36,
+                  height: 36,
+                  color: kGreenLight,
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    PhosphorIconsLight.user,
+                    size: 16,
+                    color: kGreen,
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -591,14 +604,14 @@ class _ReviewCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF1A1A1A),
+                        color: kTextPrim,
                       ),
                     ),
                     Text(
                       _timeAgo(review.createdAt),
                       style: const TextStyle(
                         fontSize: 11,
-                        color: Color(0xFF9CA3AF),
+                        color: kTextLight,
                       ),
                     ),
                   ],
@@ -607,7 +620,7 @@ class _ReviewCard extends StatelessWidget {
               Row(
                 children: List.generate(5, (index) {
                   return Icon(
-                    index < review.rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                    index < review.rating ? PhosphorIconsFill.star : PhosphorIconsRegular.star,
                     size: 16,
                     color: index < review.rating ? const Color(0xFFFBBF24) : const Color(0xFFE5E7EB),
                   );
@@ -621,7 +634,7 @@ class _ReviewCard extends StatelessWidget {
               review.comment!,
               style: const TextStyle(
                 fontSize: 13,
-                color: Color(0xFF4B5563),
+                color: kTextSub,
                 height: 1.5,
               ),
             ),
@@ -667,7 +680,7 @@ class _Tab extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: selected ? const Color(0xFF006F39) : Colors.transparent,
+              color: selected ? kGreen : Colors.transparent,
               width: 3,
             ),
           ),
@@ -679,7 +692,7 @@ class _Tab extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
-                color: selected ? const Color(0xFF1A1A1A) : const Color(0xFF9CA3AF),
+                color: selected ? kTextPrim : kTextLight,
               ),
             ),
             if (count != null && count! > 0) ...[
@@ -687,7 +700,7 @@ class _Tab extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: selected ? const Color(0xFF006F39) : const Color(0xFFE5E7EB),
+                  color: selected ? kGreen : const Color(0xFFE5E7EB),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -695,7 +708,7 @@ class _Tab extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
-                    color: selected ? Colors.white : const Color(0xFF4B5563),
+                    color: selected ? Colors.white : kTextSub,
                   ),
                 ),
               ),
@@ -722,7 +735,7 @@ class _AboutTab extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF1A1A1A),
+            color: kTextPrim,
           ),
         ),
         const SizedBox(height: 12),
@@ -730,7 +743,7 @@ class _AboutTab extends StatelessWidget {
           terrain.description ?? 'Aucune description fournie.',
           style: const TextStyle(
             fontSize: 14,
-            color: Color(0xFF4B5563),
+            color: kTextSub,
             height: 1.6,
           ),
         ),
@@ -746,7 +759,7 @@ class _AboutTab extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A1A1A),
+                  color: kTextPrim,
                 ),
               ),
               const Spacer(),
@@ -754,7 +767,7 @@ class _AboutTab extends StatelessWidget {
                 '${terrain.subTerrains.length} terrains',
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF006F39),
+                  color: kGreen,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -772,7 +785,7 @@ class _AboutTab extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF1A1A1A),
+            color: kTextPrim,
           ),
         ),
         const SizedBox(height: 16),
@@ -796,7 +809,7 @@ class _ReviewsTab extends StatelessWidget {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 40),
         child: Center(
-          child: CircularProgressIndicator(color: Color(0xFF006F39)),
+          child: CircularProgressIndicator(color: kGreen),
         ),
       );
     }
@@ -817,7 +830,7 @@ class _ReviewsTab extends StatelessWidget {
                 child: const Icon(
                   PhosphorIconsLight.chatTeardropDots,
                   size: 40,
-                  color: Color(0xFF9CA3AF),
+                  color: kTextLight,
                 ),
               ),
               const SizedBox(height: 20),
@@ -826,7 +839,7 @@ class _ReviewsTab extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A1A1A),
+                  color: kTextPrim,
                 ),
               ),
               const SizedBox(height: 8),
@@ -834,7 +847,7 @@ class _ReviewsTab extends StatelessWidget {
                 'Les retours de vos clients s\'afficheront ici.',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF6B7280),
+                  color: kTextSub,
                 ),
               ),
             ],
@@ -851,7 +864,7 @@ class _ReviewsTab extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF1A1A1A),
+            color: kTextPrim,
           ),
         ),
         const SizedBox(height: 16),

@@ -107,9 +107,6 @@ class SecurityScreen extends GetView<ProfileController> {
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: kGreen.withValues(alpha: 0.5),
                   elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
                 ),
                 child: controller.isChangingPassword.value
                     ? const SizedBox(
@@ -167,8 +164,8 @@ class _PasswordField extends StatelessWidget {
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          enableInteractiveSelection: false,
           obscureText: obscure,
+          autofillHints: const [AutofillHints.newPassword],
           style: const TextStyle(color: kTextPrim, fontSize: 15),
           decoration: InputDecoration(
             hintText: hint,

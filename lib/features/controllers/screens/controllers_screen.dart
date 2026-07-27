@@ -4,7 +4,13 @@ import 'package:get/get.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/utils/app_phone.dart';
+import '../../../core/utils/app_validators.dart';
+import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/app_bottom_sheet.dart';
+import '../../../core/widgets/app_button.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_states.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../routes/app_routes.dart';
 import '../controllers/controllers_controller.dart';
@@ -22,7 +28,7 @@ class ControllersScreen extends GetView<ControllersController> {
         leading: IconButton(
           onPressed: () => Get.back(),
           icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
+            PhosphorIconsRegular.caretLeft,
             size: 18,
           ),
         ),
@@ -42,38 +48,75 @@ class ControllersScreen extends GetView<ControllersController> {
             );
           }
 
-          if (controller.controllers.isEmpty) {
+          // L'erreur passe avant le vide : sinon une coupure réseau
+          // s'affiche comme « Aucun contrôleur ».
+          if (controller.errorMessage.value.isNotEmpty) {
             return ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(24, 80, 24, 120),
-              children: const [
-                _EmptyControllerIcon(),
-                SizedBox(height: 16),
-                Text(
-                  'Aucun contrôleur',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: kTextPrim,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
+              children: [
+                SizedBox(
+                  height: MediaQuery.sizeOf(context).height * 0.6,
+                  child: AppErrorState(
+                    message: controller.errorMessage.value,
+                    onRetry: controller.refreshAll,
                   ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Ajoute une personne de confiance pour scanner les QR et gérer les créneaux des complexes autorisés.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: kTextSub, fontSize: 13, height: 1.4),
                 ),
               ],
             );
           }
 
-          return ListView.separated(
+          if (controller.controllers.isEmpty) {
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(24, 40, 24, 120),
+              children: [
+                const _EmptyControllerIcon(),
+                const SizedBox(height: 16),
+                // L'état vide invitait à ajouter un contrôleur… sans bouton
+                // pour le faire.
+                AppEmptyState(
+                  title: 'Aucun contrôleur',
+                  message:
+                      'Ajoutez une personne de confiance pour scanner les QR '
+                      'et gérer les créneaux des complexes autorisés.',
+                  actionLabel: 'Ajouter un contrôleur',
+                  onAction: () => _showCreateSheet(context),
+                  illustration: const SizedBox.shrink(),
+                ),
+              ],
+            );
+          }
+
+          return NotificationListener<ScrollNotification>(
+            onNotification: (scroll) {
+              if (scroll.metrics.pixels >=
+                  scroll.metrics.maxScrollExtent - 400) {
+                controller.loadMore();
+              }
+              return false;
+            },
+            child: ListView.separated(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-            itemCount: controller.controllers.length,
+            itemCount:
+                controller.controllers.length + (controller.hasMore ? 1 : 0),
             separatorBuilder: (_, index) => const SizedBox(height: 12),
             itemBuilder: (_, index) {
+              if (index >= controller.controllers.length) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: kGreen,
+                      ),
+                    ),
+                  ),
+                );
+              }
               final item = controller.controllers[index];
               return _ControllerCard(
                 item: item,
@@ -82,6 +125,7 @@ class ControllersScreen extends GetView<ControllersController> {
                 onToggle: () => controller.toggleActive(item),
               );
             },
+            ),
           );
         }),
       ),
@@ -100,138 +144,75 @@ class ControllersScreen extends GetView<ControllersController> {
     );
   }
 
-  void _showCreateSheet(BuildContext context) {
-    final firstNameCtrl = TextEditingController();
-    final lastNameCtrl = TextEditingController();
-    final phoneCtrl = TextEditingController(text: '+221');
-    final selectedComplexes = <String>{}.obs;
-
-    Get.bottomSheet(
-      Container(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          14,
-          20,
-          MediaQuery.of(context).viewInsets.bottom + 20,
-        ),
-        decoration: const BoxDecoration(
-          color: kBgCard,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 42,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: kBorder,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              const Text(
-                'Nouveau contrôleur',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: kTextPrim,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: firstNameCtrl,
-                decoration: const InputDecoration(labelText: 'Prénom'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: lastNameCtrl,
-                decoration: const InputDecoration(labelText: 'Nom'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: phoneCtrl,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'Téléphone'),
-              ),
-
-              const SizedBox(height: 16),
-              const Text(
-                'Complexes autorisés',
-                style: TextStyle(
-                  color: kTextPrim,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Obx(
-                () => Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: controller.terrains.map((terrain) {
-                    final selected = selectedComplexes.contains(terrain.id);
-                    return FilterChip(
-                      selected: selected,
-                      label: Text(terrain.name),
-                      selectedColor: kGreenLight,
-                      checkmarkColor: kGreen,
-                      onSelected: (_) {
-                        selected
-                            ? selectedComplexes.remove(terrain.id)
-                            : selectedComplexes.add(terrain.id);
-                      },
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final credentials = await controller.createController(
-                      firstName: firstNameCtrl.text.trim(),
-                      lastName: lastNameCtrl.text.trim(),
-                      phone: phoneCtrl.text.trim(),
-                      complexIds: selectedComplexes.toList(),
-                    );
-                    if (credentials == null) return;
-                    Get.back();
-                    _showCredentials(credentials);
-                  },
-                  child: const Text('Créer le compte'),
-                ),
-              ),
-            ],
-          ),
-        ),
+  Future<void> _showCreateSheet(BuildContext context) {
+    // Le contenu est un widget à part entière : c'est lui qui crée ses
+    // contrôleurs de texte et les libère dans son `dispose()`. Les libérer
+    // après `await Get.bottomSheet(...)` était trop tôt — l'animation de
+    // fermeture les utilise encore, d'où « A TextEditingController was used
+    // after being disposed ».
+    return AppBottomSheet.show<void>(
+      title: 'Nouveau contrôleur',
+      child: _CreateControllerSheet(
+        controller: controller,
+        onCreated: _showCredentials,
       ),
-      isScrollControlled: true,
     );
   }
 
+
   void _showCredentials(Map<String, dynamic> credentials) {
     final message = (credentials['message'] ?? '').toString();
-    Get.defaultDialog(
+
+    // L'ancien dialogue détournait le bouton d'annulation en « Copier » : la
+    // seule sortie apparente déclenchait une action, et rien ne permettait de
+    // simplement fermer. Ici, trois boutons qui font ce qu'ils annoncent.
+    AppBottomSheet.show<void>(
       title: 'Identifiants créés',
-      middleText: message,
-      textCancel: 'Copier',
-      textConfirm: 'Partager',
-      onCancel: () {
-        Clipboard.setData(ClipboardData(text: message));
-        Get.back();
-        AppSnackbar.success('Identifiants copiés dans le presse-papiers.');
-      },
-      onConfirm: () {
-        Get.back();
-        SharePlus.instance.share(ShareParams(text: message));
-      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: kBgSurface,
+              borderRadius: AppRadius.smAll,
+            ),
+            child: SelectableText(
+              message,
+              style: const TextStyle(
+                fontSize: AppFontSize.bodySmall,
+                color: kTextPrim,
+                height: 1.5,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppButton(
+            label: 'Partager',
+            icon: PhosphorIconsRegular.shareNetwork,
+            onPressed: () {
+              Get.back();
+              SharePlus.instance.share(ShareParams(text: message));
+            },
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          AppButton(
+            label: 'Copier',
+            icon: PhosphorIconsRegular.copy,
+            variant: AppButtonVariant.secondary,
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: message));
+              Get.back();
+              AppSnackbar.success('Identifiants copiés dans le presse-papiers.');
+            },
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Fermer'),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -247,15 +228,6 @@ class _ControllerCard extends StatelessWidget {
     required this.onToggle,
   });
 
-  String _formatAmount(int amount) {
-    final text = amount.toString();
-    final buffer = StringBuffer();
-    for (var i = 0; i < text.length; i++) {
-      if (i > 0 && (text.length - i) % 3 == 0) buffer.write(' ');
-      buffer.write(text[i]);
-    }
-    return '${buffer.toString()} F';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -376,6 +348,148 @@ class _StatPill extends StatelessWidget {
           fontWeight: FontWeight.w700,
         ),
       ),
+    );
+  }
+}
+
+/// Formulaire de création d'un contrôleur.
+///
+/// `StatefulWidget` et non une simple fonction : les `TextEditingController`
+/// doivent vivre aussi longtemps que le widget, animation de fermeture comprise.
+class _CreateControllerSheet extends StatefulWidget {
+  const _CreateControllerSheet({
+    required this.controller,
+    required this.onCreated,
+  });
+
+  final ControllersController controller;
+  final void Function(Map<String, dynamic> credentials) onCreated;
+
+  @override
+  State<_CreateControllerSheet> createState() => _CreateControllerSheetState();
+}
+
+class _CreateControllerSheetState extends State<_CreateControllerSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _firstNameCtrl = TextEditingController();
+  final _lastNameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _selectedComplexes = <String>{}.obs;
+  final _submitting = false.obs;
+
+  @override
+  void dispose() {
+    _firstNameCtrl.dispose();
+    _lastNameCtrl.dispose();
+    _phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_selectedComplexes.isEmpty) {
+      AppSnackbar.warning('Sélectionnez au moins un complexe autorisé.');
+      return;
+    }
+
+    _submitting.value = true;
+    try {
+      final credentials = await widget.controller.createController(
+        firstName: _firstNameCtrl.text.trim(),
+        lastName: _lastNameCtrl.text.trim(),
+        // Normalisé ici : le champ acceptait n'importe quoi.
+        phone: AppPhone.normalize(_phoneCtrl.text)!,
+        complexIds: _selectedComplexes.toList(),
+      );
+      if (credentials == null) return;
+
+      // On ferme cette feuille **et on laisse l'animation se terminer** avant
+      // d'ouvrir celle des identifiants. Enchaîner les deux immédiatement
+      // laisse deux feuilles dans l'arbre au même instant, d'où les
+      // « Duplicate GlobalKeys » et les « deactivated widget's ancestor ».
+      Get.back();
+      await Future<void>.delayed(AppBottomSheet.closeAnimation);
+      widget.onCreated(credentials);
+    } finally {
+      if (mounted) _submitting.value = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              AppTextField(
+                controller: _firstNameCtrl,
+                label: 'Prénom',
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.givenName],
+                validator: (v) => AppValidators.required(v, label: 'Le prénom'),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              AppTextField(
+                controller: _lastNameCtrl,
+                label: 'Nom',
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.familyName],
+                validator: (v) => AppValidators.required(v, label: 'Le nom'),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              AppTextField(
+                controller: _phoneCtrl,
+                label: 'Téléphone',
+                hint: '77 XXX XX XX',
+                keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.done,
+                autofillHints: const [AutofillHints.telephoneNumber],
+                validator: AppValidators.phone,
+                onFieldSubmitted: (_) => _submit(),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        const Text(
+          'Complexes autorisés',
+          style: TextStyle(
+            color: kTextPrim,
+            fontWeight: FontWeight.w700,
+            fontSize: AppFontSize.bodySmall,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Obx(
+          () => Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: widget.controller.terrains.map((terrain) {
+              final selected = _selectedComplexes.contains(terrain.id);
+              return FilterChip(
+                selected: selected,
+                label: Text(terrain.name),
+                selectedColor: kGreenLight,
+                checkmarkColor: kGreen,
+                onSelected: (_) => selected
+                    ? _selectedComplexes.remove(terrain.id)
+                    : _selectedComplexes.add(terrain.id),
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        Obx(
+          () => AppButton(
+            label: 'Créer le compte',
+            loading: _submitting.value,
+            onPressed: _submit,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import '../../../core/utils/app_format.dart';
+import '../../../core/utils/app_motion.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_states.dart';
 import '../../../core/widgets/owner_ui.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../../routes/app_routes.dart';
@@ -23,7 +27,7 @@ class ReservationsScreen extends GetView<ReservationsController> {
         leading: IconButton(
           onPressed: () => Get.back(),
           icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
+            PhosphorIconsRegular.caretLeft,
             size: 18,
           ),
           color: kTextPrim,
@@ -244,6 +248,15 @@ class ReservationsScreen extends GetView<ReservationsController> {
         );
       }
 
+      // L'erreur passe avant le vide : un échec de chargement ne doit pas
+      // s'afficher comme « Aucune réservation ».
+      if (controller.errorMessage.value.isNotEmpty) {
+        return AppErrorState(
+          message: controller.errorMessage.value,
+          onRetry: controller.refreshReservations,
+        );
+      }
+
       final list = controller.filteredReservations;
 
       if (list.isEmpty) {
@@ -259,7 +272,7 @@ class ReservationsScreen extends GetView<ReservationsController> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Aucune reservation',
+                'Aucune réservation',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -278,18 +291,60 @@ class ReservationsScreen extends GetView<ReservationsController> {
         );
       }
 
-      return ListView.builder(
+      return NotificationListener<ScrollNotification>(
+        // Charge la page suivante avant d'atteindre le bas, pour que le
+        // défilement ne marque pas d'arrêt.
+        onNotification: (scroll) {
+          if (scroll.metrics.pixels >= scroll.metrics.maxScrollExtent - 400) {
+            controller.loadMore();
+          }
+          return false;
+        },
+        child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-        itemCount: list.length,
-        itemBuilder: (_, i) =>
-            _ReservationCard(
-                  reservation: list[i],
-                  onTap: () => _openReservationDetails(list[i]),
-                )
-                .animate()
-                .fadeIn(duration: 400.ms, delay: (i * 80).ms)
-                .slideY(begin: 0.1, end: 0),
+        itemCount: list.length + (controller.hasMore ? 1 : 0),
+        itemBuilder: (_, i) {
+          if (i >= list.length) return const _LoadMoreIndicator();
+          final reservation = list[i];
+          final card = _ReservationCard(
+            reservation: reservation,
+            onTap: () => _openReservationDetails(reservation),
+          );
+
+          // Refuser une réservation demandait d'ouvrir le détail : c'est
+          // l'action la plus fréquente sur cet écran, elle mérite d'être
+          // accessible d'un glissement. Seules les réservations encore
+          // annulables l'exposent.
+          final canRefuse =
+              reservation.status == 'pending' ||
+              reservation.status == 'confirmed';
+
+          return Slidable(
+            key: ValueKey(reservation.id),
+            enabled: canRefuse,
+            endActionPane: ActionPane(
+              motion: const DrawerMotion(),
+              extentRatio: 0.28,
+              children: [
+                SlidableAction(
+                  onPressed: (_) => controller.cancelReservation(reservation.id),
+                  backgroundColor: kRed,
+                  foregroundColor: Colors.white,
+                  icon: PhosphorIconsRegular.x,
+                  label: 'Refuser',
+                  borderRadius: AppRadius.mdAll,
+                  padding: EdgeInsets.zero,
+                ),
+              ],
+            ),
+            child: card,
+          )
+              .animate()
+              .fadeIn(duration: 400.ms, delay: AppMotion.stagger(i))
+              .slideY(begin: 0.1, end: 0);
+        },
+        ),
       );
     });
   }
@@ -307,15 +362,7 @@ class ReservationsScreen extends GetView<ReservationsController> {
 
 // ── Reservation card ────────────────────────────────────────────────────────
 
-String _formatAmount(int amount) {
-  final str = amount.toString();
-  final buffer = StringBuffer();
-  for (int i = 0; i < str.length; i++) {
-    if (i > 0 && (str.length - i) % 3 == 0) buffer.write(' ');
-    buffer.write(str[i]);
-  }
-  return '${buffer.toString()} F CFA';
-}
+String _formatAmount(int amount) => AppFormat.amount(amount);
 
 class _ReservationCard extends StatelessWidget {
   final ReservationModel reservation;
@@ -749,4 +796,21 @@ class _MetaText extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Pied de liste affiché pendant le chargement de la page suivante.
+class _LoadMoreIndicator extends StatelessWidget {
+  const _LoadMoreIndicator();
+
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.symmetric(vertical: 20),
+    child: Center(
+      child: SizedBox(
+        width: 22,
+        height: 22,
+        child: CircularProgressIndicator(strokeWidth: 2, color: kGreen),
+      ),
+    ),
+  );
 }

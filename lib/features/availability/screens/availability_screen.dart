@@ -100,7 +100,7 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
             icon: const Icon(
-              Icons.arrow_back_ios_new_rounded,
+              PhosphorIconsRegular.caretLeft,
               color: kTextPrim,
               size: 18,
             ),
@@ -153,8 +153,8 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
                     Icon(
                       controller.isController ||
                               controller.calendarFormat.value == 'month'
-                          ? Icons.calendar_view_week_rounded
-                          : Icons.calendar_month_rounded,
+                          ? PhosphorIconsRegular.calendar
+                          : PhosphorIconsRegular.calendarBlank,
                       size: 16,
                       color: kGreen,
                     ),
@@ -344,7 +344,7 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
-              Icons.chevron_left_rounded,
+              PhosphorIconsRegular.caretLeft,
               color: kTextSub,
               size: 20,
             ),
@@ -356,7 +356,7 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
-              Icons.chevron_right_rounded,
+              PhosphorIconsRegular.caretRight,
               color: kTextSub,
               size: 20,
             ),
@@ -392,7 +392,7 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
       }
       if (controller.terrains.isEmpty) {
         return const _AvailabilityEmptyState(
-          icon: Icons.sports_soccer_rounded,
+          icon: PhosphorIconsFill.soccerBall,
           title: 'Aucun complexe',
           message:
               'Crée d’abord un complexe pour gérer ses créneaux de réservation.',
@@ -401,7 +401,7 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
       }
       if (slots.isEmpty) {
         return const _AvailabilityEmptyState(
-          icon: Icons.event_busy_rounded,
+          icon: PhosphorIconsRegular.calendarX,
           title: 'Aucun créneau',
           message:
               'Tire vers le bas pour recharger les disponibilités du jour.',
@@ -427,7 +427,7 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
             if (morning.isNotEmpty) ...[
               _PeriodHeader(
                 label: 'Matin',
-                icon: Icons.wb_sunny_rounded,
+                icon: PhosphorIconsRegular.sun,
                 color: kGold,
                 count: morning.where((s) => s.isBooked).length,
                 total: morning.length,
@@ -441,7 +441,7 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
             if (afternoon.isNotEmpty) ...[
               _PeriodHeader(
                 label: 'Après-midi',
-                icon: Icons.wb_cloudy_rounded,
+                icon: PhosphorIconsRegular.cloud,
                 color: kBlue,
                 count: afternoon.where((s) => s.isBooked).length,
                 total: afternoon.length,
@@ -455,7 +455,7 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
             if (evening.isNotEmpty) ...[
               _PeriodHeader(
                 label: 'Soirée',
-                icon: Icons.nightlight_rounded,
+                icon: PhosphorIconsRegular.moon,
                 color: const Color(0xFF7C3AED),
                 count: evening.where((s) => s.isBooked).length,
                 total: evening.length,
@@ -537,7 +537,7 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
-                  Icons.sports_soccer_rounded,
+                  PhosphorIconsFill.soccerBall,
                   color: kGreen,
                   size: 18,
                 ),
@@ -885,7 +885,7 @@ class _SlotCard extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               const Icon(
-                Icons.chevron_right_rounded,
+                PhosphorIconsRegular.caretRight,
                 size: 20,
                 color: kTextLight,
               ),
@@ -1022,7 +1022,7 @@ class _NoTerrainChip extends StatelessWidget {
       child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.info_outline_rounded, size: 14, color: kTextSub),
+          Icon(PhosphorIconsRegular.info, size: 14, color: kTextSub),
           SizedBox(width: 6),
           Text(
             'Aucun complexe disponible',
@@ -1076,8 +1076,8 @@ class _TerrainSelectorChip extends StatelessWidget {
               children: [
                 Icon(
                   terrain.isMiniTerrain
-                      ? Icons.grid_view_rounded
-                      : Icons.sports_soccer_rounded,
+                      ? PhosphorIconsRegular.gridFour
+                      : PhosphorIconsFill.soccerBall,
                   size: 14,
                   color: selected ? Colors.white : kTextSub,
                 ),
@@ -1184,11 +1184,8 @@ class _AvailabilityEmptyState extends StatelessWidget {
                   backgroundColor: kGreen,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
                 ),
-                icon: const Icon(Icons.add_rounded, size: 20),
+                icon: const Icon(PhosphorIconsRegular.plus, size: 20),
                 label: const Text(
                   'Créer un complexe',
                   style: TextStyle(fontWeight: FontWeight.w700),
@@ -1321,14 +1318,14 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
                       _PeriodFieldButton(
                         label: 'Date',
                         value: endLabel,
-                        icon: Icons.calendar_today_rounded,
+                        icon: PhosphorIconsRegular.calendarBlank,
                         onTap: () => _pickEndDate(context, controller),
                       ),
                       const SizedBox(height: 12),
                       _PeriodFieldButton(
                         label: 'Heure',
                         value: endTime,
-                        icon: Icons.access_time_rounded,
+                        icon: PhosphorIconsRegular.clock,
                         onTap: () => _pickEndTime(context, controller),
                       ),
                     ],
@@ -1370,7 +1367,7 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
-                        Icons.groups_rounded,
+                        PhosphorIconsRegular.users,
                         color: kGold,
                         size: 24,
                       ),
@@ -1419,9 +1416,6 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
                         onPressed: Navigator.of(context).pop,
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: kBorder),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
                         ),
                         child: const Text(
                           'Fermer',
@@ -1442,9 +1436,6 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
                               onPressed: Navigator.of(context).pop,
                               style: OutlinedButton.styleFrom(
                                 side: const BorderSide(color: kBorder),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
                               ),
                               child: const Text(
                                 'Annuler',
@@ -1487,14 +1478,11 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
                                 backgroundColor: slot.isBlocked ? kGreen : kRed,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
                               ),
                               icon: Icon(
                                 slot.isBlocked
-                                    ? Icons.lock_open_rounded
-                                    : Icons.lock_rounded,
+                                    ? PhosphorIconsRegular.lockOpen
+                                    : PhosphorIconsFill.lock,
                                 size: 18,
                               ),
                               label: Text(
@@ -1739,7 +1727,7 @@ class _BulkActionSheet extends StatelessWidget {
 
           // Action : Bloquer tous les créneaux libres
           _BulkActionTile(
-            icon: Icons.lock_rounded,
+            icon: PhosphorIconsFill.lock,
             iconColor: kRed,
             iconBg: kRedLight,
             title: 'Bloquer tous les créneaux libres',
@@ -1763,7 +1751,7 @@ class _BulkActionSheet extends StatelessWidget {
 
           // Action : Débloquer tous les créneaux bloqués
           _BulkActionTile(
-            icon: Icons.lock_open_rounded,
+            icon: PhosphorIconsRegular.lockOpen,
             iconColor: kGreen,
             iconBg: kGreenLight,
             title: 'Débloquer tous les créneaux',
@@ -1793,9 +1781,6 @@ class _BulkActionSheet extends StatelessWidget {
                   onPressed: () => Get.back(),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: kBorder),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
                   ),
                   child: const Text(
                     'Fermer',
@@ -1870,7 +1855,7 @@ class _BulkActionTile extends StatelessWidget {
               ),
             ),
             const Icon(
-              Icons.chevron_right_rounded,
+              PhosphorIconsRegular.caretRight,
               color: kTextLight,
               size: 20,
             ),

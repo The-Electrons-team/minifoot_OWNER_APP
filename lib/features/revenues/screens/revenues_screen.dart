@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../controllers/revenues_controller.dart';
 import '../../reports/screens/report_screen.dart';
@@ -50,7 +50,7 @@ class RevenuesScreen extends GetView<RevenuesController> {
       leading: IconButton(
         onPressed: () => Get.back(),
         icon: const Icon(
-          Icons.arrow_back_ios_new_rounded,
+          PhosphorIconsRegular.caretLeft,
           color: kTextPrim,
           size: 18,
         ),
@@ -88,19 +88,19 @@ class RevenuesScreen extends GetView<RevenuesController> {
             children: [
               _PeriodTab(
                 label: 'Journalier',
-                icon: Icons.today_rounded,
+                icon: PhosphorIconsRegular.calendarBlank,
                 isSelected: controller.period.value == RevenuePeriod.daily,
                 onTap: () => controller.setPeriod(RevenuePeriod.daily),
               ),
               _PeriodTab(
                 label: 'Hebdo',
-                icon: Icons.view_week_rounded,
+                icon: PhosphorIconsRegular.calendar,
                 isSelected: controller.period.value == RevenuePeriod.weekly,
                 onTap: () => controller.setPeriod(RevenuePeriod.weekly),
               ),
               _PeriodTab(
                 label: 'Mensuel',
-                icon: Icons.calendar_month_rounded,
+                icon: PhosphorIconsRegular.calendarBlank,
                 isSelected: controller.period.value == RevenuePeriod.monthly,
                 onTap: () => controller.setPeriod(RevenuePeriod.monthly),
               ),
@@ -140,7 +140,7 @@ class RevenuesScreen extends GetView<RevenuesController> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.info_outline_rounded, color: kRed, size: 18),
+            const Icon(PhosphorIconsRegular.info, color: kRed, size: 18),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -192,7 +192,7 @@ class RevenuesScreen extends GetView<RevenuesController> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
-                          Icons.account_balance_wallet_rounded,
+                          PhosphorIconsRegular.wallet,
                           color: Colors.white,
                           size: 22,
                         ),
@@ -221,7 +221,7 @@ class RevenuesScreen extends GetView<RevenuesController> {
                   Row(
                     children: [
                       const Icon(
-                        Icons.trending_up_rounded,
+                        PhosphorIconsRegular.trendUp,
                         color: Colors.white70,
                         size: 16,
                       ),
@@ -247,7 +247,7 @@ class RevenuesScreen extends GetView<RevenuesController> {
                 Expanded(
                   child:
                       _KpiSmallCard(
-                            icon: Icons.calendar_month_rounded,
+                            icon: PhosphorIconsRegular.calendarBlank,
                             iconColor: kBlue,
                             iconBg: kBlueLight,
                             label: 'Réservations',
@@ -261,7 +261,7 @@ class RevenuesScreen extends GetView<RevenuesController> {
                 Expanded(
                   child:
                       _KpiSmallCard(
-                            icon: Icons.pie_chart_rounded,
+                            icon: PhosphorIconsRegular.chartPie,
                             iconColor: kGold,
                             iconBg: kGoldLight,
                             label: 'Taux moy.',
@@ -303,7 +303,7 @@ class RevenuesScreen extends GetView<RevenuesController> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
-                      Icons.bar_chart_rounded,
+                      PhosphorIconsRegular.chartBar,
                       size: 18,
                       color: kGreen,
                     ),
@@ -484,7 +484,7 @@ class RevenuesScreen extends GetView<RevenuesController> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
-                      Icons.show_chart_rounded,
+                      PhosphorIconsRegular.chartLine,
                       size: 18,
                       color: kGold,
                     ),
@@ -626,7 +626,7 @@ class RevenuesScreen extends GetView<RevenuesController> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
-                      Icons.stadium_rounded,
+                      PhosphorIconsRegular.buildings,
                       size: 18,
                       color: kBlue,
                     ),
@@ -763,7 +763,7 @@ class RevenuesScreen extends GetView<RevenuesController> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
-                Icons.picture_as_pdf_rounded,
+                PhosphorIconsRegular.filePdf,
                 color: Colors.white,
                 size: 22,
               ),
@@ -805,7 +805,7 @@ class _EmptyRevenueChart extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            compact ? Icons.show_chart_rounded : Icons.bar_chart_rounded,
+            compact ? PhosphorIconsRegular.chartLine : PhosphorIconsRegular.chartBar,
             color: kTextLight,
             size: compact ? 26 : 30,
           ),

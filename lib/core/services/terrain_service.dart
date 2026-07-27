@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_config.dart';
+import '../models/paginated.dart';
 
 class TerrainService {
   final String _base = AppConfig.apiUrl;
@@ -20,16 +21,35 @@ class TerrainService {
   };
 
   // ── GET /terrains/mine ─────────────────────────────────────────────────────
-  Future<List<dynamic>> getMesTerrains() async {
-    final response = await http.get(
-      Uri.parse('$_base/terrains/mine'),
-      headers: await _headers(),
-    );
+  Future<Paginated<dynamic>> getMesTerrains({int page = 1}) async {
+    final uri = Uri.parse(
+      '$_base/terrains/mine',
+    ).replace(queryParameters: {'page': '$page'});
+
+    final response = await http.get(uri, headers: await _headers());
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      return (body['data'] as List<dynamic>).cast<Map<String, dynamic>>();
+      return Paginated<dynamic>.fromBody(jsonDecode(response.body), page: page);
     }
     throw Exception('Erreur chargement terrains: ${response.body}');
+  }
+
+  /// Récupère tous les terrains, page après page.
+  ///
+  /// Utilisé là où la liste complète est nécessaire (sélecteurs, statistiques),
+  /// pas pour l'affichage d'une liste défilante.
+  Future<List<dynamic>> getAllMesTerrains() async {
+    final all = <dynamic>[];
+    var page = 1;
+
+    while (true) {
+      final result = await getMesTerrains(page: page);
+      all.addAll(result.items);
+      if (!result.hasMore || result.items.isEmpty) break;
+      page += 1;
+      if (page > 100) break;
+    }
+
+    return all;
   }
 
   // ── POST /terrains ─────────────────────────────────────────────────────────

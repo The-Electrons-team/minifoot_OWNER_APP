@@ -1,5 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../routes/app_routes.dart';
@@ -121,10 +122,10 @@ class NotificationService {
     final type  = message.data['type'] as String? ?? 'general';
 
     final (Color iconColor, Color iconBg, IconData icon) = switch (type) {
-      'booking'  => (kBlue,    kBlueLight,  Icons.calendar_month_rounded),
-      'payment'  => (kGreen,   kGreenLight, Icons.payments_rounded),
-      'review'   => (kGold,    kGoldLight,  Icons.star_rounded),
-      _          => (kTextSub, kBgSurface,  Icons.notifications_rounded),
+      'booking'  => (kBlue,    kBlueLight,  PhosphorIconsRegular.calendarBlank),
+      'payment'  => (kGreen,   kGreenLight, PhosphorIconsRegular.money),
+      'review'   => (kGold,    kGoldLight,  PhosphorIconsFill.star),
+      _          => (kTextSub, kBgSurface,  PhosphorIconsFill.bell),
     };
 
     Get.snackbar(
@@ -156,9 +157,18 @@ class NotificationService {
   // ── Navigation selon le type de notif ───────────────────────────────────────
   static void _handleNavigation(RemoteMessage message) {
     final type = message.data['type'] as String? ?? '';
+    // L'identifiant d'entité n'était pas exploité : une push « réservation
+    // confirmée » ouvrait la *liste*, à charge pour le propriétaire d'y
+    // retrouver la bonne ligne.
+    final id = (message.data['id'] ?? message.data['entityId'] ?? '').toString();
+
     switch (type) {
       case 'booking':
-        Get.toNamed(Routes.reservations);
+        if (id.isNotEmpty) {
+          Get.toNamed(Routes.reservationDetail, arguments: id);
+        } else {
+          Get.toNamed(Routes.reservations);
+        }
       case 'payment':
         Get.toNamed(Routes.payments);
       case 'chat':

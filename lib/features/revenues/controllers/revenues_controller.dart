@@ -1,9 +1,9 @@
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../../core/utils/app_format.dart';
 import '../../../core/services/revenue_service.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/app_snackbar.dart';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Modèles
@@ -61,8 +61,8 @@ class RevenuesController extends GetxController {
       monthlyData.value = data.monthlyEntries.map(_fromServiceEntry).toList();
       terrainStats.value = data.terrainStats;
     } catch (_) {
-      errorMessage.value = 'Impossible de charger les revenus';
-      AppSnackbar.error('Impossible de charger les revenus. Vérifiez votre connexion.');
+      errorMessage.value =
+          'Impossible de charger les revenus. Vérifiez votre connexion.';
     } finally {
       isLoading.value = false;
     }
@@ -149,7 +149,7 @@ class RevenuesController extends GetxController {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
             gradient: LinearGradient(
               colors: isSelected
-                  ? [const Color(0xFF00C264), const Color(0xFF006F39)]
+                  ? [kGreenDark, kGreen]
                   : [
                       kGreen.withValues(alpha: 0.4),
                       kGreen.withValues(alpha: 0.7),
@@ -193,25 +193,10 @@ class RevenuesController extends GetxController {
   }
 
   // ── Format ────────────────────────────────────────────────────────────────
-  String formatAmount(int amount) {
-    if (amount >= 1000000) {
-      return '${(amount / 1000000).toStringAsFixed(1)}M';
-    }
-    if (amount >= 1000) {
-      return '${(amount / 1000).toStringAsFixed(0)}k';
-    }
-    return '$amount';
-  }
+  String formatAmount(int amount) => AppFormat.amountCompact(amount);
 
-  String formatAmountFull(int amount) {
-    final str = amount.toString();
-    final buffer = StringBuffer();
-    for (int i = 0; i < str.length; i++) {
-      if (i > 0 && (str.length - i) % 3 == 0) buffer.write(' ');
-      buffer.write(str[i]);
-    }
-    return buffer.toString();
-  }
+  String formatAmountFull(int amount) =>
+      AppFormat.amount(amount, withSymbol: false);
 
   String get occupancyPercent => '${(avgOccupancy * 100).round()}%';
 }

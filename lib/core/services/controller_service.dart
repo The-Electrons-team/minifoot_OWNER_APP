@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_config.dart';
+import '../models/paginated.dart';
 
 class ControllerService {
   final String _base = AppConfig.apiUrl;
@@ -18,14 +19,14 @@ class ControllerService {
     'Authorization': 'Bearer ${await _token()}',
   };
 
-  Future<List<dynamic>> getControllers() async {
-    final response = await http.get(
-      Uri.parse('$_base/owner/controllers'),
-      headers: await _headers(),
-    );
+  Future<Paginated<dynamic>> getControllers({int page = 1}) async {
+    final uri = Uri.parse(
+      '$_base/owner/controllers',
+    ).replace(queryParameters: {'page': '$page'});
+
+    final response = await http.get(uri, headers: await _headers());
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      return body['data'] as List<dynamic>? ?? [];
+      return Paginated<dynamic>.fromBody(jsonDecode(response.body), page: page);
     }
     throw Exception('Erreur chargement controllers: ${response.body}');
   }

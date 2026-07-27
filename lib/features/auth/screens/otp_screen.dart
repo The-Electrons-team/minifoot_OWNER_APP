@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import '../../../core/utils/app_validators.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/auth_controller.dart';
@@ -89,8 +90,9 @@ class _OtpScreenState extends State<OtpScreen> {
 
   Future<void> _validate() async {
     final code = _otpController.text.trim();
-    if (code.length < 6) {
-      setState(() => _errorMessage = 'Saisis les 6 chiffres du code');
+    final codeError = AppValidators.otp(code);
+    if (codeError != null) {
+      setState(() => _errorMessage = codeError);
       return;
     }
 
@@ -169,7 +171,7 @@ class _OtpScreenState extends State<OtpScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
-              Icons.arrow_back_ios_new_rounded,
+              PhosphorIconsRegular.caretLeft,
               color: kTextPrim,
               size: 18,
             ),
@@ -231,18 +233,33 @@ class _OtpScreenState extends State<OtpScreen> {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Visually rendered styled boxes
-                    Row(
+                    // Les 6 cases faisaient 44 pt + 8 pt de marge = 312 pt,
+                    // pour 264 pt disponibles sur un écran de 320 pt : le
+                    // débordement était garanti. `LayoutBuilder` répartit la
+                    // largeur réelle au lieu de la supposer.
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        const gap = 8.0;
+                        final available = constraints.maxWidth;
+                        final boxWidth =
+                            ((available -
+                                        gap * (AppValidators.otpLength - 1)) /
+                                    AppValidators.otpLength)
+                                .clamp(34.0, 44.0);
+
+                        return Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(6, (i) {
+                      children: List.generate(AppValidators.otpLength, (i) {
                         final code = _otpController.text;
                         final char = code.length > i ? code[i] : '';
                         final isFocused = _otpFocusNode.hasFocus && code.length == i;
 
                         return Container(
-                          width: 44,
+                          width: boxWidth,
                           height: 58,
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          margin: EdgeInsets.only(
+                            right: i == AppValidators.otpLength - 1 ? 0 : gap,
+                          ),
                           decoration: BoxDecoration(
                             color: kBgSurface,
                             borderRadius: BorderRadius.circular(14),
@@ -263,6 +280,8 @@ class _OtpScreenState extends State<OtpScreen> {
                           ),
                         );
                       }),
+                        );
+                      },
                     ),
                     // Fully transparent but functional single TextField
                     Positioned.fill(
@@ -272,13 +291,17 @@ class _OtpScreenState extends State<OtpScreen> {
                           controller: _otpController,
                           focusNode: _otpFocusNode,
                           keyboardType: TextInputType.number,
-                          maxLength: 6,
+                          maxLength: AppValidators.otpLength,
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          // Fait remplir le code automatiquement par iOS et
+                          // Android à sa réception. C'est gratuit, et toute
+                          // l'authentification de l'app repose sur l'OTP.
+                          autofillHints: const [AutofillHints.oneTimeCode],
                           enableInteractiveSelection: true,
                           showCursor: false,
                           onChanged: (val) {
                             setState(() => _errorMessage = null);
-                            if (val.length == 6) {
+                            if (val.length == AppValidators.otpLength) {
                               Future.delayed(const Duration(milliseconds: 200), _validate);
                             }
                           },
@@ -321,9 +344,6 @@ class _OtpScreenState extends State<OtpScreen> {
                             alpha: 0.5,
                           ),
                           elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
                         ),
                         child: _authController.isLoading.value
                             ? const SizedBox(

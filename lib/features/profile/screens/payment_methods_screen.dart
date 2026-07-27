@@ -46,7 +46,7 @@ class PaymentMethodsScreen extends GetView<ProfileController> {
             _PayoutMethodCard(
               title: 'Wave',
               subtitle: 'Numéro Wave',
-              color: const Color(0xFF00B0F0),
+              color: kBrandWave,
               bgColor: kBlueLight,
               method: 'WAVE',
               textController: controller.wavePhoneCtrl,
@@ -90,9 +90,6 @@ class PaymentMethodsScreen extends GetView<ProfileController> {
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: kGreen.withValues(alpha: 0.5),
                   elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
                 ),
                 child: controller.isSavingPayout.value
                     ? const SizedBox(
@@ -277,14 +274,13 @@ class _PayoutMethodCardState extends State<_PayoutMethodCard> {
           const SizedBox(height: 14),
           TextField(
             controller: widget.textController,
-            enableInteractiveSelection: false,
             keyboardType: TextInputType.phone,
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(9),
             ],
             decoration: InputDecoration(
-              hintText: '77 000 00 00',
+              hintText: '77 XXX XX XX',
               prefixText: '+221 ',
               prefixStyle: const TextStyle(
                 color: kTextPrim,

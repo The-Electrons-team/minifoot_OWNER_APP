@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:get/get.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_validators.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/auth_controller.dart';
 
@@ -33,8 +35,9 @@ class _ForceChangePasswordScreenState extends State<ForceChangePasswordScreen> {
       AppSnackbar.warning('Veuillez saisir un mot de passe.');
       return;
     }
-    if (pass.length < 6) {
-      AppSnackbar.warning('Le mot de passe doit faire au moins 6 caractères.');
+    final passwordError = AppValidators.password(pass);
+    if (passwordError != null) {
+      AppSnackbar.warning('$passwordError.');
       return;
     }
     if (pass != confirm) {
@@ -63,7 +66,7 @@ class _ForceChangePasswordScreenState extends State<ForceChangePasswordScreen> {
                   color: kGreen.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Icon(Icons.lock_reset_rounded, color: kGreen, size: 32),
+                child: const Icon(PhosphorIconsRegular.lockKeyOpen, color: kGreen, size: 32),
               ),
               const SizedBox(height: 24),
               const Text(
@@ -99,14 +102,15 @@ class _ForceChangePasswordScreenState extends State<ForceChangePasswordScreen> {
               Obx(() => TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword.value,
+                autofillHints: const [AutofillHints.newPassword],
                 style: const TextStyle(color: kTextPrim, fontSize: 16),
                 decoration: InputDecoration(
                   hintText: 'Entrez votre nouveau mot de passe',
-                  prefixIcon: const Icon(Icons.lock_outline_rounded, color: kTextLight),
+                  prefixIcon: const Icon(PhosphorIconsRegular.lock, color: kTextLight),
                   suffixIcon: IconButton(
                     onPressed: () => _obscurePassword.toggle(),
                     icon: Icon(
-                      _obscurePassword.value ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscurePassword.value ? PhosphorIconsRegular.eyeSlash : PhosphorIconsRegular.eye,
                       color: kTextLight,
                     ),
                   ),
@@ -128,14 +132,15 @@ class _ForceChangePasswordScreenState extends State<ForceChangePasswordScreen> {
               Obx(() => TextField(
                 controller: _confirmController,
                 obscureText: _obscureConfirm.value,
+                autofillHints: const [AutofillHints.newPassword],
                 style: const TextStyle(color: kTextPrim, fontSize: 16),
                 decoration: InputDecoration(
                   hintText: 'Confirmez votre nouveau mot de passe',
-                  prefixIcon: const Icon(Icons.lock_outline_rounded, color: kTextLight),
+                  prefixIcon: const Icon(PhosphorIconsRegular.lock, color: kTextLight),
                   suffixIcon: IconButton(
                     onPressed: () => _obscureConfirm.toggle(),
                     icon: Icon(
-                      _obscureConfirm.value ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      _obscureConfirm.value ? PhosphorIconsRegular.eyeSlash : PhosphorIconsRegular.eye,
                       color: kTextLight,
                     ),
                   ),
@@ -152,9 +157,6 @@ class _ForceChangePasswordScreenState extends State<ForceChangePasswordScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: kGreen,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
                     elevation: 0,
                   ),
                   child: _authController.isLoading.value

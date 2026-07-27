@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_config.dart';
+import '../models/paginated.dart';
 
 class ReservationService {
   final String _base = AppConfig.apiUrl;
@@ -18,23 +19,44 @@ class ReservationService {
     'Authorization': 'Bearer ${await _token()}',
   };
 
-  Future<List<dynamic>> getOwnerReservations({String? status}) async {
+  Future<Paginated<dynamic>> getOwnerReservations({
+    String? status,
+    int page = 1,
+  }) async {
     final uri = Uri.parse('$_base/reservations/owner/mine').replace(
-      queryParameters: status == null || status.isEmpty
-          ? null
-          : {'status': status},
+      queryParameters: {
+        'page': '$page',
+        if (status != null && status.isNotEmpty) 'status': status,
+      },
     );
 
     final response = await http.get(uri, headers: await _headers());
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      if (body is List) return body;
-      if (body is Map<String, dynamic>) {
-        return body['data'] as List<dynamic>? ?? [];
-      }
-      return [];
+      return Paginated<dynamic>.fromBody(jsonDecode(response.body), page: page);
     }
     throw Exception('Erreur chargement réservations: ${response.body}');
+  }
+
+  /// Récupère **toutes** les réservations, page après page.
+  ///
+  /// À réserver aux calculs qui doivent être exhaustifs — revenus, rapports
+  /// PDF — où une troncature silencieuse fausserait des montants. Les écrans de
+  /// liste doivent passer par [getOwnerReservations] page par page.
+  Future<List<dynamic>> getAllOwnerReservations({String? status}) async {
+    final all = <dynamic>[];
+    var page = 1;
+
+    while (true) {
+      final result = await getOwnerReservations(status: status, page: page);
+      all.addAll(result.items);
+      if (!result.hasMore || result.items.isEmpty) break;
+      page += 1;
+      // Garde-fou : une pagination mal formée côté serveur ne doit pas
+      // provoquer une boucle infinie sur le téléphone.
+      if (page > 100) break;
+    }
+
+    return all;
   }
 
   Future<void> cancelOwnerReservation(String id) async {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_states.dart';
 import '../controllers/notifications_controller.dart';
 
 class NotificationsScreen extends GetView<NotificationsController> {
@@ -52,40 +53,78 @@ class NotificationsScreen extends GetView<NotificationsController> {
         children: [
           _FilterChips(),
           Expanded(
-            child: Obx(() {
-              if (controller.isLoading.value &&
-                  controller.notifications.isEmpty) {
-                return const Center(
-                  child: CircularProgressIndicator(color: kGreen),
-                );
-              }
-              if (controller.errorMessage.value.isNotEmpty &&
-                  controller.notifications.isEmpty) {
-                return _ErrorState(
-                  message: controller.errorMessage.value,
-                  onRetry: controller.loadNotifications,
-                );
-              }
-              final items = controller.filteredNotifications;
-              if (items.isEmpty) {
-                return _EmptyState();
-              }
-              return RefreshIndicator(
-                color: kGreen,
-                onRefresh: controller.refreshNotifications,
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                  itemCount: items.length,
-                  itemBuilder: (context, index) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _NotificationTile(
-                      item: items[index],
-                      onTap: () => controller.markRead(items[index]),
+            // Le RefreshIndicator était *à l'intérieur* de la branche « liste
+            // non vide » : impossible de tirer pour réessayer précisément dans
+            // les deux cas où on en a besoin, l'erreur et le vide.
+            child: RefreshIndicator(
+              color: kGreen,
+              onRefresh: controller.refreshNotifications,
+              child: Obx(() {
+                if (controller.isLoading.value &&
+                    controller.notifications.isEmpty) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: kGreen),
+                  );
+                }
+
+                if (controller.errorMessage.value.isNotEmpty &&
+                    controller.notifications.isEmpty) {
+                  return _fullHeight(
+                    context,
+                    AppErrorState(
+                      message: controller.errorMessage.value,
+                      onRetry: controller.loadNotifications,
                     ),
+                  );
+                }
+
+                final items = controller.filteredNotifications;
+                if (items.isEmpty) {
+                  return _fullHeight(context, _EmptyState());
+                }
+
+                return NotificationListener<ScrollNotification>(
+                  // Charge la page suivante avant d'atteindre le bas, pour que
+                  // le défilement ne marque pas d'arrêt.
+                  onNotification: (scroll) {
+                    final metrics = scroll.metrics;
+                    if (metrics.pixels >= metrics.maxScrollExtent - 400) {
+                      controller.loadMore();
+                    }
+                    return false;
+                  },
+                  child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                    itemCount: items.length + (controller.hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index >= items.length) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Center(
+                            child: SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: kGreen,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _NotificationTile(
+                          item: items[index],
+                          onTap: () => controller.markRead(items[index]),
+                        ),
+                      );
+                    },
                   ),
-                ),
-              );
-            }),
+                );
+              }),
+            ),
           ),
         ],
       ),
@@ -317,49 +356,12 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-class _ErrorState extends StatelessWidget {
-  final String message;
-  final Future<void> Function() onRetry;
 
-  const _ErrorState({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            PhosphorIcon(PhosphorIconsDuotone.warningCircle,
-              size: 56,
-              color: kTextLight,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: kTextSub,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: onRetry,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kGreen,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              child: const Text('Réessayer'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+/// Occupe toute la hauteur disponible tout en restant défilable, pour qu'un
+/// état vide ou en erreur reste tirable vers le bas.
+Widget _fullHeight(BuildContext context, Widget child) => ListView(
+  physics: const AlwaysScrollableScrollPhysics(),
+  children: [
+    SizedBox(height: MediaQuery.sizeOf(context).height * 0.6, child: child),
+  ],
+);

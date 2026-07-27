@@ -3,7 +3,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import '../../../core/utils/app_format.dart';
+import '../../../core/widgets/app_states.dart';
+import '../../../core/utils/app_motion.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../controllers/terrain_controller.dart';
 
@@ -19,7 +23,7 @@ class TerrainListScreen extends GetView<TerrainController> {
         child: Container(
           decoration: const BoxDecoration(
             color: Colors.white,
-            border: Border(bottom: BorderSide(color: Color(0xFFF0EBE3))),
+            border: Border(bottom: BorderSide(color: kBgSurface)),
           ),
           child: AppBar(
             backgroundColor: Colors.transparent,
@@ -31,12 +35,12 @@ class TerrainListScreen extends GetView<TerrainController> {
                   width: 40,
                   height: 40,
                   decoration: const BoxDecoration(
-                    color: Color(0xFFF0EBE3),
+                    color: kBgSurface,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     PhosphorIconsLight.arrowLeft,
-                    color: Color(0xFF1A1A1A),
+                    color: kTextPrim,
                     size: 16,
                   ),
                 ),
@@ -49,7 +53,7 @@ class TerrainListScreen extends GetView<TerrainController> {
                 fontFamily: 'Orbitron',
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF006F39),
+                color: kGreen,
               ),
             ),
           ),
@@ -57,9 +61,9 @@ class TerrainListScreen extends GetView<TerrainController> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => controller.goToForm(null),
-        backgroundColor: const Color(0xFF006F39),
+        backgroundColor: kGreen,
         elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
         child: const Icon(
           PhosphorIconsLight.plus,
           color: Colors.white,
@@ -82,7 +86,7 @@ class TerrainListScreen extends GetView<TerrainController> {
                             label: 'Terrains',
                             value: '${controller.totalTerrains}',
                             icon: PhosphorIconsLight.soccerBall,
-                            color: const Color(0xFF006F39),
+                            color: kGreen,
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -113,7 +117,7 @@ class TerrainListScreen extends GetView<TerrainController> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE5E0D8)),
+                      border: Border.all(color: kBorder),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.03),
@@ -126,7 +130,7 @@ class TerrainListScreen extends GetView<TerrainController> {
                       children: [
                         const Icon(
                           PhosphorIconsLight.magnifyingGlass,
-                          color: Color(0xFF9CA3AF),
+                          color: kTextLight,
                           size: 20,
                         ),
                         const SizedBox(width: 12),
@@ -134,14 +138,14 @@ class TerrainListScreen extends GetView<TerrainController> {
                           child: TextField(
                             onChanged: controller.onSearch,
                             style: const TextStyle(
-                              color: Color(0xFF1A1A1A),
+                              color: kTextPrim,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
                             decoration: const InputDecoration(
                               hintText: 'Rechercher un terrain...',
                               hintStyle: TextStyle(
-                                color: Color(0xFF9CA3AF),
+                                color: kTextLight,
                                 fontSize: 14,
                               ),
                               border: InputBorder.none,
@@ -161,40 +165,93 @@ class TerrainListScreen extends GetView<TerrainController> {
             ),
 
             Expanded(
-              child: Obx(() {
-                if (controller.isLoading.value) {
-                  return ShimmerList(
-                    itemBuilder: (context, index) =>
-                        const TerrainCardSkeleton(),
-                  );
-                }
-                if (controller.terrains.isEmpty) {
-                  return _buildEmptyState();
-                }
-
-                return ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 110),
-                  physics: const BouncingScrollPhysics(),
-                  children: List.generate(controller.terrains.length, (index) {
-                    final terrain = controller.terrains[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child:
-                          _TerrainCard(
-                            onTap: () => controller.goToDetail(terrain),
-                            terrain: terrain,
-                            onToggle: () => controller.toggleStatus(terrain.id),
-                            onEdit: () => controller.goToForm(terrain),
-                            onDelete: () =>
-                                controller.deleteConfirm(terrain.id),
-                          ).animate().fadeIn(
-                            duration: 350.ms,
-                            delay: (index * 70).ms,
-                          ),
+              // La liste employait une physique « bouncing » : elle *semblait*
+              // tirable alors qu'aucun rafraîchissement n'était branché.
+              child: RefreshIndicator(
+                onRefresh: controller.refreshTerrains,
+                color: kGreen,
+                backgroundColor: kBgCard,
+                child: Obx(() {
+                  if (controller.isLoading.value) {
+                    return ShimmerList(
+                      itemBuilder: (context, index) =>
+                          const TerrainCardSkeleton(),
                     );
-                  }),
-                );
-              }),
+                  }
+
+                  // L'erreur passe avant le vide : sans cela, une coupure
+                  // réseau s'affichait comme « Aucun terrain ».
+                  if (controller.errorMessage.value.isNotEmpty) {
+                    return _scrollableState(
+                      context,
+                      AppErrorState(
+                        message: controller.errorMessage.value,
+                        onRetry: controller.refreshTerrains,
+                      ),
+                    );
+                  }
+
+                  if (controller.terrains.isEmpty) {
+                    return _buildEmptyState();
+                  }
+
+                  return NotificationListener<ScrollNotification>(
+                    onNotification: (scroll) {
+                      if (scroll.metrics.pixels >=
+                          scroll.metrics.maxScrollExtent - 400) {
+                        controller.loadMore();
+                      }
+                      return false;
+                    },
+                    child: ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 110),
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: BouncingScrollPhysics(),
+                    ),
+                    children: List.generate(controller.terrains.length, (
+                      index,
+                    ) {
+                      final terrain = controller.terrains[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child:
+                            _TerrainCard(
+                              onTap: () => controller.goToDetail(terrain),
+                              terrain: terrain,
+                              onToggle: () =>
+                                  controller.toggleStatus(terrain.id),
+                              onEdit: () => controller.goToForm(terrain),
+                              onDelete: () =>
+                                  controller.deleteConfirm(terrain.id),
+                            ).animate().fadeIn(
+                              duration: 350.ms,
+                              delay: AppMotion.stagger(index, step: 70),
+                            ),
+                      );
+                    })
+                      ..addAll(
+                        controller.hasMore
+                            ? const [
+                                Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 20),
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: kGreen,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ]
+                            : const <Widget>[],
+                      ),
+                    ),
+                  );
+                }),
+              ),
             ),
           ],
         ),
@@ -237,6 +294,22 @@ class TerrainListScreen extends GetView<TerrainController> {
     );
   }
 
+  /// Rend un état plein écran défilable, pour qu'il reste tirable vers le bas
+  /// même quand il n'y a rien à faire défiler.
+  Widget _scrollableState(BuildContext context, Widget child) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
+      ),
+      children: [
+        SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.55,
+          child: child,
+        ),
+      ],
+    );
+  }
+
   Widget _buildEmptyState() {
     final hasAnyTerrain = controller.totalTerrains > 0;
     return LayoutBuilder(
@@ -266,7 +339,7 @@ class TerrainListScreen extends GetView<TerrainController> {
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1A1A1A),
+                        color: kTextPrim,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -277,7 +350,7 @@ class TerrainListScreen extends GetView<TerrainController> {
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF6B7280),
+                        color: kTextSub,
                         height: 1.5,
                       ),
                     ),
@@ -288,14 +361,11 @@ class TerrainListScreen extends GetView<TerrainController> {
                         icon: const Icon(PhosphorIconsLight.plus, size: 18),
                         label: const Text('Ajouter un terrain'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF006F39),
+                          backgroundColor: kGreen,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 18,
                             vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
                           ),
                           elevation: 0,
                         ),
@@ -333,7 +403,7 @@ class _StatPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E0D8)),
+        border: Border.all(color: kBorder),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -362,7 +432,7 @@ class _StatPill extends StatelessWidget {
                 Text(
                   value,
                   style: const TextStyle(
-                    color: Color(0xFF1A1A1A),
+                    color: kTextPrim,
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                   ),
@@ -372,7 +442,7 @@ class _StatPill extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Color(0xFF6B7280),
+                    color: kTextSub,
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                   ),
@@ -405,10 +475,10 @@ class _FilterChip extends StatelessWidget {
       duration: 180.ms,
       height: 38,
       decoration: BoxDecoration(
-        color: selected ? const Color(0xFF006F39) : Colors.white,
+        color: selected ? kGreen : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: selected ? const Color(0xFF006F39) : const Color(0xFFE5E0D8),
+          color: selected ? kGreen : kBorder,
         ),
       ),
       child: Material(
@@ -428,7 +498,7 @@ class _FilterChip extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: selected ? Colors.white : const Color(0xFF6B7280),
+                      color: selected ? Colors.white : kTextSub,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -443,13 +513,13 @@ class _FilterChip extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: selected
                         ? Colors.white.withValues(alpha: 0.18)
-                        : const Color(0xFFF0EBE3),
+                        : kBgSurface,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     '$count',
                     style: TextStyle(
-                      color: selected ? Colors.white : const Color(0xFF006F39),
+                      color: selected ? Colors.white : kGreen,
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
                     ),
@@ -488,7 +558,7 @@ class _TerrainCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: Color(0xFFE5E0D8)),
+          side: const BorderSide(color: kBorder),
         ),
         shadowColor: Colors.black.withValues(alpha: 0.12),
         elevation: 6,
@@ -503,15 +573,9 @@ class _TerrainCard extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     terrain.displayImage.isNotEmpty
-                        ? Image.network(
-                            terrain.displayImage,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              debugPrint(
-                                'Erreur image terrain: ${terrain.displayImage} -> $error',
-                              );
-                              return const _TerrainImageFallback();
-                            },
+                        ? AppNetworkImage(
+                            url: terrain.displayImage,
+                            fallback: const _TerrainImageFallback(),
                           )
                         : const _TerrainImageFallback(),
                     DecoratedBox(
@@ -544,7 +608,7 @@ class _TerrainCard extends StatelessWidget {
                           _RoundAction(
                             icon: PhosphorIconsLight.trash,
                             onTap: onDelete,
-                            color: const Color(0xFFEF4444),
+                            color: kRed,
                           ),
                         ],
                       ),
@@ -610,7 +674,7 @@ class _TerrainCard extends StatelessWidget {
                             child: Text(
                               _formatPriceRange(terrain),
                               style: const TextStyle(
-                                color: Color(0xFF006F39),
+                                color: kGreen,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w900,
                               ),
@@ -652,10 +716,10 @@ class _TerrainCard extends StatelessWidget {
                               _InfoBadge(
                                 label: terrain.rating.toStringAsFixed(1),
                                 icon: PhosphorIconsFill.star,
-                                iconColor: const Color(0xFFF59E0B),
-                                backgroundColor: const Color(0xFFFEF3C7),
+                                iconColor: kGold,
+                                backgroundColor: kGoldLight,
                                 borderColor: const Color(0xFFFDE68A),
-                                textColor: const Color(0xFFF59E0B),
+                                textColor: kGold,
                               ),
                             ],
                           ),
@@ -694,7 +758,7 @@ class _TerrainCard extends StatelessWidget {
                           ),
                           label: const Text('Modifier'),
                           style: TextButton.styleFrom(
-                            foregroundColor: const Color(0xFF006F39),
+                            foregroundColor: kGreen,
                             textStyle: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
@@ -724,17 +788,10 @@ class _TerrainCard extends StatelessWidget {
     return '${_formatAmount(prices.first)} - ${_formatAmount(prices.last)} F/h';
   }
 
-  static String _formatHourlyPrice(int price) {
-    return '${_formatAmount(price)} F/h';
-  }
+  static String _formatHourlyPrice(int price) => AppFormat.pricePerHour(price);
 
-  static String _formatAmount(int price) {
-    final value = price.toString().replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (_) => ' ',
-    );
-    return value;
-  }
+  static String _formatAmount(int price) =>
+      AppFormat.amount(price, withSymbol: false);
 }
 
 class _MiniTerrainChip extends StatelessWidget {
@@ -745,13 +802,13 @@ class _MiniTerrainChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = miniTerrain.isActive
-        ? const Color(0xFF006F39)
-        : const Color(0xFF9CA3AF);
+        ? kGreen
+        : kTextLight;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         color: miniTerrain.isActive
-            ? const Color(0xFFE8F5E9)
+            ? kGreenLight
             : const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: color.withValues(alpha: 0.22)),
@@ -781,7 +838,7 @@ class _TerrainImageFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFEAF5ED),
+      color: kGreenLight,
       child: Center(
         child: Container(
           width: 62,
@@ -793,7 +850,7 @@ class _TerrainImageFallback extends StatelessWidget {
           ),
           child: const Icon(
             PhosphorIconsLight.soccerBall,
-            color: Color(0xFF006F39),
+            color: kGreen,
             size: 30,
           ),
         ),
@@ -809,7 +866,7 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? const Color(0xFF006F39) : const Color(0xFF6B7280);
+    final color = isActive ? kGreen : kTextSub;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
@@ -854,7 +911,7 @@ class _RoundAction extends StatelessWidget {
   const _RoundAction({
     required this.icon,
     required this.onTap,
-    this.color = const Color(0xFF1A1A1A),
+    this.color = kTextPrim,
   });
 
   @override
@@ -882,7 +939,7 @@ class _StatusToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? const Color(0xFF006F39) : const Color(0xFF9CA3AF);
+    final color = isActive ? kGreen : kTextLight;
     return Row(
       children: [
         AnimatedContainer(
@@ -891,7 +948,7 @@ class _StatusToggle extends StatelessWidget {
           height: 22,
           padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
-            color: isActive ? const Color(0xFF006F39) : const Color(0xFFE5E0D8),
+            color: isActive ? kGreen : kBorder,
             borderRadius: BorderRadius.circular(20),
           ),
           child: AnimatedAlign(
@@ -934,9 +991,9 @@ class _InfoBadge extends StatelessWidget {
     required this.label,
     this.icon,
     this.iconColor,
-    this.backgroundColor = const Color(0xFFF5F0E8),
-    this.borderColor = const Color(0xFFE5E0D8),
-    this.textColor = const Color(0xFF1A1A1A),
+    this.backgroundColor = kBg,
+    this.borderColor = kBorder,
+    this.textColor = kTextPrim,
   });
 
   @override

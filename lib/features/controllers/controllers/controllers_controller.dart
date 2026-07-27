@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../../core/services/controller_service.dart';
 import '../../../core/services/terrain_service.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_snackbar.dart';
 
 class OwnerControllerModel {
@@ -145,6 +146,18 @@ class ControllersController extends GetxController {
   final _terrainService = TerrainService();
 
   final isLoading = false.obs;
+  /// Message d'erreur du dernier chargement. Vide = pas d'erreur.
+  ///
+  /// Sans lui, un échec réseau se présentait comme une liste vide, message
+  /// d'accueil compris — trompeur et sans moyen de réessayer.
+  final errorMessage = ''.obs;
+
+  /// Pagination.
+  final currentPage = 1.obs;
+  final isLoadingMore = false.obs;
+  final total = 0.obs;
+
+  bool get hasMore => controllers.length < total.value;
   final isLoadingActivity = false.obs;
   final controllers = <OwnerControllerModel>[].obs;
   final terrains = <ControllerTerrainOption>[].obs;
@@ -158,16 +171,21 @@ class ControllersController extends GetxController {
 
   Future<void> refreshAll() async {
     isLoading.value = true;
+    errorMessage.value = '';
     try {
-      final data = await _service.getControllers();
-      controllers.value = data
+      currentPage.value = 1;
+      final result = await _service.getControllers();
+      total.value = result.total;
+      controllers.value = result.items
           .map(
             (item) =>
                 OwnerControllerModel.fromJson(item as Map<String, dynamic>),
           )
           .toList();
 
-      final terrainData = await _terrainService.getMesTerrains();
+      // Liste complète : elle alimente le sélecteur de complexes autorisés,
+      // qui doit tous les proposer.
+      final terrainData = await _terrainService.getAllMesTerrains();
       terrains.value = terrainData
           .map(
             (item) => ControllerTerrainOption(
@@ -178,9 +196,30 @@ class ControllersController extends GetxController {
           .where((item) => item.id.isNotEmpty)
           .toList();
     } catch (_) {
-      AppSnackbar.error('Impossible de charger les contrôleurs. Vérifiez votre connexion.');
+      errorMessage.value =
+          'Impossible de charger les contrôleurs. Vérifiez votre connexion.';
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// Charge la page suivante. Échec silencieux : la liste affichée est conservée.
+  Future<void> loadMore() async {
+    if (isLoadingMore.value || isLoading.value || !hasMore) return;
+    isLoadingMore.value = true;
+    try {
+      final result = await _service.getControllers(page: currentPage.value + 1);
+      controllers.addAll(
+        result.items.map(
+          (item) => OwnerControllerModel.fromJson(item as Map<String, dynamic>),
+        ),
+      );
+      currentPage.value += 1;
+      total.value = result.total;
+    } catch (_) {
+      // volontairement silencieux
+    } finally {
+      isLoadingMore.value = false;
     }
   }
 
@@ -206,6 +245,21 @@ class ControllersController extends GetxController {
   }
 
   Future<void> toggleActive(OwnerControllerModel controller) async {
+    // La désactivation se faisait instantanément au tap : elle retire à
+    // quelqu'un l'accès au scan des QR et à la gestion des créneaux, elle
+    // mérite une confirmation.
+    if (controller.isActive) {
+      final confirmed = await AppDialog.confirm(
+        title: 'Désactiver ce contrôleur ?',
+        message:
+            '${controller.fullName} ne pourra plus scanner les QR codes ni '
+            'gérer les créneaux des complexes autorisés.',
+        confirmLabel: 'Désactiver',
+        destructive: true,
+      );
+      if (!confirmed) return;
+    }
+
     try {
       await _service.updateController(controller.id, {
         'isActive': !controller.isActive,

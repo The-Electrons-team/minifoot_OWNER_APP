@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../controllers/profile_controller.dart';
 
 class EditProfileScreen extends GetView<ProfileController> {
@@ -57,9 +58,6 @@ class EditProfileScreen extends GetView<ProfileController> {
                   backgroundColor: kGreen,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
                 ),
                 child: controller.isSaving.value
                     ? const SizedBox(
@@ -119,31 +117,20 @@ class EditProfileScreen extends GetView<ProfileController> {
                       ],
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: hasImage
-                        ? Image.network(
-                            controller.avatarUrl.value!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => Center(
-                              child: Text(
-                                controller.initials,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ),
-                          )
-                        : Center(
-                            child: Text(
-                              controller.initials,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
+                    child: AppNetworkImage(
+                      url: hasImage ? controller.avatarUrl.value : null,
+                      fit: BoxFit.cover,
+                      fallback: Center(
+                        child: Text(
+                          controller.initials,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
                           ),
+                        ),
+                      ),
+                    ),
                   );
                 }),
                 // Upload indicator
@@ -433,7 +420,6 @@ class EditProfileScreen extends GetView<ProfileController> {
                 const SizedBox(height: 18),
                 TextField(
                   controller: controller.nextPhoneCtrl,
-                  enableInteractiveSelection: false,
                   keyboardType: TextInputType.phone,
                   enabled: !controller.phoneOtpSent.value,
                   inputFormatters: [
@@ -442,7 +428,7 @@ class EditProfileScreen extends GetView<ProfileController> {
                   ],
                   decoration: const InputDecoration(
                     labelText: 'Nouveau numéro',
-                    hintText: '77 000 00 00',
+                    hintText: '77 XXX XX XX',
                     prefixText: '+221 ',
                   ),
                 ),
@@ -450,7 +436,6 @@ class EditProfileScreen extends GetView<ProfileController> {
                   const SizedBox(height: 14),
                   TextField(
                     controller: controller.phoneOtpCtrl,
-                    enableInteractiveSelection: false,
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
@@ -582,7 +567,6 @@ class _ProfileTextField extends StatelessWidget {
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          enableInteractiveSelection: false,
           textCapitalization: TextCapitalization.words,
           textInputAction: TextInputAction.next,
           style: const TextStyle(

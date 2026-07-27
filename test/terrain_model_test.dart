@@ -27,15 +27,23 @@ void main() {
     });
 
     expect(terrain.miniTerrainCount, 1);
-    expect(terrain.miniTerrainLabel, '1 mini-terrain');
+    // Renommé `reservableUnitLabel` (et le libellé est passé à « option ») ;
+    // le test référençait encore l'ancien nom et cassait la compilation de
+    // toute la suite, pas seulement de ce fichier.
+    expect(terrain.reservableUnitLabel, '1 option');
     expect(terrain.subTerrains.first.name, 'Terrain A');
+    // Le modèle a gagné la découpe (FULL/HALF) et les plages tarifaires depuis
+    // l'écriture de ce test.
     expect(terrain.subTerrains.first.toJson(), {
       'id': 'sub-1',
       'name': 'Terrain A',
+      'divisionType': 'FULL',
+      'divisionIndex': 0,
       'capacity': 10,
       'type': '5v5',
       'surface': 'Gazon synthetique',
       'pricePerHour': 18000,
+      'pricingPeriods': <Map<String, dynamic>>[],
       'isActive': true,
     });
   });

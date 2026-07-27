@@ -1,5 +1,13 @@
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../../../core/utils/app_async.dart';
+import '../../../core/utils/app_image.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_network_image.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
@@ -8,7 +16,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/config/app_config.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/lottie_success_dialog.dart';
 import '../controllers/owner_zone_options.dart';
@@ -55,6 +63,30 @@ class _PricingPeriodDraft {
       target: target,
       days: model.days,
     );
+  }
+
+  /// Décrit *pourquoi* la plage est invalide, ou `null` si elle est correcte.
+  ///
+  /// `toModel()` renvoyait `null` pour quatre causes différentes, toutes
+  /// remontées par le même message : « Terrain incomplet. Vérifiez le nom, les
+  /// formats, les découpes et les tarifs. » Sur un écran comptant N terrains ×
+  /// M plages, l'utilisateur ne pouvait pas savoir quoi corriger.
+  String? get validationError {
+    final start = startCtrl.text.trim();
+    final end = endCtrl.text.trim();
+    final label = labelCtrl.text.trim().isEmpty ? 'une plage tarifaire' : '« ${labelCtrl.text.trim()} »';
+
+    final price = int.tryParse(priceCtrl.text.trim());
+    if (price == null || price <= 0) {
+      return 'Renseignez un prix supérieur à 0 pour $label.';
+    }
+    if (!_isValidTime(start) || !_isValidTime(end)) {
+      return 'Les heures de $label sont incomplètes.';
+    }
+    if (_timeToMinutes(end) <= _timeToMinutes(start)) {
+      return 'Pour $label, l\'heure de fin doit suivre l\'heure de début.';
+    }
+    return null;
   }
 
   PricingPeriodModel? toModel() {
@@ -186,6 +218,33 @@ class _SubTerrainDraft {
     );
     draft.pricingPeriods.assignAll(periods);
     return draft;
+  }
+
+  /// Décrit ce qui manque à ce terrain, ou `null` s'il est complet.
+  String? get validationError {
+    final name = nameCtrl.text.trim();
+    final label = name.isEmpty ? 'ce terrain' : '« $name »';
+
+    if (name.isEmpty) return 'Donnez un nom à ce terrain.';
+    final selectedFormats = _TerrainFormScreenState._miniTerrainTypes
+        .where(formats.contains)
+        .toList();
+    if (selectedFormats.isEmpty) {
+      return 'Choisissez au moins un format pour $label.';
+    }
+    if (pricingPeriods.isEmpty) {
+      return 'Ajoutez au moins une plage tarifaire à $label.';
+    }
+    for (final period in pricingPeriods) {
+      final error = period.validationError;
+      if (error != null) return error;
+    }
+    final hasFull = pricingPeriods.any((p) => p.target.value == 'FULL');
+    final hasHalf = pricingPeriods.any((p) => p.target.value == 'HALF');
+    if (!hasFull && !hasHalf) {
+      return 'Indiquez si les tarifs de $label visent le terrain complet ou la demi-surface.';
+    }
+    return null;
   }
 
   List<SubTerrainModel>? toModels(int index, int defaultPricePerHour) {
@@ -405,6 +464,11 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
     }
 
     if (_miniTerrains.isNotEmpty) _editingTerrainIndex.value = 0;
+
+    // Référence pour détecter une modification réelle : à figer après le
+    // préremplissage, sinon l'édition serait considérée comme modifiée d'emblée.
+    _initialSignature = _inputSignature;
+
     if (!_isEditing) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _useCurrentLocation());
     }
@@ -511,37 +575,44 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // `canPop: false` intercepte le bouton retour matériel et le geste de
+    // retour iOS, qui court-circuitaient l'assistant et détruisaient la saisie.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _handleBack();
+      },
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F0E8),
+      backgroundColor: kBg,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(64),
         child: Container(
           decoration: const BoxDecoration(
             color: Colors.white,
-            border: Border(bottom: BorderSide(color: Color(0xFFF0EBE3))),
+            border: Border(bottom: BorderSide(color: kBgSurface)),
           ),
           child: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
             leading: Center(
               child: GestureDetector(
-                onTap: () {
-                  if (_step.value > 0) {
-                    _goPrevious();
-                  } else {
-                    _ctrl.goBack();
-                  }
-                },
+                onTap: _handleBack,
                 child: Container(
                   width: 40,
                   height: 40,
                   decoration: const BoxDecoration(
-                    color: Color(0xFFF0EBE3),
+                    color: kBgSurface,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: Color(0xFF1A1A1A),
+                    PhosphorIconsRegular.caretLeft,
+                    color: kTextPrim,
                     size: 16,
                   ),
                 ),
@@ -554,7 +625,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                 fontFamily: 'Orbitron',
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF006F39),
+                color: kGreen,
               ),
             ),
           ),
@@ -597,7 +668,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
           decoration: BoxDecoration(
             color: Colors.white,
-            border: const Border(top: BorderSide(color: Color(0xFFF0EBE3))),
+            border: const Border(top: BorderSide(color: kBgSurface)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -628,7 +699,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
         Text(
           'Étape $current sur 5',
           style: const TextStyle(
-            color: Color(0xFF6B7280),
+            color: kTextSub,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
@@ -643,8 +714,8 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                 margin: EdgeInsets.only(right: index == 4 ? 0 : 6),
                 decoration: BoxDecoration(
                   color: active
-                      ? const Color(0xFF006F39)
-                      : const Color(0xFFE5E0D8),
+                      ? kGreen
+                      : kBorder,
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
@@ -655,7 +726,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
         Text(
           titles[_step.value],
           style: const TextStyle(
-            color: Color(0xFF1A1A1A),
+            color: kTextPrim,
             fontSize: 22,
             fontWeight: FontWeight.w800,
           ),
@@ -704,12 +775,9 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
             child: ElevatedButton(
               onPressed: _addMiniTerrain,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF006F39),
+                backgroundColor: kGreen,
                 foregroundColor: Colors.white,
                 minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
                 elevation: 0,
               ),
               child: const Text(
@@ -747,12 +815,9 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
               child: OutlinedButton(
                 onPressed: _addMiniTerrain,
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF006F39),
-                  side: const BorderSide(color: Color(0xFFE5E0D8)),
+                  foregroundColor: kGreen,
+                  side: const BorderSide(color: kBorder),
                   minimumSize: const Size(double.infinity, 46),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
                 ),
                 child: const Text(
                   'Ajouter un terrain',
@@ -860,7 +925,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE5E0D8)),
+          border: Border.all(color: kBorder),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -878,12 +943,12 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5E9),
+                    color: kGreenLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
                     PhosphorIconsLight.imageSquare,
-                    color: Color(0xFF006F39),
+                    color: kGreen,
                     size: 19,
                   ),
                 ),
@@ -892,7 +957,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                   child: Text(
                     'Photos',
                     style: TextStyle(
-                      color: Color(0xFF1A1A1A),
+                      color: kTextPrim,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
@@ -912,26 +977,21 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                       : 'Ajouter encore',
                 ),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF006F39),
+                  foregroundColor: kGreen,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: const BorderSide(color: Color(0xFFE5E0D8)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  side: const BorderSide(color: kBorder),
                 ),
               ),
             ),
             if (hasExistingImage && _images.isEmpty) ...[
               const SizedBox(height: 12),
-              ClipRRect(
+              // L'ancien errorBuilder renvoyait un SizedBox.shrink() : l'image
+              // disparaissait sans laisser de trace, ce qui ressemblait à un bug.
+              AppNetworkImage(
+                url: existingImage,
+                height: 92,
+                width: double.infinity,
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  existingImage,
-                  height: 92,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                ),
               ),
             ],
             if (_images.isNotEmpty) ...[
@@ -957,9 +1017,17 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
   Future<void> _pickImages() async {
     final picker = ImagePicker();
     final images = await picker.pickMultiImage();
-    if (images.isNotEmpty) {
-      _images.addAll(images);
-    }
+    if (images.isEmpty) return;
+
+    // Compression avant envoi : un propriétaire ajoute souvent 4 ou 5 photos
+    // de terrain d'un coup, soit plusieurs dizaines de mégaoctets bruts sur
+    // une connexion mobile.
+    final compressed = await AppAsync.mapBounded(
+      images,
+      (image) async => XFile((await AppImage.compress(File(image.path))).path),
+      concurrency: 3,
+    );
+    _images.addAll(compressed);
   }
 
   // ── 2. Informations ──────────────────────────────────────────────────────
@@ -996,7 +1064,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF6B7280),
+            color: kTextSub,
           ),
         ),
         const SizedBox(height: 6),
@@ -1010,19 +1078,19 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                         decoration: BoxDecoration(
                           color: const Color(0xFFF9FAF7),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFE5E0D8)),
+                          border: Border.all(color: kBorder),
                         ),
                         child: Row(
                           children: [
                             const Icon(PhosphorIconsLight.phone,
-                                color: Color(0xFF006F39), size: 18),
+                                color: kGreen, size: 18),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 phone,
                                 style: const TextStyle(
                                   fontSize: 14,
-                                  color: Color(0xFF1A1A1A),
+                                  color: kTextPrim,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -1030,7 +1098,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                             IconButton(
                               onPressed: () => _contactPhones.remove(phone),
                               icon: const Icon(PhosphorIconsLight.trash,
-                                  color: Color(0xFFEF4444), size: 18),
+                                  color: kRed, size: 18),
                             ),
                           ],
                         ),
@@ -1043,13 +1111,13 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE5E0D8)),
+            border: Border.all(color: kBorder),
           ),
           child: Row(
             children: [
               const SizedBox(width: 14),
               const Icon(PhosphorIconsLight.phone,
-                  color: Color(0xFF006F39), size: 18),
+                  color: kGreen, size: 18),
               const SizedBox(width: 10),
               Expanded(
                 child: TextField(
@@ -1057,13 +1125,13 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                   keyboardType: TextInputType.phone,
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF1A1A1A),
+                    color: kTextPrim,
                     fontWeight: FontWeight.w600,
                   ),
                   decoration: const InputDecoration(
                     hintText: 'Ajouter un numéro...',
                     hintStyle: TextStyle(
-                      color: Color(0xFF9CA3AF),
+                      color: kTextLight,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
@@ -1083,7 +1151,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                   }
                 },
                 icon: const Icon(PhosphorIconsLight.plusCircle,
-                    color: Color(0xFF006F39), size: 20),
+                    color: kGreen, size: 20),
               ),
             ],
           ),
@@ -1104,7 +1172,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
         style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: Color(0xFF6B7280),
+          color: kTextSub,
         ),
       ),
       const SizedBox(height: 6),
@@ -1115,7 +1183,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE5E0D8)),
+            border: Border.all(color: kBorder),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
@@ -1123,11 +1191,11 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
               isExpanded: true,
               icon: const Icon(
                 PhosphorIconsLight.caretDown,
-                color: Color(0xFF006F39),
+                color: kGreen,
                 size: 16,
               ),
               style: const TextStyle(
-                color: Color(0xFF1A1A1A),
+                color: kTextPrim,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -1173,7 +1241,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFF9FAF7),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E0D8)),
+        border: Border.all(color: kBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1184,12 +1252,12 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
+                  color: kGreenLight,
                   borderRadius: BorderRadius.circular(11),
                 ),
                 child: const Icon(
                   PhosphorIconsLight.soccerBall,
-                  color: Color(0xFF006F39),
+                  color: kGreen,
                   size: 17,
                 ),
               ),
@@ -1198,7 +1266,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                 child: Text(
                   'Terrain ${index + 1}',
                   style: const TextStyle(
-                    color: Color(0xFF1A1A1A),
+                    color: kTextPrim,
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                   ),
@@ -1207,7 +1275,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
               Obx(
                 () => Switch.adaptive(
                   value: miniTerrain.isActive.value,
-                  activeThumbColor: const Color(0xFF006F39),
+                  activeThumbColor: kGreen,
                   onChanged: (value) => miniTerrain.isActive.value = value,
                 ),
               ),
@@ -1216,7 +1284,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                   onPressed: () => _removeMiniTerrain(miniTerrain),
                   icon: const Icon(
                     PhosphorIconsLight.trash,
-                    color: Color(0xFFEF4444),
+                    color: kRed,
                     size: 18,
                   ),
                 ),
@@ -1263,7 +1331,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
             const Text(
               'Tarifs',
               style: TextStyle(
-                color: Color(0xFF6B7280),
+                color: kTextSub,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
@@ -1296,7 +1364,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
           const Text(
             'Tarifs',
             style: TextStyle(
-              color: Color(0xFF6B7280),
+              color: kTextSub,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -1330,7 +1398,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFE5E0D8)),
+          border: Border.all(color: kBorder),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1341,7 +1409,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                   child: Text(
                     label,
                     style: const TextStyle(
-                      color: Color(0xFF1A1A1A),
+                      color: kTextPrim,
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                     ),
@@ -1376,7 +1444,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFF9FAF7),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E0D8)),
+        border: Border.all(color: kBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1385,12 +1453,17 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
             alignment: Alignment.centerRight,
             child: IconButton(
               onPressed: () => miniTerrain.removePricingPeriod(period),
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints.tightFor(width: 34, height: 28),
+              tooltip: 'Supprimer cette plage tarifaire',
+              // 34×28 auparavant : sous le minimum de 48 dp, pour une action
+              // destructive — on rate la cible et on supprime par erreur.
+              constraints: const BoxConstraints.tightFor(
+                width: AppTouch.minTarget,
+                height: AppTouch.minTarget,
+              ),
               icon: const Icon(
                 PhosphorIconsLight.trash,
-                color: Color(0xFFEF4444),
-                size: 17,
+                color: kRed,
+                size: 18,
               ),
             ),
           ),
@@ -1401,6 +1474,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                   label: 'Début',
                   ctrl: period.startCtrl,
                   hint: '18:00',
+                  isTime: true,
                 ),
               ),
               const SizedBox(width: 8),
@@ -1409,6 +1483,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                   label: 'Fin',
                   ctrl: period.endCtrl,
                   hint: '23:00',
+                  isTime: true,
                 ),
               ),
               const SizedBox(width: 8),
@@ -1418,6 +1493,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                   ctrl: period.priceCtrl,
                   hint: '20000',
                   keyboardType: TextInputType.number,
+                  digitsOnly: true,
                 ),
               ),
             ],
@@ -1426,7 +1502,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
           const Text(
             'Jours',
             style: TextStyle(
-              color: Color(0xFF6B7280),
+              color: kTextSub,
               fontSize: 11,
               fontWeight: FontWeight.w700,
             ),
@@ -1462,7 +1538,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
             alignment: Alignment.centerLeft,
             child: Text(
               'Aucun jour sélectionné = tous les jours.',
-              style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 10),
+              style: TextStyle(color: kTextLight, fontSize: 10),
             ),
           ),
         ],
@@ -1488,7 +1564,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF6B7280),
+            color: kTextSub,
           ),
         ),
         const SizedBox(height: 6),
@@ -1548,12 +1624,12 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
               duration: 200.ms,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: sel ? const Color(0xFF006F39) : Colors.white,
+                color: sel ? kGreen : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: sel
-                      ? const Color(0xFF006F39)
-                      : const Color(0xFFE5E0D8),
+                      ? kGreen
+                      : kBorder,
                 ),
               ),
               child: Text(
@@ -1561,7 +1637,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: sel ? Colors.white : const Color(0xFF6B7280),
+                  color: sel ? Colors.white : kTextSub,
                 ),
               ),
             ),
@@ -1605,10 +1681,10 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
               duration: 200.ms,
               padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
-                color: on ? const Color(0xFFE8F5E9) : Colors.white,
+                color: on ? kGreenLight : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: on ? const Color(0xFF006F39) : const Color(0xFFE5E0D8),
+                  color: on ? kGreen : kBorder,
                 ),
               ),
               child: Row(
@@ -1616,8 +1692,8 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                   Icon(
                     icon,
                     color: on
-                        ? const Color(0xFF006F39)
-                        : const Color(0xFF9CA3AF),
+                        ? kGreen
+                        : kTextLight,
                     size: 18,
                   ),
                   const SizedBox(width: 8),
@@ -1628,8 +1704,8 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                         fontSize: 11,
                         fontWeight: on ? FontWeight.w600 : FontWeight.w500,
                         color: on
-                            ? const Color(0xFF006F39)
-                            : const Color(0xFF6B7280),
+                            ? kGreen
+                            : kTextSub,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1663,11 +1739,8 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
       child: ElevatedButton(
         onPressed: _isSaving.value ? null : _goNext,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF006F39),
-          disabledBackgroundColor: const Color(0xFF006F39).withAlpha(120),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          backgroundColor: kGreen,
+          disabledBackgroundColor: kGreen.withAlpha(120),
           elevation: 0,
         ),
         child: _isSaving.value
@@ -1689,6 +1762,41 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
       ),
     );
   });
+
+  /// `true` si l'utilisateur a saisi quelque chose qui serait perdu.
+  ///
+  /// On ne demande confirmation que dans ce cas : un assistant vide qu'on
+  /// referme aussitôt ne doit pas poser de question.
+  ///
+  /// En édition les champs sont préremplis : on compare à un instantané pris à
+  /// l'ouverture plutôt qu'au vide, pour ne pas interroger quelqu'un qui n'a
+  /// rien touché.
+  String get _inputSignature => [
+    _nameCtrl.text.trim(),
+    _addressCtrl.text.trim(),
+    _descCtrl.text.trim(),
+    _priceCtrl.text.trim(),
+    _images.length,
+    _miniTerrains.length,
+    _contactPhones.length,
+  ].join('|');
+
+  late final String _initialSignature;
+
+  bool get _hasUnsavedInput =>
+      _inputSignature != _initialSignature || _step.value > 0;
+
+  /// Gère le retour, matériel comme applicatif : on recule d'une étape tant
+  /// qu'il en reste, et on ne quitte qu'après confirmation si de la saisie
+  /// serait perdue.
+  Future<void> _handleBack() async {
+    if (_step.value > 0) {
+      _goPrevious();
+      return;
+    }
+    if (_hasUnsavedInput && !await AppDialog.confirmDiscard()) return;
+    _ctrl.goBack();
+  }
 
   void _goPrevious() {
     if (_step.value == 3) {
@@ -1759,9 +1867,9 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
     if (index == null || index < 0 || index >= _miniTerrains.length) {
       return false;
     }
-    final valid = _miniTerrains[index].toModels(index, 0);
-    if (valid == null) {
-      AppSnackbar.warning('Terrain incomplet. Vérifiez le nom, les formats, les découpes et les tarifs.');
+    final error = _miniTerrains[index].validationError;
+    if (error != null) {
+      AppSnackbar.warning(error);
       return false;
     }
     return true;
@@ -1786,7 +1894,14 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
     final subTerrains = subTerrainGroups.expand((models) => models).toList();
     if (subTerrains.isEmpty ||
         subTerrainGroups.length != _miniTerrains.length) {
-      AppSnackbar.warning('Chaque terrain doit avoir un nom, un format, des tarifs valides et au moins une découpe réservable.');
+      // On nomme le premier terrain fautif et la raison exacte, au lieu de
+      // réciter toutes les règles possibles.
+      final firstError = _miniTerrains
+          .map((terrain) => terrain.validationError)
+          .firstWhere((error) => error != null, orElse: () => null);
+      AppSnackbar.warning(
+        firstError ?? 'Ajoutez au moins un terrain réservable au complexe.',
+      );
       return;
     }
     final price = _deriveComplexPrice(subTerrains);
@@ -1881,7 +1996,7 @@ class _IconPillButton extends StatelessWidget {
         height: 36,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFF006F39),
+          color: kGreen,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -1931,8 +2046,8 @@ class _PhotoThumb extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: isPrimary
-                      ? const Color(0xFF006F39)
-                      : const Color(0xFFE5E0D8),
+                      ? kGreen
+                      : kBorder,
                   width: isPrimary ? 2 : 1,
                 ),
                 color: const Color(0xFFF9FAF7),
@@ -1953,7 +2068,7 @@ class _PhotoThumb extends StatelessWidget {
                       height: 70,
                       errorBuilder: (_, __, ___) => const Icon(
                         PhosphorIconsLight.imageBroken,
-                        color: Color(0xFF9CA3AF),
+                        color: kTextLight,
                         size: 22,
                       ),
                     ),
@@ -1969,7 +2084,7 @@ class _PhotoThumb extends StatelessWidget {
               width: 24,
               height: 24,
               decoration: BoxDecoration(
-                color: const Color(0xFFEF4444),
+                color: kRed,
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 2),
                 boxShadow: [
@@ -1980,7 +2095,7 @@ class _PhotoThumb extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(Icons.close, color: Colors.white, size: 12),
+              child: const Icon(PhosphorIconsRegular.x, color: Colors.white, size: 12),
             ),
           ),
         ),
@@ -1992,10 +2107,10 @@ class _PhotoThumb extends StatelessWidget {
               width: 18,
               height: 18,
               decoration: const BoxDecoration(
-                color: Color(0xFF006F39),
+                color: kGreen,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.check, color: Colors.white, size: 12),
+              child: const Icon(PhosphorIconsRegular.check, color: Colors.white, size: 12),
             ),
           ),
       ],
@@ -2035,7 +2150,7 @@ class _TerrainDraftTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFFF9FAF7),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE5E0D8)),
+          border: Border.all(color: kBorder),
         ),
         child: Row(
           children: [
@@ -2043,14 +2158,14 @@ class _TerrainDraftTile extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
+                color: kGreenLight,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
                 child: Text(
                   '${index + 1}',
                   style: const TextStyle(
-                    color: Color(0xFF006F39),
+                    color: kGreen,
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
                   ),
@@ -2067,7 +2182,7 @@ class _TerrainDraftTile extends StatelessWidget {
                         ? 'Terrain ${index + 1}'
                         : terrain.nameCtrl.text.trim(),
                     style: const TextStyle(
-                      color: Color(0xFF1A1A1A),
+                      color: kTextPrim,
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
                     ),
@@ -2077,7 +2192,7 @@ class _TerrainDraftTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: Color(0xFF6B7280),
+                      color: kTextSub,
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                     ),
@@ -2087,24 +2202,29 @@ class _TerrainDraftTile extends StatelessWidget {
             ),
             IconButton(
               onPressed: onEdit,
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+              tooltip: 'Modifier ce terrain',
+              constraints: const BoxConstraints.tightFor(
+                width: AppTouch.minTarget,
+                height: AppTouch.minTarget,
+              ),
               icon: const Icon(
                 PhosphorIconsLight.pencilSimple,
-                color: Color(0xFF006F39),
-                size: 17,
+                color: kGreen,
+                size: 18,
               ),
             ),
             if (onDelete != null)
               IconButton(
                 onPressed: onDelete,
-                visualDensity: VisualDensity.compact,
-                constraints:
-                    const BoxConstraints.tightFor(width: 36, height: 36),
+                tooltip: 'Supprimer ce terrain',
+                constraints: const BoxConstraints.tightFor(
+                  width: AppTouch.minTarget,
+                  height: AppTouch.minTarget,
+                ),
                 icon: const Icon(
                   PhosphorIconsLight.trash,
-                  color: Color(0xFFEF4444),
-                  size: 17,
+                  color: kRed,
+                  size: 18,
                 ),
               ),
           ],
@@ -2132,7 +2252,7 @@ class _ReviewLine extends StatelessWidget {
             child: Text(
               label,
               style: const TextStyle(
-                color: Color(0xFF6B7280),
+                color: kTextSub,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
@@ -2142,7 +2262,7 @@ class _ReviewLine extends StatelessWidget {
             child: Text(
               value.isEmpty ? '-' : value,
               style: const TextStyle(
-                color: Color(0xFF1A1A1A),
+                color: kTextPrim,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
@@ -2175,7 +2295,7 @@ class _Card extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE5E0D8)),
+        border: Border.all(color: kBorder),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -2189,14 +2309,14 @@ class _Card extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 20, color: const Color(0xFF9CA3AF)),
+              Icon(icon, size: 20, color: kTextLight),
               const SizedBox(width: 8),
               Text(
                 title,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A1A1A),
+                  color: kTextPrim,
                 ),
               ),
               const Spacer(),
@@ -2236,7 +2356,7 @@ class _Field extends StatelessWidget {
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF6B7280),
+            color: kTextSub,
           ),
         ),
         const SizedBox(height: 6),
@@ -2245,12 +2365,12 @@ class _Field extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE5E0D8)),
+            border: Border.all(color: kBorder),
           ),
           child: Row(
             children: [
               const SizedBox(width: 14),
-              Icon(icon, color: const Color(0xFF006F39), size: 18),
+              Icon(icon, color: kGreen, size: 18),
               const SizedBox(width: 10),
               Expanded(
                 child: TextField(
@@ -2258,13 +2378,13 @@ class _Field extends StatelessWidget {
                   keyboardType: keyboardType,
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF1A1A1A),
+                    color: kTextPrim,
                     fontWeight: FontWeight.w600,
                   ),
                   decoration: InputDecoration(
                     hintText: hint,
                     hintStyle: const TextStyle(
-                      color: Color(0xFF9CA3AF),
+                      color: kTextLight,
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
@@ -2290,12 +2410,47 @@ class _CompactField extends StatelessWidget {
   final String hint;
   final TextInputType? keyboardType;
 
+  /// Ouvre un sélecteur d'heure au lieu du clavier.
+  ///
+  /// Ces champs attendent `18:00` et ouvraient un clavier **alphabétique**,
+  /// sans masque ni contrôle. L'écran Disponibilités utilise déjà
+  /// `showTimePicker` correctement — on s'aligne dessus.
+  final bool isTime;
+
+  /// Restreint la saisie aux chiffres — un montant n'a pas de lettres.
+  final bool digitsOnly;
+
   const _CompactField({
     required this.label,
     required this.ctrl,
     required this.hint,
     this.keyboardType,
+    this.isTime = false,
+    this.digitsOnly = false,
   });
+
+  Future<void> _pickTime(BuildContext context) async {
+    final parts = ctrl.text.split(':');
+    final initial = TimeOfDay(
+      hour: int.tryParse(parts.first)?.clamp(0, 23) ?? 18,
+      minute: parts.length > 1 ? (int.tryParse(parts[1])?.clamp(0, 59) ?? 0) : 0,
+    );
+
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initial,
+      builder: (context, child) => MediaQuery(
+        // Format 24 h : « 6:00 PM » n'a pas de sens pour un tarif de terrain.
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+    if (picked == null) return;
+
+    ctrl.text =
+        '${picked.hour.toString().padLeft(2, '0')}:'
+        '${picked.minute.toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2307,7 +2462,7 @@ class _CompactField extends StatelessWidget {
           style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF6B7280),
+            color: kTextSub,
           ),
         ),
         const SizedBox(height: 5),
@@ -2316,15 +2471,20 @@ class _CompactField extends StatelessWidget {
           child: TextField(
             controller: ctrl,
             keyboardType: keyboardType,
+            readOnly: isTime,
+            onTap: isTime ? () => _pickTime(context) : null,
+            inputFormatters: digitsOnly
+                ? [FilteringTextInputFormatter.digitsOnly]
+                : null,
             style: const TextStyle(
-              color: Color(0xFF1A1A1A),
+              color: kTextPrim,
               fontSize: 13,
               fontWeight: FontWeight.w700,
             ),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: const TextStyle(
-                color: Color(0xFF9CA3AF),
+                color: kTextLight,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -2333,15 +2493,15 @@ class _CompactField extends StatelessWidget {
               contentPadding: const EdgeInsets.symmetric(horizontal: 10),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFE5E0D8)),
+                borderSide: const BorderSide(color: kBorder),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFFE5E0D8)),
+                borderSide: const BorderSide(color: kBorder),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Color(0xFF006F39)),
+                borderSide: const BorderSide(color: kGreen),
               ),
             ),
           ),
@@ -2370,16 +2530,16 @@ class _DivisionChip extends StatelessWidget {
         duration: 180.ms,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF006F39) : Colors.white,
+          color: selected ? kGreen : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: selected ? const Color(0xFF006F39) : const Color(0xFFE5E0D8),
+            color: selected ? kGreen : kBorder,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.white : const Color(0xFF6B7280),
+            color: selected ? Colors.white : kTextSub,
             fontSize: 12,
             fontWeight: FontWeight.w800,
           ),
@@ -2407,15 +2567,15 @@ class _AddPricingTypeButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: const Color(0xFFE8F5E9),
+          color: kGreenLight,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF006F39)),
+          border: Border.all(color: kGreen),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(PhosphorIconsLight.plus, size: 15, color: Color(0xFF006F39)),
+            const Icon(PhosphorIconsLight.plus, size: 15, color: kGreen),
             const SizedBox(width: 6),
             Flexible(
               child: Text(
@@ -2423,7 +2583,7 @@ class _AddPricingTypeButton extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: Color(0xFF006F39),
+                  color: kGreen,
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                 ),
@@ -2457,24 +2617,24 @@ class _MultilineField extends StatelessWidget {
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF6B7280),
+            color: kTextSub,
           ),
         ),
         const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF0EBE3),
+            color: kBgSurface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE5E0D8)),
+            border: Border.all(color: kBorder),
           ),
           child: TextField(
             controller: ctrl,
             maxLines: 3,
-            style: const TextStyle(fontSize: 14, color: Color(0xFF1A1A1A)),
+            style: const TextStyle(fontSize: 14, color: kTextPrim),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: const TextStyle(
-                color: Color(0xFF9CA3AF),
+                color: kTextLight,
                 fontSize: 13,
               ),
               border: InputBorder.none,

@@ -3,9 +3,11 @@ import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import '../../../core/utils/app_format.dart';
+import '../../../core/utils/app_motion.dart';
+import '../../../core/widgets/app_card.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/owner_ui.dart';
-import '../../../routes/app_routes.dart';
 import '../controllers/dashboard_controller.dart';
 
 // ─── Constantes de layout ────────────────────────────────────────────────────
@@ -46,6 +48,7 @@ class DashboardScreen extends GetView<DashboardController> {
               child: Column(
                 children: [
                   _buildDashboardNotice(),
+                  _buildTodayFocus(),
                   _buildStatsRow(),
                   _buildQuickActions(),
                   _buildWeeklyChart(),
@@ -57,7 +60,6 @@ class DashboardScreen extends GetView<DashboardController> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
@@ -112,6 +114,61 @@ class DashboardScreen extends GetView<DashboardController> {
   }
 
   // ─── Stats row ───────────────────────────────────────────────────────────
+  /// Ce qui demande une action aujourd'hui.
+  ///
+  /// Le tableau de bord n'avait aucune surface de ce type : les paiements en
+  /// attente n'apparaissaient que comme sous-titre d'une tuile de navigation,
+  /// et rien ne distinguait une journée calme d'une journée chargée. Le bloc
+  /// disparaît quand il n'y a rien à traiter — un encart vide est du bruit.
+  Widget _buildTodayFocus() {
+    return Obx(() {
+      final pending = controller.pendingPayments.value;
+      final today = controller.todayBookings.value;
+      if (pending == 0 && today == 0) return const SizedBox.shrink();
+
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          0,
+          AppSpacing.lg,
+          AppSpacing.md,
+        ),
+        child: AppCard(
+          borderColor: kBorder,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const OwnerSectionHeader(
+                title: "À traiter aujourd'hui",
+                subtitle: 'Ce qui attend une action de votre part',
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              if (today > 0)
+                _FocusRow(
+                  icon: PhosphorIconsRegular.calendarBlank,
+                  color: kBlue,
+                  label: "$today réservation${today > 1 ? 's' : ''} aujourd'hui",
+                  actionLabel: 'Voir',
+                  onTap: controller.goToReservations,
+                ),
+              if (today > 0 && pending > 0)
+                const SizedBox(height: AppSpacing.xs),
+              if (pending > 0)
+                _FocusRow(
+                  icon: PhosphorIconsRegular.clockCountdown,
+                  color: kGoldDeep,
+                  label:
+                      '$pending paiement${pending > 1 ? 's' : ''} en attente',
+                  actionLabel: 'Traiter',
+                  onTap: controller.goToPayments,
+                ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
   Widget _buildStatsRow() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
@@ -305,7 +362,7 @@ class DashboardScreen extends GetView<DashboardController> {
                           .animate()
                           .fadeIn(
                             duration: 400.ms,
-                            delay: (400 + index * 80).ms,
+                            delay: AppMotion.stagger(index, base: 400),
                           )
                           .slideX(begin: 0.15, end: 0);
                     }),
@@ -578,7 +635,7 @@ class DashboardScreen extends GetView<DashboardController> {
                         .animate()
                         .fadeIn(
                           duration: 400.ms,
-                          delay: (700 + entry.key * 80).ms,
+                          delay: AppMotion.stagger(entry.key, base: 700),
                         )
                         .slideY(begin: 0.1, end: 0),
                   )
@@ -591,109 +648,6 @@ class DashboardScreen extends GetView<DashboardController> {
   }
 
   // ─── Bottom nav ───────────────────────────────────────────────────────────
-  Widget _buildBottomNav() {
-    return Obx(
-      () => SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              Container(
-                height: 68,
-                decoration: BoxDecoration(
-                  color: kBgCard,
-                  borderRadius: BorderRadius.circular(36),
-                  boxShadow: kNavShadow,
-                ),
-                child: Row(
-                  children: [
-                    _NavItem(
-                      icon: PhosphorIconsDuotone.squaresFour,
-                      label: 'Accueil',
-                      isSelected: controller.selectedTab.value == 0,
-                      onTap: () => controller.changeTab(0),
-                    ),
-                    _NavItem(
-                      icon: PhosphorIconsDuotone.courtBasketball,
-                      label: controller.isController ? 'Réserv.' : 'Terrains',
-                      isSelected: controller.selectedTab.value == 1,
-                      onTap: () => controller.openBottomTab(
-                        1,
-                        controller.isController
-                            ? Routes.reservations
-                            : Routes.terrainList,
-                      ),
-                    ),
-                    const SizedBox(width: 72),
-                    _NavItem(
-                      icon: controller.isController
-                          ? PhosphorIconsDuotone.clockCountdown
-                          : PhosphorIconsDuotone.wallet,
-                      label: controller.isController ? 'Créneaux' : 'Paiements',
-                      isSelected: controller.selectedTab.value == 3,
-                      onTap: () => controller.openBottomTab(
-                        3,
-                        controller.isController
-                            ? Routes.availability
-                            : Routes.payments,
-                      ),
-                    ),
-                    _NavItem(
-                      icon: PhosphorIconsDuotone.user,
-                      label: 'Profil',
-                      isSelected: controller.selectedTab.value == 4,
-                      onTap: () =>
-                          controller.openBottomTab(4, Routes.profile),
-                    ),
-                  ],
-                ),
-              ),
-              Positioned(
-                bottom: 20,
-                child: GestureDetector(
-                  onTap: () =>
-                      controller.openBottomTab(2, Routes.qrCheckIn),
-                  child: Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: kBgCard,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: controller.selectedTab.value == 2
-                            ? kGreen
-                            : kBorder,
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.12),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ClipOval(
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Image.asset(
-                          'assets/images/ballon.png',
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -782,7 +736,7 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
                   'assets/images/terrain.webp',
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) =>
-                      Container(color: const Color(0xFF006F39)),
+                      Container(color: kGreen),
                 ),
                 Container(
                   decoration: BoxDecoration(
@@ -790,7 +744,7 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                       colors: [
-                        const Color(0xFF006F39).withValues(alpha: 0.75),
+                        kGreen.withValues(alpha: 0.75),
                         Colors.black.withValues(alpha: 0.25),
                       ],
                     ),
@@ -1013,15 +967,7 @@ class _RevenueCardAnimated extends StatelessWidget {
 
   const _RevenueCardAnimated({required this.controller, required this.t});
 
-  static String _fmt(int value) {
-    final str = value.toString();
-    final buf = StringBuffer();
-    for (int i = 0; i < str.length; i++) {
-      if (i > 0 && (str.length - i) % 3 == 0) buf.write(' ');
-      buf.write(str[i]);
-    }
-    return buf.toString();
-  }
+  static String _fmt(int value) => AppFormat.amount(value, withSymbol: false);
 
   @override
   Widget build(BuildContext context) {
@@ -1624,54 +1570,55 @@ class _ChartToggle extends StatelessWidget {
   }
 }
 
-class _NavItem extends StatelessWidget {
-  final dynamic icon;
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _NavItem({
+/// Une ligne d'« à traiter aujourd'hui » : constat + action directe.
+class _FocusRow extends StatelessWidget {
+  const _FocusRow({
     required this.icon,
+    required this.color,
     required this.label,
-    required this.isSelected,
+    required this.actionLabel,
     required this.onTap,
   });
 
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String actionLabel;
+  final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isSelected ? kGreen : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: PhosphorIcon(
-                icon,
-                color: isSelected ? Colors.white : kTextLight,
-                size: 22,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Row(
+        children: [
+          AppIconBadge(icon: icon, color: color, size: AppIconBox.sm),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
               label,
-              style: TextStyle(
-                fontSize: 11,
-                color: isSelected ? kGreen : kTextLight,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              style: const TextStyle(
+                fontSize: AppFontSize.bodySmall,
+                fontWeight: FontWeight.w700,
+                color: kTextPrim,
               ),
-              maxLines: 1,
             ),
-          ],
-        ),
+          ),
+          Text(
+            actionLabel,
+            style: TextStyle(
+              fontSize: AppFontSize.label,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+          const Icon(
+            PhosphorIconsRegular.caretRight,
+            size: 14,
+            color: kTextLight,
+          ),
+        ],
       ),
     );
   }

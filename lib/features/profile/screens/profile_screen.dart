@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/owner_ui.dart';
 import '../../../routes/app_routes.dart';
 import '../controllers/profile_controller.dart';
@@ -489,9 +490,6 @@ class ProfileScreen extends GetView<ProfileController> {
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: kBorder),
                         padding: const EdgeInsets.symmetric(vertical: 13),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
                       ),
                       child: const Text(
                         'Annuler',
@@ -511,9 +509,6 @@ class ProfileScreen extends GetView<ProfileController> {
                         foregroundColor: Colors.white,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 13),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
                       ),
                       child: const Text(
                         'Confirmer',
@@ -685,14 +680,11 @@ class _ProfileAvatar extends StatelessWidget {
               gradient: kGreenGradient,
             ),
             clipBehavior: Clip.antiAlias,
-            child: hasImage
-                ? Image.network(
-                    imageUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        _AvatarInitials(initials: initials),
-                  )
-                : _AvatarInitials(initials: initials),
+            child: AppNetworkImage(
+              url: hasImage ? imageUrl : null,
+              fit: BoxFit.cover,
+              fallback: _AvatarInitials(initials: initials),
+            ),
           ),
           if (isUploading)
             Positioned.fill(

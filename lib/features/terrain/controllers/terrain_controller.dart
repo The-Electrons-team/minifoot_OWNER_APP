@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/services/terrain_service.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../routes/app_routes.dart';
 
@@ -282,6 +283,19 @@ class TerrainController extends GetxController {
   final terrains = <TerrainModel>[].obs;
   final allTerrains = <TerrainModel>[].obs;
   final isLoading = false.obs;
+
+  /// Message d'erreur du dernier chargement. Vide = pas d'erreur.
+  ///
+  /// Sans lui, un échec réseau se présentait comme une liste vide et l'écran
+  /// annonçait « Ajoutez votre premier terrain » à un propriétaire qui en a.
+  final errorMessage = ''.obs;
+
+  /// Pagination.
+  final currentPage = 1.obs;
+  final isLoadingMore = false.obs;
+  final total = 0.obs;
+
+  bool get hasMore => allTerrains.length < total.value;
   final selectedTerrain = Rxn<TerrainModel>();
   final reviews = <TerrainReviewModel>[].obs;
   final isLoadingReviews = false.obs;
@@ -298,21 +312,45 @@ class TerrainController extends GetxController {
 
   Future<void> loadTerrains() async {
     isLoading.value = true;
+    errorMessage.value = '';
     try {
-      final data = await _service.getMesTerrains();
-      final list = data
+      currentPage.value = 1;
+      final result = await _service.getMesTerrains();
+      total.value = result.total;
+      allTerrains.value = result.items
           .map((e) => TerrainModel.fromJson(e as Map<String, dynamic>))
           .toList();
-      allTerrains.value = list;
       _applyFilters();
     } catch (e) {
-      AppSnackbar.error('Impossible de charger vos terrains. Vérifiez votre connexion.');
+      // L'erreur est portée par l'écran (AppErrorState + Réessayer), pas par un
+      // toast qui disparaît en 4 secondes.
+      errorMessage.value =
+          'Impossible de charger vos terrains. Vérifiez votre connexion.';
     } finally {
       isLoading.value = false;
     }
   }
 
   Future<void> refreshTerrains() => loadTerrains();
+
+  /// Charge la page suivante. Échec silencieux : la liste affichée est conservée.
+  Future<void> loadMore() async {
+    if (isLoadingMore.value || isLoading.value || !hasMore) return;
+    isLoadingMore.value = true;
+    try {
+      final result = await _service.getMesTerrains(page: currentPage.value + 1);
+      allTerrains.addAll(
+        result.items.map((e) => TerrainModel.fromJson(e as Map<String, dynamic>)),
+      );
+      currentPage.value += 1;
+      total.value = result.total;
+      _applyFilters();
+    } catch (_) {
+      // volontairement silencieux
+    } finally {
+      isLoadingMore.value = false;
+    }
+  }
 
   void onSearch(String query) {
     searchQuery.value = query;
@@ -374,24 +412,25 @@ class TerrainController extends GetxController {
     }
   }
 
-  void deleteConfirm(String id) {
-    Get.defaultDialog(
+  Future<void> deleteConfirm(String id) async {
+    // `Get.defaultDialog` rendait « Supprimer » avec la couleur primaire —
+    // en vert, donc comme une validation.
+    final confirmed = await AppDialog.confirm(
       title: 'Supprimer le terrain',
-      middleText: 'Cette action est irréversible. Confirmer ?',
-      textConfirm: 'Supprimer',
-      textCancel: 'Annuler',
-      onConfirm: () async {
-        Get.back();
-        try {
-          await _service.supprimerTerrain(id);
-          terrains.removeWhere((t) => t.id == id);
-          allTerrains.removeWhere((t) => t.id == id);
-          AppSnackbar.success('Terrain supprimé avec succès.');
-        } catch (e) {
-          AppSnackbar.error('Impossible de supprimer ce terrain. Réessayez.');
-        }
-      },
+      message: 'Cette action est irréversible. Confirmer ?',
+      confirmLabel: 'Supprimer',
+      destructive: true,
     );
+    if (!confirmed) return;
+
+    try {
+      await _service.supprimerTerrain(id);
+      terrains.removeWhere((t) => t.id == id);
+      allTerrains.removeWhere((t) => t.id == id);
+      AppSnackbar.success('Terrain supprimé avec succès.');
+    } catch (e) {
+      AppSnackbar.error('Impossible de supprimer ce terrain. Réessayez.');
+    }
   }
 
   void goToDetail(TerrainModel terrain) {

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:get/get.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_async.dart';
 import '../../../core/services/terrain_service.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -90,7 +93,7 @@ class AvailabilityController extends GetxController {
     isLoadingTerrains.value = true;
     errorMessage.value = '';
     try {
-      final data = await _service.getMesTerrains();
+      final data = await _service.getAllMesTerrains();
       final options = <TerrainOption>[];
       var loadedComplexes = 0;
       for (final item in data) {
@@ -148,8 +151,8 @@ class AvailabilityController extends GetxController {
       }
     } catch (e) {
       complexCount.value = 0;
-      errorMessage.value = 'Impossible de charger les terrains';
-      AppSnackbar.error('Impossible de charger vos terrains. Vérifiez votre connexion.');
+      errorMessage.value =
+          'Impossible de charger vos terrains. Vérifiez votre connexion.';
     } finally {
       isLoadingTerrains.value = false;
     }
@@ -287,8 +290,7 @@ class AvailabilityController extends GetxController {
       }).toList();
     } catch (e) {
       if (requestId != _slotsRequestId) return;
-      errorMessage.value = 'Impossible de charger les créneaux';
-      AppSnackbar.error('Impossible de charger les créneaux. Réessayez.');
+      errorMessage.value = 'Impossible de charger les créneaux. Réessayez.';
     } finally {
       if (requestId == _slotsRequestId) {
         isLoading.value = false;
@@ -448,41 +450,50 @@ class AvailabilityController extends GetxController {
     if (start.isAfter(end)) return 0;
     if (isSameDay(start, end) && endMinutes <= startMinutes) return 0;
 
-    isBulkUpdating.value = true;
-    var count = 0;
-    try {
-      var day = start;
-      while (!day.isAfter(end)) {
-        final from = isSameDay(day, start) ? startMinutes : 8 * 60;
-        final to = isSameDay(day, end) ? endMinutes : 24 * 60;
-        for (var minutes = from; minutes < to; minutes += 30) {
-          final slot = _formatSlotMinutes(minutes);
-          try {
-            if (unblock) {
-              await _service.debloquerCreneau(
-                terrains[selectedTerrain.value].id,
-                _formatDate(day),
-                slot,
-                subTerrainId: terrains[selectedTerrain.value].subTerrainId,
-              );
-            } else {
-              await _service.bloquerCreneau(
-                terrains[selectedTerrain.value].id,
-                _formatDate(day),
-                slot,
-                subTerrainId: terrains[selectedTerrain.value].subTerrainId,
-              );
-            }
-            count += 1;
-          } catch (_) {
-            // Un créneau déjà réservé ou déjà dans l'état demandé ne doit pas
-            // empêcher le reste de la plage de se traiter.
-          }
-        }
-        day = day.add(const Duration(days: 1));
+    // On énumère d'abord toute la plage, puis on l'envoie par lots concurrents :
+    // l'API travaille créneau par créneau, et une boucle séquentielle payait la
+    // latence réseau des centaines de fois sur une plage de plusieurs jours.
+    final targets = <({DateTime day, String slot})>[];
+    var day = start;
+    while (!day.isAfter(end)) {
+      final from = isSameDay(day, start) ? startMinutes : 8 * 60;
+      final to = isSameDay(day, end) ? endMinutes : 24 * 60;
+      for (var minutes = from; minutes < to; minutes += 30) {
+        targets.add((day: day, slot: _formatSlotMinutes(minutes)));
       }
+      day = day.add(const Duration(days: 1));
+    }
+
+    isBulkUpdating.value = true;
+    try {
+      final terrain = terrains[selectedTerrain.value];
+      final results = await AppAsync.mapBounded(targets, (target) async {
+        try {
+          if (unblock) {
+            await _service.debloquerCreneau(
+              terrain.id,
+              _formatDate(target.day),
+              target.slot,
+              subTerrainId: terrain.subTerrainId,
+            );
+          } else {
+            await _service.bloquerCreneau(
+              terrain.id,
+              _formatDate(target.day),
+              target.slot,
+              subTerrainId: terrain.subTerrainId,
+            );
+          }
+          return true;
+        } catch (_) {
+          // Un créneau déjà réservé ou déjà dans l'état demandé ne doit pas
+          // empêcher le reste de la plage de se traiter.
+          return false;
+        }
+      });
+
       await _loadSlots(selectedDate.value);
-      return count;
+      return results.where((ok) => ok).length;
     } finally {
       isBulkUpdating.value = false;
     }
@@ -633,22 +644,22 @@ class AvailabilityController extends GetxController {
   Color slotColor(SlotStatus status) {
     switch (status) {
       case SlotStatus.available:
-        return const Color(0xFF006F39);
+        return kGreen;
       case SlotStatus.booked:
-        return const Color(0xFFF59E0B);
+        return kGold;
       case SlotStatus.blocked:
-        return const Color(0xFFEF4444);
+        return kRed;
     }
   }
 
   Color slotBgColor(SlotStatus status) {
     switch (status) {
       case SlotStatus.available:
-        return const Color(0xFFE8F5E9);
+        return kGreenLight;
       case SlotStatus.booked:
-        return const Color(0xFFFEF3C7);
+        return kGoldLight;
       case SlotStatus.blocked:
-        return const Color(0xFFFEE2E2);
+        return kRedLight;
     }
   }
 
@@ -666,11 +677,11 @@ class AvailabilityController extends GetxController {
   IconData slotIcon(SlotStatus status) {
     switch (status) {
       case SlotStatus.available:
-        return Icons.check_circle_outline_rounded;
+        return PhosphorIconsRegular.checkCircle;
       case SlotStatus.booked:
-        return Icons.groups_rounded;
+        return PhosphorIconsRegular.users;
       case SlotStatus.blocked:
-        return Icons.lock_outline_rounded;
+        return PhosphorIconsRegular.lock;
     }
   }
 }

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:get/get.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../routes/app_routes.dart';
 
-const Color kGreen = Color(0xFF006F39);
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -139,9 +140,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPressed: _skip,
                     style: TextButton.styleFrom(
                       backgroundColor: Colors.white.withValues(alpha: 0.15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 18, vertical: 8),
                     ),
@@ -283,7 +281,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              const Icon(Icons.chevron_right,
+                              const Icon(PhosphorIconsRegular.caretRight,
                                   color: Colors.white, size: 22),
                             ],
                           ),

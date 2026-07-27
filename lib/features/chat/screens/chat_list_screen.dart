@@ -15,7 +15,7 @@ class ChatListScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           onPressed: Get.back,
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: kTextPrim, size: 18),
+          icon: const Icon(PhosphorIconsRegular.caretLeft, color: kTextPrim, size: 18),
         ),
         title: const Text(
           'Messages',

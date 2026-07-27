@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../../../core/utils/app_format.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/revenue_service.dart';
 import '../../../core/widgets/app_snackbar.dart';
@@ -57,6 +58,10 @@ class PaymentsController extends GetxController {
 
   // Solde disponible pour retrait (débloqué après scan QR, pas encore viré)
   final availableBalance = 0.obs;
+
+  /// `true` quand le solde n'a pas pu être récupéré : l'écran doit le dire
+  /// plutôt que d'afficher un zéro qui ressemble à un solde réel.
+  final balanceUnavailable = false.obs;
   final pendingPaymentsCount = 0.obs;
   final isWithdrawing = false.obs;
 
@@ -85,8 +90,8 @@ class PaymentsController extends GetxController {
           .toList();
       await Future.wait([_loadPayoutInfo(), _loadPayoutBalance()]);
     } catch (_) {
-      errorMessage.value = 'Impossible de charger les paiements';
-      AppSnackbar.error('Impossible de charger les paiements. Vérifiez votre connexion.');
+      errorMessage.value =
+          'Impossible de charger les paiements. Vérifiez votre connexion.';
     } finally {
       isLoading.value = false;
     }
@@ -99,8 +104,12 @@ class PaymentsController extends GetxController {
       final data = await _authService.getPayoutBalance(token);
       availableBalance.value = data['availableAmount'] as int? ?? 0;
       pendingPaymentsCount.value = data['pendingPaymentsCount'] as int? ?? 0;
+      balanceUnavailable.value = false;
     } catch (_) {
-      availableBalance.value = 0;
+      // Ne pas afficher 0 : sur un écran d'argent, un faux zéro fait croire au
+      // propriétaire qu'il n'a rien à retirer. On signale que la valeur est
+      // indisponible et on conserve la dernière connue.
+      balanceUnavailable.value = true;
     }
   }
 
@@ -194,15 +203,7 @@ class PaymentsController extends GetxController {
   int get failedCount =>
       periodTransactions.where((t) => t.status == 'failed').length;
 
-  String formatAmount(int v) {
-    if (v >= 1000000) {
-      return '${(v / 1000000).toStringAsFixed(1)}M';
-    }
-    if (v >= 1000) {
-      return '${(v / 1000).toStringAsFixed(v % 1000 == 0 ? 0 : 1)}k';
-    }
-    return v.toString();
-  }
+  String formatAmount(int v) => AppFormat.amountCompact(v);
 
   Future<void> _loadPayoutInfo() async {
     try {

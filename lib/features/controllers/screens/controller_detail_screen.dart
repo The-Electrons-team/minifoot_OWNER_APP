@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
+import '../../../core/utils/app_format.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/controllers_controller.dart';
@@ -26,15 +26,6 @@ class _ControllerDetailScreenState extends State<ControllerDetailScreen> {
     controller.loadActivity(item.id);
   }
 
-  String _formatAmount(int amount) {
-    final text = amount.toString();
-    final buffer = StringBuffer();
-    for (var i = 0; i < text.length; i++) {
-      if (i > 0 && (text.length - i) % 3 == 0) buffer.write(' ');
-      buffer.write(text[i]);
-    }
-    return '${buffer.toString()} F CFA';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +37,7 @@ class _ControllerDetailScreenState extends State<ControllerDetailScreen> {
         leading: IconButton(
           onPressed: () => Get.back(),
           icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
+            PhosphorIconsRegular.caretLeft,
             size: 18,
           ),
         ),
@@ -104,7 +95,7 @@ class _ControllerDetailScreenState extends State<ControllerDetailScreen> {
               title: 'Complexes autorisés',
               action: TextButton.icon(
                 onPressed: _showComplexAssignmentSheet,
-                icon: const Icon(Icons.edit_rounded, size: 16),
+                icon: const Icon(PhosphorIconsRegular.pencilSimple, size: 16),
                 label: const Text('Modifier'),
                 style: TextButton.styleFrom(
                   foregroundColor: kGreen,
@@ -466,7 +457,7 @@ class _ActivityTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final date = activity.createdAt == null
         ? ''
-        : DateFormat('dd/MM HH:mm').format(activity.createdAt!.toLocal());
+        : AppFormat.shortDateTime(activity.createdAt!.toLocal());
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),

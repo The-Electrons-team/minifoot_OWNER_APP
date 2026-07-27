@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:get/get.dart';
 import '../../../core/services/reservation_service.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_snackbar.dart';
 
 class ReservationModel {
@@ -141,6 +142,18 @@ class ReservationsController extends GetxController {
   final _allReservations = <ReservationModel>[].obs;
   final selectedFilter = 'all'.obs;
   final isLoading = false.obs;
+  /// Message d'erreur du dernier chargement. Vide = pas d'erreur.
+  ///
+  /// Sans lui, un échec réseau se présentait comme une liste vide, message
+  /// d'accueil compris — trompeur et sans moyen de réessayer.
+  final errorMessage = ''.obs;
+
+  /// Pagination. Le backend renvoie 50 éléments par page et le total.
+  final currentPage = 1.obs;
+  final isLoadingMore = false.obs;
+  final total = 0.obs;
+
+  bool get hasMore => _allReservations.length < total.value;
 
   @override
   void onInit() {
@@ -150,15 +163,19 @@ class ReservationsController extends GetxController {
 
   Future<void> loadReservations() async {
     isLoading.value = true;
+    errorMessage.value = '';
+    currentPage.value = 1;
     try {
-      final data = await _service.getOwnerReservations();
-      _allReservations.value = data
+      final result = await _service.getOwnerReservations();
+      total.value = result.total;
+      _allReservations.value = result.items
           .map(
             (item) => ReservationModel.fromJson(item as Map<String, dynamic>),
           )
           .toList();
     } catch (e) {
-      AppSnackbar.error('Impossible de charger les réservations. Vérifiez votre connexion.');
+      errorMessage.value =
+          'Impossible de charger les réservations. Vérifiez votre connexion.';
     } finally {
       isLoading.value = false;
     }
@@ -173,21 +190,44 @@ class ReservationsController extends GetxController {
 
   void setFilter(String filter) => selectedFilter.value = filter;
 
+  /// Charge la page suivante et l'ajoute à la liste.
+  ///
+  /// Échec silencieux : on ne remplace pas une liste déjà affichée par un
+  /// écran d'erreur, l'utilisateur garde ce qu'il a.
+  Future<void> loadMore() async {
+    if (isLoadingMore.value || isLoading.value || !hasMore) return;
+    isLoadingMore.value = true;
+    try {
+      final result = await _service.getOwnerReservations(
+        page: currentPage.value + 1,
+      );
+      _allReservations.addAll(
+        result.items.map(
+          (item) => ReservationModel.fromJson(item as Map<String, dynamic>),
+        ),
+      );
+      currentPage.value += 1;
+      total.value = result.total;
+    } catch (_) {
+      // volontairement silencieux
+    } finally {
+      isLoadingMore.value = false;
+    }
+  }
+
   Future<void> refreshReservations() async {
     await loadReservations();
   }
 
   Future<void> cancelReservation(String id) async {
-    Get.defaultDialog(
+    final confirmed = await AppDialog.confirm(
       title: 'Refuser la réservation',
-      middleText: 'Cette réservation passera en statut annulé.',
-      textCancel: 'Garder',
-      textConfirm: 'Refuser',
-      onConfirm: () async {
-        Get.back();
-        await cancelReservationDirect(id);
-      },
+      message: 'Cette réservation passera en statut annulé.',
+      confirmLabel: 'Refuser',
+      cancelLabel: 'Garder',
+      destructive: true,
     );
+    if (confirmed) await cancelReservationDirect(id);
   }
 
   Future<void> cancelReservationDirect(String id) async {

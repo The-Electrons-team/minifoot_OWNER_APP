@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../routes/app_routes.dart';
 import '../controllers/auth_controller.dart';
 
-const Color kGreen = Color(0xFF006F39);
-const Color kBeige = Color(0xFFF5F0E8);
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -85,7 +84,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kBeige,
+      backgroundColor: kBg,
       body: FadeTransition(
         opacity: _fadeAnim,
         child: Center(
