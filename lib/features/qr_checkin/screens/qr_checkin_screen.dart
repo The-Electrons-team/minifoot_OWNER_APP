@@ -50,6 +50,11 @@ class _QrCheckInScreenState extends State<QrCheckInScreen> {
     if (mounted) setState(() => _torchEnabled = !_torchEnabled);
   }
 
+  Future<void> _confirmCheckIn() async {
+    final confirmed = await controller.confirmCheckIn();
+    if (confirmed) HapticFeedback.heavyImpact();
+  }
+
   String _formatDate(dynamic value) {
     if (value == null) return '';
     final date = DateTime.tryParse(value.toString());
@@ -196,6 +201,8 @@ class _QrCheckInScreenState extends State<QrCheckInScreen> {
                   child: _ResultPanel(
                     controller: controller,
                     onRescan: _resumeScanner,
+                    onConfirm: _confirmCheckIn,
+                    onDone: () => Get.back(result: true),
                     formatDate: _formatDate,
                     statusColor: _statusColor,
                     statusIcon: _statusIcon,
@@ -251,10 +258,7 @@ class _ScanOverlay extends StatelessWidget {
 
     return IgnorePointer(
       child: CustomPaint(
-        painter: _OverlayPainter(
-          zoneSize: zoneSize,
-          radius: radius,
-        ),
+        painter: _OverlayPainter(zoneSize: zoneSize, radius: radius),
         child: Center(
           child: SizedBox(
             width: zoneSize,
@@ -265,29 +269,49 @@ class _ScanOverlay extends StatelessWidget {
                 Positioned(
                   top: 0,
                   left: 0,
-                  child: _Corner(len: borderLen, w: borderW, r: radius,
-                      top: true, left: true),
+                  child: _Corner(
+                    len: borderLen,
+                    w: borderW,
+                    r: radius,
+                    top: true,
+                    left: true,
+                  ),
                 ),
                 // Coin haut-droit
                 Positioned(
                   top: 0,
                   right: 0,
-                  child: _Corner(len: borderLen, w: borderW, r: radius,
-                      top: true, left: false),
+                  child: _Corner(
+                    len: borderLen,
+                    w: borderW,
+                    r: radius,
+                    top: true,
+                    left: false,
+                  ),
                 ),
                 // Coin bas-gauche
                 Positioned(
                   bottom: 0,
                   left: 0,
-                  child: _Corner(len: borderLen, w: borderW, r: radius,
-                      top: false, left: true),
+                  child: _Corner(
+                    len: borderLen,
+                    w: borderW,
+                    r: radius,
+                    top: false,
+                    left: true,
+                  ),
                 ),
                 // Coin bas-droit
                 Positioned(
                   bottom: 0,
                   right: 0,
-                  child: _Corner(len: borderLen, w: borderW, r: radius,
-                      top: false, left: false),
+                  child: _Corner(
+                    len: borderLen,
+                    w: borderW,
+                    r: radius,
+                    top: false,
+                    left: false,
+                  ),
                 ),
               ],
             ),
@@ -381,26 +405,38 @@ class _CornerPainter extends CustomPainter {
     if (top && left) {
       path.moveTo(0, s.height);
       path.lineTo(0, r);
-      path.arcToPoint(Offset(r, 0),
-          radius: Radius.circular(r), clockwise: true);
+      path.arcToPoint(
+        Offset(r, 0),
+        radius: Radius.circular(r),
+        clockwise: true,
+      );
       path.lineTo(s.width, 0);
     } else if (top && !left) {
       path.moveTo(0, 0);
       path.lineTo(s.width - r, 0);
-      path.arcToPoint(Offset(s.width, r),
-          radius: Radius.circular(r), clockwise: true);
+      path.arcToPoint(
+        Offset(s.width, r),
+        radius: Radius.circular(r),
+        clockwise: true,
+      );
       path.lineTo(s.width, s.height);
     } else if (!top && left) {
       path.moveTo(0, 0);
       path.lineTo(0, s.height - r);
-      path.arcToPoint(Offset(r, s.height),
-          radius: Radius.circular(r), clockwise: false);
+      path.arcToPoint(
+        Offset(r, s.height),
+        radius: Radius.circular(r),
+        clockwise: false,
+      );
       path.lineTo(s.width, s.height);
     } else {
       path.moveTo(0, s.height);
       path.lineTo(s.width - r, s.height);
-      path.arcToPoint(Offset(s.width, s.height - r),
-          radius: Radius.circular(r), clockwise: false);
+      path.arcToPoint(
+        Offset(s.width, s.height - r),
+        radius: Radius.circular(r),
+        clockwise: false,
+      );
       path.lineTo(s.width, 0);
     }
 
@@ -416,6 +452,8 @@ class _CornerPainter extends CustomPainter {
 class _ResultPanel extends StatelessWidget {
   final QrCheckInController controller;
   final VoidCallback onRescan;
+  final Future<void> Function() onConfirm;
+  final VoidCallback onDone;
   final String Function(dynamic) formatDate;
   final Color Function(String) statusColor;
   final IconData Function(String) statusIcon;
@@ -423,6 +461,8 @@ class _ResultPanel extends StatelessWidget {
   const _ResultPanel({
     required this.controller,
     required this.onRescan,
+    required this.onConfirm,
+    required this.onDone,
     required this.formatDate,
     required this.statusColor,
     required this.statusIcon,
@@ -434,6 +474,7 @@ class _ResultPanel extends StatelessWidget {
     final reservation = controller.reservation.value;
     final color = statusColor(status);
     final canConfirm = status == 'ready' && reservation != null;
+    final checkedIn = status == 'checked_in';
 
     return Container(
       decoration: const BoxDecoration(
@@ -467,43 +508,103 @@ class _ResultPanel extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
 
-                    // Status row
-                    Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: PhosphorIcon(statusIcon(status),
-                              color: color, size: 22),
+                    if (checkedIn)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            controller.message.value,
-                            style: const TextStyle(
-                              color: kTextPrim,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
+                        decoration: BoxDecoration(
+                          color: kGreenLight,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: const BoxDecoration(
+                                color: kGreen,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const PhosphorIcon(
+                                PhosphorIconsFill.check,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Présence confirmée',
+                                    style: TextStyle(
+                                      color: kGreen,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    reservation?['clientName']?.toString() ??
+                                        'Joueur MiniFoot',
+                                    style: const TextStyle(
+                                      color: kTextPrim,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: PhosphorIcon(
+                              statusIcon(status),
+                              color: color,
+                              size: 22,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              controller.message.value,
+                              style: const TextStyle(
+                                color: kTextPrim,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
 
                     if (reservation != null) ...[
                       const SizedBox(height: 16),
                       _InfoRow(
                         label: 'Client',
-                        value: reservation['clientName']?.toString() ??
+                        value:
+                            reservation['clientName']?.toString() ??
                             'Client MiniFoot',
                       ),
                       _InfoRow(
                         label: 'Terrain',
-                        value: (reservation['subTerrainName']
+                        value:
+                            (reservation['subTerrainName']
                                     ?.toString()
                                     .isNotEmpty ==
                                 true)
@@ -528,61 +629,89 @@ class _ResultPanel extends StatelessWidget {
 
                     const SizedBox(height: 20),
 
-                    // Boutons
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: onRescan,
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: kBorder),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                            child: const Text(
-                              'Rescanner',
-                              style: TextStyle(
-                                color: kTextSub,
-                                fontWeight: FontWeight.w700,
+                    if (checkedIn) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: onRescan,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kGreen,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          icon: const PhosphorIcon(
+                            PhosphorIconsRegular.qrCode,
+                            size: 19,
+                          ),
+                          label: const Text(
+                            'Scanner le prochain',
+                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextButton(
+                        onPressed: onDone,
+                        child: const Text('Terminer'),
+                      ),
+                    ] else
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: onRescan,
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: kBorder),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                              ),
+                              child: const Text(
+                                'Rescanner',
+                                style: TextStyle(
+                                  color: kTextSub,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: canConfirm
-                                ? controller.isConfirming.value
-                                    ? null
-                                    : controller.confirmCheckIn
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: kGreen,
-                              disabledBackgroundColor: kGreenLight,
-                              elevation: 0,
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 14),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: canConfirm
+                                  ? controller.isConfirming.value
+                                        ? null
+                                        : onConfirm
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: kGreen,
+                                disabledBackgroundColor: kGreenLight,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                              ),
+                              child: controller.isConfirming.value
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Confirmer',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                             ),
-                            child: controller.isConfirming.value
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Confirmer',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                   ],
                 ),
         ),

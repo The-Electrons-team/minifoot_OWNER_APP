@@ -26,10 +26,7 @@ class ReservationsScreen extends GetView<ReservationsController> {
         elevation: 0,
         leading: IconButton(
           onPressed: () => Get.back(),
-          icon: const Icon(
-            PhosphorIconsRegular.caretLeft,
-            size: 18,
-          ),
+          icon: const PhosphorIcon(PhosphorIconsRegular.caretLeft, size: 24),
           color: kTextPrim,
         ),
         title: const Text(
@@ -47,9 +44,7 @@ class ReservationsScreen extends GetView<ReservationsController> {
               () => const ReportScreen(),
               arguments: {'reportType': 'reservations'},
             ),
-            icon: PhosphorIcon(PhosphorIconsDuotone.filePdf,
-              color: kGreen,
-            ),
+            icon: PhosphorIcon(PhosphorIconsDuotone.filePdf, color: kGreen),
             tooltip: 'Rapport PDF',
           ),
         ],
@@ -97,7 +92,7 @@ class ReservationsScreen extends GetView<ReservationsController> {
 
       return Container(
         color: kBgCard,
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -115,7 +110,7 @@ class ReservationsScreen extends GetView<ReservationsController> {
                     ),
                     decoration: BoxDecoration(
                       color: isSelected ? kGreen : kBgSurface,
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: AppRadius.xsAll,
                       border: Border.all(color: isSelected ? kGreen : kBorder),
                     ),
                     child: Row(
@@ -173,7 +168,7 @@ class ReservationsScreen extends GetView<ReservationsController> {
       return Container(
         width: double.infinity,
         color: kBgCard,
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -243,7 +238,7 @@ class ReservationsScreen extends GetView<ReservationsController> {
       // Shimmer loading pendant le chargement
       if (controller.isLoading.value) {
         return ShimmerList(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
           itemBuilder: (context, index) => const ReservationCardSkeleton(),
         );
       }
@@ -301,49 +296,50 @@ class ReservationsScreen extends GetView<ReservationsController> {
           return false;
         },
         child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-        itemCount: list.length + (controller.hasMore ? 1 : 0),
-        itemBuilder: (_, i) {
-          if (i >= list.length) return const _LoadMoreIndicator();
-          final reservation = list[i];
-          final card = _ReservationCard(
-            reservation: reservation,
-            onTap: () => _openReservationDetails(reservation),
-          );
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+          itemCount: list.length + (controller.hasMore ? 1 : 0),
+          itemBuilder: (_, i) {
+            if (i >= list.length) return const _LoadMoreIndicator();
+            final reservation = list[i];
+            final card = _ReservationCard(
+              reservation: reservation,
+              onTap: () => _openReservationDetails(reservation),
+            );
 
-          // Refuser une réservation demandait d'ouvrir le détail : c'est
-          // l'action la plus fréquente sur cet écran, elle mérite d'être
-          // accessible d'un glissement. Seules les réservations encore
-          // annulables l'exposent.
-          final canRefuse =
-              reservation.status == 'pending' ||
-              reservation.status == 'confirmed';
+            // Refuser une réservation demandait d'ouvrir le détail : c'est
+            // l'action la plus fréquente sur cet écran, elle mérite d'être
+            // accessible d'un glissement. Seules les réservations encore
+            // annulables l'exposent.
+            final canRefuse =
+                reservation.status == 'pending' ||
+                reservation.status == 'confirmed';
 
-          return Slidable(
-            key: ValueKey(reservation.id),
-            enabled: canRefuse,
-            endActionPane: ActionPane(
-              motion: const DrawerMotion(),
-              extentRatio: 0.28,
-              children: [
-                SlidableAction(
-                  onPressed: (_) => controller.cancelReservation(reservation.id),
-                  backgroundColor: kRed,
-                  foregroundColor: Colors.white,
-                  icon: PhosphorIconsRegular.x,
-                  label: 'Refuser',
-                  borderRadius: AppRadius.mdAll,
-                  padding: EdgeInsets.zero,
-                ),
-              ],
-            ),
-            child: card,
-          )
-              .animate()
-              .fadeIn(duration: 400.ms, delay: AppMotion.stagger(i))
-              .slideY(begin: 0.1, end: 0);
-        },
+            return Slidable(
+                  key: ValueKey(reservation.id),
+                  enabled: canRefuse,
+                  endActionPane: ActionPane(
+                    motion: const DrawerMotion(),
+                    extentRatio: 0.28,
+                    children: [
+                      SlidableAction(
+                        onPressed: (_) =>
+                            controller.cancelReservation(reservation.id),
+                        backgroundColor: kRed,
+                        foregroundColor: Colors.white,
+                        icon: PhosphorIconsRegular.x,
+                        label: 'Refuser',
+                        borderRadius: AppRadius.mdAll,
+                        padding: EdgeInsets.zero,
+                      ),
+                    ],
+                  ),
+                  child: card,
+                )
+                .animate()
+                .fadeIn(duration: 400.ms, delay: AppMotion.stagger(i))
+                .slideY(begin: 0.1, end: 0);
+          },
         ),
       );
     });
@@ -485,7 +481,8 @@ class _ReservationCard extends StatelessWidget {
                           const SizedBox(height: 2),
                           Row(
                             children: [
-                              PhosphorIcon(PhosphorIconsDuotone.phone,
+                              PhosphorIcon(
+                                PhosphorIconsDuotone.phone,
                                 size: 12,
                                 color: kTextLight,
                               ),
@@ -559,7 +556,8 @@ class _ReservationCard extends StatelessWidget {
                         color: kBlueLight,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: PhosphorIcon(PhosphorIconsDuotone.courtBasketball,
+                      child: PhosphorIcon(
+                        PhosphorIconsDuotone.courtBasketball,
                         color: kBlue,
                         size: 16,
                       ),

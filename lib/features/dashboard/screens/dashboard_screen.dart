@@ -6,6 +6,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/utils/app_format.dart';
 import '../../../core/utils/app_motion.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_network_image.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/owner_ui.dart';
 import '../controllers/dashboard_controller.dart';
@@ -92,7 +93,8 @@ class DashboardScreen extends GetView<DashboardController> {
         ),
         child: Row(
           children: [
-            PhosphorIcon(PhosphorIconsDuotone.warningCircle,
+            PhosphorIcon(
+              PhosphorIconsDuotone.warningCircle,
               color: kRed,
               size: 18,
             ),
@@ -145,11 +147,12 @@ class DashboardScreen extends GetView<DashboardController> {
               const SizedBox(height: AppSpacing.sm),
               if (today > 0)
                 _FocusRow(
-                  icon: PhosphorIconsRegular.calendarBlank,
-                  color: kBlue,
-                  label: "$today réservation${today > 1 ? 's' : ''} aujourd'hui",
-                  actionLabel: 'Voir',
-                  onTap: controller.goToReservations,
+                  icon: PhosphorIconsRegular.qrCode,
+                  color: kGreen,
+                  label:
+                      "$today réservation${today > 1 ? 's' : ''} aujourd'hui",
+                  actionLabel: 'Scanner',
+                  onTap: controller.goToQrCheckIn,
                 ),
               if (today > 0 && pending > 0)
                 const SizedBox(height: AppSpacing.xs),
@@ -228,11 +231,7 @@ class DashboardScreen extends GetView<DashboardController> {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: const OwnerSectionHeader(
-              title: 'À faire maintenant',
-              subtitle:
-                  'Accès directs vers les actions les plus fréquentes du gérant',
-            ),
+            child: const OwnerSectionHeader(title: 'Accès rapide'),
           ),
           const SizedBox(height: 14),
           Obx(() {
@@ -273,28 +272,14 @@ class DashboardScreen extends GetView<DashboardController> {
               ),
               if (!controller.isController) ...[
                 _ActionData(
-                  icon: PhosphorIconsDuotone.soccerBall,
-                  label: 'Terrains',
-                  subtitle: terrainSubtitle,
+                  icon: PhosphorIconsDuotone.squaresFour,
+                  label: 'Gérer',
+                  subtitle: terrainSubtitle == 'Aucun terrain'
+                      ? 'Terrains et versements'
+                      : paymentSubtitle,
                   color: kGreen,
                   bgColor: kGreenLight,
-                  onTap: controller.goToTerrains,
-                ),
-                _ActionData(
-                  icon: PhosphorIconsDuotone.usersThree,
-                  label: 'Contrôleurs',
-                  subtitle: 'Accès & suivi',
-                  color: kBlue,
-                  bgColor: kBlueLight,
-                  onTap: controller.goToControllers,
-                ),
-                _ActionData(
-                  icon: PhosphorIconsDuotone.wallet,
-                  label: 'Paiements',
-                  subtitle: paymentSubtitle,
-                  color: kOrange,
-                  bgColor: const Color(0xFFFFF3E0),
-                  onTap: controller.goToPayments,
+                  onTap: _showManagementActions,
                 ),
               ],
             ];
@@ -373,6 +358,65 @@ class DashboardScreen extends GetView<DashboardController> {
           }),
         ],
       ),
+    );
+  }
+
+  void _showManagementActions() {
+    Get.bottomSheet(
+      OwnerSheetFrame(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Gérer votre activité',
+              style: TextStyle(
+                color: kTextPrim,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Terrains, équipe et versements',
+              style: TextStyle(color: kTextSub, fontSize: 13),
+            ),
+            const SizedBox(height: 18),
+            _ManagementActionTile(
+              icon: PhosphorIconsDuotone.soccerBall,
+              color: kGreen,
+              label: 'Mes terrains',
+              subtitle: 'Ajouter et modifier vos complexes',
+              onTap: () {
+                Get.back();
+                controller.goToTerrains();
+              },
+            ),
+            _ManagementActionTile(
+              icon: PhosphorIconsDuotone.wallet,
+              color: kOrange,
+              label: 'Paiements',
+              subtitle: 'Consulter le solde et les retraits',
+              onTap: () {
+                Get.back();
+                controller.goToPayments();
+              },
+            ),
+            _ManagementActionTile(
+              icon: PhosphorIconsDuotone.usersThree,
+              color: kBlue,
+              label: 'Contrôleurs',
+              subtitle: 'Gérer les accès de votre équipe',
+              onTap: () {
+                Get.back();
+                controller.goToControllers();
+              },
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
     );
   }
 
@@ -783,14 +827,18 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Center(
-                              child: Obx(
-                                () => Text(
-                                  controller.ownerInitials,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                    color: kGreen,
+                            child: Obx(
+                              () => AppNetworkImage(
+                                url: controller.avatarUrl,
+                                fit: BoxFit.cover,
+                                fallback: Center(
+                                  child: Text(
+                                    controller.ownerInitials,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: kGreen,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -874,17 +922,25 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
                 child: Padding(
                   padding: const EdgeInsets.all(4),
                   child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
+                    width: 42,
+                    height: 42,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Obx(
+                      () => AppNetworkImage(
+                        url: controller.avatarUrl,
+                        fit: BoxFit.cover,
+                        fallback: PhosphorIcon(
+                          PhosphorIconsDuotone.user,
+                          color: kGreen,
+                          size: 22,
+                        ),
+                      ),
+                    ),
                   ),
-                  child: PhosphorIcon(PhosphorIconsDuotone.user,
-                    color: kGreen,
-                    size: 22,
-                  ),
-                ),
                 ),
               ),
             ],
@@ -911,51 +967,52 @@ class _NotifBell extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(4),
         child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: PhosphorIcon(
+                PhosphorIconsDuotone.bell,
+                color: kGreen,
+                size: 22,
+              ),
             ),
-            child: PhosphorIcon(PhosphorIconsDuotone.bell,
-              color: kGreen,
-              size: 22,
-            ),
-          ),
-          Obx(
-            () => controller.notificationCount.value > 0
-                ? Positioned(
-                    top: 4,
-                    right: 4,
-                    child: Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: kRed,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.5),
-                      ),
-                      child: Center(
-                        child: Text(
-                          controller.notificationCount.value > 9
-                              ? '9+'
-                              : '${controller.notificationCount.value}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 7,
-                            fontWeight: FontWeight.w800,
+            Obx(
+              () => controller.notificationCount.value > 0
+                  ? Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: kRed,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: Center(
+                          child: Text(
+                            controller.notificationCount.value > 9
+                                ? '9+'
+                                : '${controller.notificationCount.value}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 7,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-        ],
-      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1023,7 +1080,8 @@ class _RevenueCardAnimated extends StatelessWidget {
                   ),
                 ],
               ),
-              child: PhosphorIcon(PhosphorIconsDuotone.wallet,
+              child: PhosphorIcon(
+                PhosphorIconsDuotone.wallet,
                 color: Colors.white,
                 size: 22,
               ),
@@ -1048,7 +1106,8 @@ class _RevenueCardAnimated extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  PhosphorIcon(PhosphorIconsDuotone.checkCircle,
+                  PhosphorIcon(
+                    PhosphorIconsDuotone.checkCircle,
                     color: kGreen,
                     size: 13,
                   ),
@@ -1158,7 +1217,8 @@ class _RevenueCardAnimated extends StatelessWidget {
             gradient: kGoldGradient,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: PhosphorIcon(PhosphorIconsDuotone.wallet,
+          child: PhosphorIcon(
+            PhosphorIconsDuotone.wallet,
             color: Colors.white,
             size: 22,
           ),
@@ -1199,7 +1259,8 @@ class _RevenueCardAnimated extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              PhosphorIcon(PhosphorIconsDuotone.checkCircle,
+              PhosphorIcon(
+                PhosphorIconsDuotone.checkCircle,
                 color: kGreen,
                 size: 13,
               ),
@@ -1241,6 +1302,72 @@ class _ActionData {
   });
 }
 
+class _ManagementActionTile extends StatelessWidget {
+  final dynamic icon;
+  final Color color;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ManagementActionTile({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppRadius.mdAll,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: AppRadius.smAll,
+              ),
+              child: PhosphorIcon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: kTextPrim,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(color: kTextSub, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const PhosphorIcon(
+              PhosphorIconsRegular.caretRight,
+              color: kTextLight,
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _EmptyChartState extends StatelessWidget {
   const _EmptyChartState();
 
@@ -1255,7 +1382,8 @@ class _EmptyChartState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          PhosphorIcon(PhosphorIconsDuotone.chartBar,
+          PhosphorIcon(
+            PhosphorIconsDuotone.chartBar,
             color: kTextLight,
             size: 30,
           ),
@@ -1296,7 +1424,11 @@ class _EmptyRecentBookings extends StatelessWidget {
               color: kGreenLight,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: PhosphorIcon(PhosphorIconsDuotone.calendarCheck, color: kGreen, size: 22),
+            child: PhosphorIcon(
+              PhosphorIconsDuotone.calendarCheck,
+              color: kGreen,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -1462,7 +1594,8 @@ class _BookingTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    PhosphorIcon(PhosphorIconsDuotone.mapPin,
+                    PhosphorIcon(
+                      PhosphorIconsDuotone.mapPin,
                       size: 13,
                       color: kTextLight,
                     ),
@@ -1480,7 +1613,8 @@ class _BookingTile extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                     ),
-                    PhosphorIcon(PhosphorIconsDuotone.clock,
+                    PhosphorIcon(
+                      PhosphorIconsDuotone.clock,
                       size: 13,
                       color: kTextLight,
                     ),

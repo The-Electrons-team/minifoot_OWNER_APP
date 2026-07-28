@@ -142,6 +142,7 @@ class ReservationsController extends GetxController {
   final _allReservations = <ReservationModel>[].obs;
   final selectedFilter = 'all'.obs;
   final isLoading = false.obs;
+
   /// Message d'erreur du dernier chargement. Vide = pas d'erreur.
   ///
   /// Sans lui, un échec réseau se présentait comme une liste vide, message
@@ -230,11 +231,15 @@ class ReservationsController extends GetxController {
     if (confirmed) await cancelReservationDirect(id);
   }
 
-  Future<void> cancelReservationDirect(String id) async {
+  Future<void> cancelReservationDirect(String id, {bool notify = true}) async {
     try {
       await _service.cancelOwnerReservation(id);
       await loadReservations();
-      AppSnackbar.success('Réservation refusée. Le créneau est à nouveau disponible.');
+      if (notify) {
+        AppSnackbar.success(
+          'Réservation refusée. Le créneau est à nouveau disponible.',
+        );
+      }
     } catch (e) {
       AppSnackbar.error('Impossible de refuser cette réservation. Réessayez.');
       rethrow;

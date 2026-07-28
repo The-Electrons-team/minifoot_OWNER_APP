@@ -97,6 +97,7 @@ class AppConfig {
 
   static const String tokenKey = 'token';
   static const String refreshTokenKey = 'refreshToken';
+  static const String cachedUserKey = 'cached_owner_user';
 
   // ══════════════════════════════════════════════════════════════════════════
   // Cartographie

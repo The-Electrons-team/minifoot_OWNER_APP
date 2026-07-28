@@ -89,10 +89,14 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
     if (!confirmed) return;
 
     try {
-      await controller.cancelReservationDirect(reservation.id);
+      await controller.cancelReservationDirect(reservation.id, notify: false);
       await controller.loadReservations();
       if (!mounted) return;
       Get.back(result: true);
+      await Future<void>.delayed(const Duration(milliseconds: 220));
+      AppSnackbar.success(
+        'Réservation refusée. Le créneau est à nouveau disponible.',
+      );
     } catch (_) {}
   }
 
@@ -105,10 +109,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
         elevation: 0,
         leading: IconButton(
           onPressed: () => Get.back(),
-          icon: const Icon(
-            PhosphorIconsRegular.caretLeft,
-            size: 18,
-          ),
+          icon: const Icon(PhosphorIconsRegular.caretLeft, size: 18),
           color: kTextPrim,
         ),
         title: const Text(
@@ -287,9 +288,12 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                                 await Clipboard.setData(
                                   ClipboardData(text: reservation.phone),
                                 );
-                                AppSnackbar.info('Numéro copié dans le presse-papiers.');
+                                AppSnackbar.info(
+                                  'Numéro copié dans le presse-papiers.',
+                                );
                               },
-                              icon: PhosphorIcon(PhosphorIconsDuotone.copy,
+                              icon: PhosphorIcon(
+                                PhosphorIconsDuotone.copy,
                                 color: kTextSub,
                                 size: 16,
                               ),
@@ -340,7 +344,8 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: () => _confirmCancel(reservation),
-                      icon: PhosphorIcon(PhosphorIconsDuotone.xCircle,
+                      icon: PhosphorIcon(
+                        PhosphorIconsDuotone.xCircle,
                         size: 18,
                       ),
                       label: const Text('Refuser la réservation'),

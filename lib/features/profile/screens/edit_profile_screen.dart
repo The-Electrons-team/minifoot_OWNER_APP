@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -22,7 +24,8 @@ class EditProfileScreen extends GetView<ProfileController> {
           onTap: _close,
           behavior: HitTestBehavior.opaque,
           child: const Center(
-            child: PhosphorIcon(PhosphorIcons.caretLeft,
+            child: PhosphorIcon(
+              PhosphorIcons.caretLeft,
               color: kTextPrim,
               size: 24,
             ),
@@ -101,7 +104,11 @@ class EditProfileScreen extends GetView<ProfileController> {
               clipBehavior: Clip.none,
               children: [
                 Obx(() {
-                  final hasImage = (controller.avatarUrl.value ?? '').isNotEmpty;
+                  final hasImage =
+                      (controller.avatarUrl.value ?? '').isNotEmpty;
+                  final localImagePath = controller.pendingAvatarPath.value;
+                  final hasLocalImage =
+                      localImagePath != null && localImagePath.isNotEmpty;
                   return Container(
                     width: 80,
                     height: 80,
@@ -117,40 +124,43 @@ class EditProfileScreen extends GetView<ProfileController> {
                       ],
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: AppNetworkImage(
-                      url: hasImage ? controller.avatarUrl.value : null,
-                      fit: BoxFit.cover,
-                      fallback: Center(
-                        child: Text(
-                          controller.initials,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
+                    child: hasLocalImage
+                        ? Image.file(File(localImagePath), fit: BoxFit.cover)
+                        : AppNetworkImage(
+                            url: hasImage ? controller.avatarUrl.value : null,
+                            fit: BoxFit.cover,
+                            fallback: Center(
+                              child: Text(
+                                controller.initials,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
                   );
                 }),
                 // Upload indicator
-                Obx(() => controller.isUploadingAvatar.value
-                    ? Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Padding(
-                            padding: EdgeInsets.all(24),
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.2,
-                              color: Colors.white,
+                Obx(
+                  () => controller.isUploadingAvatar.value
+                      ? Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.35),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Padding(
+                              padding: EdgeInsets.all(24),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
+                        )
+                      : const SizedBox.shrink(),
                 ),
                 // Camera badge
                 Positioned(
@@ -164,7 +174,8 @@ class EditProfileScreen extends GetView<ProfileController> {
                       shape: BoxShape.circle,
                       border: Border.all(color: kBgCard, width: 2.5),
                     ),
-                    child: PhosphorIcon(PhosphorIcons.camera,
+                    child: PhosphorIcon(
+                      PhosphorIcons.camera,
                       color: Colors.white,
                       size: 14,
                     ),
@@ -246,7 +257,8 @@ class EditProfileScreen extends GetView<ProfileController> {
                       color: kGreenLight,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: PhosphorIcon(PhosphorIcons.shieldCheck,
+                    child: PhosphorIcon(
+                      PhosphorIcons.shieldCheck,
                       color: kGreen,
                       size: 18,
                     ),
@@ -276,7 +288,8 @@ class EditProfileScreen extends GetView<ProfileController> {
                       ],
                     ),
                   ),
-                  PhosphorIcon(PhosphorIcons.caretRight,
+                  PhosphorIcon(
+                    PhosphorIcons.caretRight,
                     color: kGreen,
                     size: 18,
                   ),
@@ -398,7 +411,8 @@ class EditProfileScreen extends GetView<ProfileController> {
                   ),
                   child: Row(
                     children: [
-                      PhosphorIcon(PhosphorIconsDuotone.info,
+                      PhosphorIcon(
+                        PhosphorIconsDuotone.info,
                         color: kBlue,
                         size: 18,
                       ),
@@ -529,10 +543,7 @@ class _AvatarSourceTile extends StatelessWidget {
                 ),
               ),
             ),
-            PhosphorIcon(PhosphorIcons.caretRight,
-              color: kTextLight,
-              size: 18,
-            ),
+            PhosphorIcon(PhosphorIcons.caretRight, color: kTextLight, size: 18),
           ],
         ),
       ),
@@ -654,10 +665,7 @@ class _ReadOnlyProfileField extends StatelessWidget {
                   ),
                 ),
               ),
-              PhosphorIcon(PhosphorIcons.lockKey,
-                color: kTextLight,
-                size: 18,
-              ),
+              PhosphorIcon(PhosphorIcons.lockKey, color: kTextLight, size: 18),
             ],
           ),
         ),

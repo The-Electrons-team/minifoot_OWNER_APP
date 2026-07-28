@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart' show CupertinoDatePicker, CupertinoDatePickerMode, CupertinoTheme, CupertinoThemeData;
+import 'package:flutter/cupertino.dart'
+    show
+        CupertinoDatePicker,
+        CupertinoDatePickerMode,
+        CupertinoTheme,
+        CupertinoThemeData;
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -492,7 +497,9 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
                     onLongPress: () async {
                       if (slot.isBooked) return;
                       if (!controller.canToggleRange(slot.time, 2)) {
-                        AppSnackbar.warning('Le blocage rapide nécessite au moins 1h de créneaux continus libres.');
+                        AppSnackbar.warning(
+                          'Le blocage rapide nécessite au moins 1h de créneaux continus libres.',
+                        );
                         return;
                       }
                       HapticFeedback.heavyImpact();
@@ -675,7 +682,8 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
                   color: Colors.white,
                 ),
               )
-            : PhosphorIcon(PhosphorIconsDuotone.slidersHorizontal,
+            : PhosphorIcon(
+                PhosphorIconsDuotone.slidersHorizontal,
                 color: Colors.white,
                 size: 20,
               ),
@@ -1105,8 +1113,8 @@ class _TerrainSelectorChip extends StatelessWidget {
                         terrain.isComplexView
                             ? 'Tous les terrains'
                             : terrain.isMiniTerrain
-                                ? terrain.name
-                                : 'Terrain principal',
+                            ? terrain.name
+                            : 'Terrain principal',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -1234,7 +1242,6 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
     final endLabel = _formatDateLabel(endDate);
 
     return Container(
-
       decoration: BoxDecoration(
         color: kBgCard,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -1456,15 +1463,15 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
                                   ? null
                                   : () async {
                                       HapticFeedback.mediumImpact();
-                                      final count =
-                                          await controller.toggleBlockPeriod(
-                                        startDate:
-                                            controller.selectedDate.value,
-                                        startTime: slot.time,
-                                        endDate: endDate,
-                                        endTime: endTime,
-                                        unblock: slot.isBlocked,
-                                      );
+                                      final count = await controller
+                                          .toggleBlockPeriod(
+                                            startDate:
+                                                controller.selectedDate.value,
+                                            startTime: slot.time,
+                                            endDate: endDate,
+                                            endTime: endTime,
+                                            unblock: slot.isBlocked,
+                                          );
                                       if (!context.mounted) return;
                                       Navigator.of(context).pop();
                                       AppSnackbar.success(
@@ -1504,8 +1511,6 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
       ),
     );
   }
-
-
 
   bool _isPeriodValid(AvailabilityController controller, TimeSlot slot) {
     final startDate = DateTime(
@@ -1561,9 +1566,7 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
               onSurface: kTextPrim,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: kGreen,
-              ),
+              style: TextButton.styleFrom(foregroundColor: kGreen),
             ),
           ),
           child: child!,
@@ -1595,9 +1598,7 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
               onSurface: kTextPrim,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: kGreen,
-              ),
+              style: TextButton.styleFrom(foregroundColor: kGreen),
             ),
           ),
           child: MediaQuery(
@@ -1687,7 +1688,6 @@ class _BulkActionSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-
       decoration: BoxDecoration(
         color: kBgCard,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -1736,6 +1736,7 @@ class _BulkActionSheet extends StatelessWidget {
               HapticFeedback.mediumImpact();
               final count = await controller.blockAllAvailable();
               Get.back();
+              await Future<void>.delayed(const Duration(milliseconds: 220));
               AppSnackbar.success(
                 count == 0
                     ? 'Aucun créneau libre à bloquer.'
@@ -1760,6 +1761,7 @@ class _BulkActionSheet extends StatelessWidget {
               HapticFeedback.mediumImpact();
               final count = await controller.unblockAllBlocked();
               Get.back();
+              await Future<void>.delayed(const Duration(milliseconds: 220));
               AppSnackbar.success(
                 count == 0
                     ? 'Aucun créneau bloqué à débloquer.'

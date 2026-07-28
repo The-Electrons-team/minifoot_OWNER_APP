@@ -135,6 +135,38 @@ class OwnerIntroCard extends StatelessWidget {
   }
 }
 
+/// Cadre commun des feuilles modales Owner.
+///
+/// Les écrans utilisaient tantôt une feuille bord-à-bord, tantôt une carte
+/// flottante avec des rayons différents. Ce cadre garde une marge respirante,
+/// le même rayon et la même ombre, tout en laissant chaque écran choisir son
+/// contenu et son propre handle.
+class OwnerSheetFrame extends StatelessWidget {
+  const OwnerSheetFrame({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.fromLTRB(20, 20, 20, 24),
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      padding: padding.add(EdgeInsets.only(bottom: bottomInset)),
+      decoration: BoxDecoration(
+        color: kBgCard,
+        borderRadius: AppRadius.lgAll,
+        boxShadow: kElevatedShadow,
+      ),
+      child: SafeArea(top: false, child: child),
+    );
+  }
+}
+
 class PaymentBrandBadge extends StatelessWidget {
   final String method;
   final double size;
@@ -183,7 +215,8 @@ class PaymentBrandBadge extends StatelessWidget {
           fit: BoxFit.contain,
         );
       default:
-        return PhosphorIcon(PhosphorIconsDuotone.creditCard,
+        return PhosphorIcon(
+          PhosphorIconsDuotone.creditCard,
           color: kTextSub,
           size: 22,
         );

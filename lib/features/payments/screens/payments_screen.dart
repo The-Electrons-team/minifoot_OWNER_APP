@@ -35,11 +35,10 @@ class PaymentsScreen extends GetView<PaymentsController> {
             slivers: [
               SliverToBoxAdapter(child: _buildHeader(context)),
               SliverToBoxAdapter(child: _buildAvailableBalance(context)),
-              SliverToBoxAdapter(child: _buildPayoutDestination()),
               SliverToBoxAdapter(child: _buildNotice()),
-              SliverToBoxAdapter(child: _buildMethodBreakdown()),
-              SliverToBoxAdapter(child: _buildFilterChips()),
               SliverToBoxAdapter(child: _buildTransactionsHeader()),
+              SliverToBoxAdapter(child: _buildPeriodPicker()),
+              SliverToBoxAdapter(child: _buildFilterChips()),
               SliverToBoxAdapter(child: _buildGroupedTransactions(context)),
               const SliverToBoxAdapter(child: SizedBox(height: 40)),
             ],
@@ -58,184 +57,141 @@ class PaymentsScreen extends GetView<PaymentsController> {
       final hasBalance = balance > 0;
 
       return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: hasBalance
-                ? const LinearGradient(
-                    colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: hasBalance ? null : kBgCard,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: kElevatedShadow,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: hasBalance
-                          ? Colors.white.withValues(alpha: 0.18)
-                          : kGreenLight,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: PhosphorIcon(PhosphorIconsDuotone.wallet,
-                      color: hasBalance ? Colors.white : kGreen,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Solde disponible',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: hasBalance
-                                ? Colors.white.withValues(alpha: 0.75)
-                                : kTextSub,
-                          ),
-                        ),
-                        Text(
-                          '${_fmt(balance)} F CFA',
-                          style: TextStyle(
-                            fontFamily: 'Orbitron',
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: hasBalance ? Colors.white : kTextPrim,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+            child: Container(
+              height: hasBalance ? null : 116,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: hasBalance
+                    ? const LinearGradient(
+                        colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
+                color: hasBalance ? null : kBgCard,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: kElevatedShadow,
               ),
-
-              if (count > 0) ...[
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: hasBalance
+                              ? Colors.white.withValues(alpha: 0.18)
+                              : kGreenLight,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: PhosphorIcon(
+                          PhosphorIconsDuotone.wallet,
+                          color: hasBalance ? Colors.white : kGreen,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Solde disponible',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: hasBalance
+                                    ? Colors.white.withValues(alpha: 0.75)
+                                    : kTextSub,
+                              ),
+                            ),
+                            Text(
+                              '${_fmt(balance)} F CFA',
+                              style: TextStyle(
+                                fontFamily: 'Orbitron',
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                color: hasBalance ? Colors.white : kTextPrim,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '$count réservation${count > 1 ? 's' : ''} scannée${count > 1 ? 's' : ''} non retirée${count > 1 ? 's' : ''}',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
 
-              const SizedBox(height: 16),
-
-              // Répartition commissions (info)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: hasBalance
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : kBgSurface,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _CommissionChip(
-                      label: 'DexPay',
-                      percent: '2%',
-                      light: hasBalance,
-                    ),
-                    _CommissionDot(light: hasBalance),
-                    _CommissionChip(
-                      label: 'MiniFoot',
-                      percent: '2%',
-                      light: hasBalance,
-                    ),
-                    _CommissionDot(light: hasBalance),
-                    _CommissionChip(
-                      label: 'Vous',
-                      percent: '96%',
-                      light: hasBalance,
-                      highlight: true,
+                  if (hasBalance) ...[
+                    if (count > 0) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '$count réservation${count > 1 ? 's' : ''} scannée${count > 1 ? 's' : ''} non retirée${count > 1 ? 's' : ''}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: !isWithdrawing
+                            ? () {
+                                HapticFeedback.mediumImpact();
+                                _showWithdrawSheet(context, balance);
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: kGreen,
+                          elevation: 0,
+                        ),
+                        icon: isWithdrawing
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: kGreen,
+                                ),
+                              )
+                            : const PhosphorIcon(
+                                PhosphorIconsBold.arrowLineDown,
+                                size: 18,
+                              ),
+                        label: Text(
+                          isWithdrawing
+                              ? 'Traitement en cours…'
+                              : 'Retirer mon argent',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
-                ),
+                ],
               ),
-
-              const SizedBox(height: 14),
-
-              // Bouton retirer
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  onPressed:
-                      hasBalance && !isWithdrawing
-                          ? () {
-                              HapticFeedback.mediumImpact();
-                              _showWithdrawSheet(context, balance);
-                            }
-                          : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: hasBalance ? Colors.white : kBgSurface,
-                    foregroundColor: hasBalance ? kGreen : kTextLight,
-                    disabledBackgroundColor: Colors.white.withValues(alpha: 0.25),
-                    disabledForegroundColor: Colors.white60,
-                    elevation: 0,
-                  ),
-                  icon: isWithdrawing
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: hasBalance ? kGreen : Colors.white60,
-                          ),
-                        )
-                      : Icon(
-                          PhosphorIconsBold.arrowLineDown,
-                          size: 18,
-                        ),
-                  label: Text(
-                    isWithdrawing
-                        ? 'Traitement en cours…'
-                        : hasBalance
-                        ? 'Retirer mon argent'
-                        : 'Aucun solde à retirer',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ).animate().fadeIn(delay: 80.ms, duration: 320.ms).slideY(
-            begin: 0.04,
-            duration: 320.ms,
-          );
+            ),
+          )
+          .animate()
+          .fadeIn(delay: 80.ms, duration: 320.ms)
+          .slideY(begin: 0.04, duration: 320.ms);
     });
   }
 
@@ -244,130 +200,14 @@ class PaymentsScreen extends GetView<PaymentsController> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder:
-          (_) => _WithdrawSheet(
-            availableBalance: balance,
-            formatAmount: _fmt,
-            payoutPhone: controller.payoutPhone.value,
-            payoutMethodLabel: controller.payoutMethodLabel,
-            onWithdraw: (phone) => controller.withdraw(phone),
-          ),
+      builder: (_) => _WithdrawSheet(
+        availableBalance: balance,
+        formatAmount: _fmt,
+        payoutPhone: controller.payoutPhone.value,
+        payoutMethodLabel: controller.payoutMethodLabel,
+        onWithdraw: (phone) => controller.withdraw(phone),
+      ),
     );
-  }
-
-  Widget _buildPayoutDestination() {
-    return Obx(() {
-      final configured =
-          controller.payoutPhone.value != null &&
-          controller.payoutPhone.value!.isNotEmpty;
-      final method = controller.payoutMethodLabel;
-      final phone = controller.payoutPhone.value ?? 'Aucun numéro défini';
-
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-        child: InkWell(
-          onTap: controller.goToPayoutSettings,
-          borderRadius: BorderRadius.circular(18),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: kBgCard,
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: kCardShadow,
-              border: Border.all(
-                color: configured
-                    ? kGreen.withValues(alpha: 0.22)
-                    : kGold.withValues(alpha: 0.28),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  alignment: Alignment.center,
-                  child: configured
-                      ? PaymentBrandBadge(
-                          method: controller.payoutMethod.value ?? method,
-                          size: 48,
-                        )
-                      : Container(
-                          decoration: BoxDecoration(
-                            color: kGoldLight,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: SizedBox(
-                            width: 48,
-                            height: 48,
-                            child: PhosphorIcon(PhosphorIconsDuotone.creditCard,
-                              color: kGold,
-                              size: 23,
-                            ),
-                          ),
-                        ),
-                ),
-                const SizedBox(width: 13),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        configured
-                            ? 'Destination des reversements'
-                            : 'Coordonnées de reversement',
-                        style: const TextStyle(
-                          color: kTextPrim,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        configured ? '$method · $phone' : phone,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: kTextSub,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: kBgSurface,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        configured ? 'Modifier' : 'Configurer',
-                        style: const TextStyle(
-                          color: kGreen,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      PhosphorIcon(PhosphorIconsDuotone.caretRight,
-                        color: kGreen,
-                        size: 16,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ).animate().fadeIn(delay: 100.ms, duration: 300.ms);
-    });
   }
 
   Widget _buildNotice() {
@@ -399,7 +239,8 @@ class PaymentsScreen extends GetView<PaymentsController> {
         ),
         child: Row(
           children: [
-            PhosphorIcon(PhosphorIconsDuotone.warningCircle,
+            PhosphorIcon(
+              PhosphorIconsDuotone.warningCircle,
               color: kRed,
               size: 18,
             ),
@@ -424,7 +265,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
   Widget _buildHeader(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
     return Container(
-      padding: EdgeInsets.fromLTRB(20, top + 12, 20, 24),
+      padding: EdgeInsets.fromLTRB(20, top + 12, 20, 20),
       decoration: const BoxDecoration(
         gradient: kGreenGradient,
         borderRadius: BorderRadius.only(
@@ -446,7 +287,8 @@ class PaymentsScreen extends GetView<PaymentsController> {
                     color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: PhosphorIcon(PhosphorIconsDuotone.caretLeft,
+                  child: PhosphorIcon(
+                    PhosphorIconsDuotone.caretLeft,
                     color: Colors.white,
                     size: 20,
                   ),
@@ -467,92 +309,13 @@ class PaymentsScreen extends GetView<PaymentsController> {
               const SizedBox(width: 40),
             ],
           ),
-          const SizedBox(height: 20),
-
-          // Sélecteur de période
-          Obx(
-            () => Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                children: [
-                  _PeriodTab(
-                    label: 'Jour',
-                    key_: 'day',
-                    active: controller.selectedPeriod.value == 'day',
-                    onTap: () => controller.setPeriod('day'),
-                  ),
-                  _PeriodTab(
-                    label: 'Semaine',
-                    key_: 'week',
-                    active: controller.selectedPeriod.value == 'week',
-                    onTap: () => controller.setPeriod('week'),
-                  ),
-                  _PeriodTab(
-                    label: 'Mois',
-                    key_: 'month',
-                    active: controller.selectedPeriod.value == 'month',
-                    onTap: () => controller.setPeriod('month'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 22),
-
-          // Montant total
-          Obx(
-            () => Column(
-              children: [
-                Text(
-                  'Revenus totaux',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withValues(alpha: 0.75),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${_fmt(controller.totalRevenue.value)} F CFA',
-                  style: const TextStyle(
-                    fontFamily: 'Orbitron',
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-
-          // Stats compactes
-          Obx(
-            () => Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _HeaderStat(
-                  icon: PhosphorIconsDuotone.calendarBlank,
-                  label: 'Ce mois',
-                  value: '${_fmt(controller.monthlyRevenue.value)} F',
-                ),
-                Container(
-                  width: 1,
-                  height: 28,
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  color: Colors.white.withValues(alpha: 0.25),
-                ),
-                _HeaderStat(
-                  icon: PhosphorIconsDuotone.wallet,
-                  label: 'À retirer',
-                  value: '${_fmt(controller.availableBalance.value)} F',
-                ),
-              ],
+          const SizedBox(height: 16),
+          Text(
+            'Solde, retraits et historique des transactions',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.78),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -560,111 +323,42 @@ class PaymentsScreen extends GetView<PaymentsController> {
     ).animate().fadeIn(duration: 350.ms).slideY(begin: -0.05, duration: 350.ms);
   }
 
-  // ── Barre de répartition par méthode de paiement ──────────────────────────
-  Widget _buildMethodBreakdown() {
-    return Obx(() {
-      final breakdown = controller.methodBreakdown;
-      final total = controller.totalPaidAmount;
-      if (total == 0) return const SizedBox.shrink();
-
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        child: Container(
-          padding: const EdgeInsets.all(16),
+  Widget _buildPeriodPicker() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+      child: Obx(
+        () => Container(
+          padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
             color: kBgCard,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: kCardShadow,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: kBorder),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              const OwnerSectionHeader(
-                title: 'Répartition des paiements',
-                subtitle: 'Part de chaque moyen de paiement encaissé',
+              _PeriodTab(
+                label: 'Jour',
+                key_: 'day',
+                active: controller.selectedPeriod.value == 'day',
+                onTap: () => controller.setPeriod('day'),
               ),
-              const SizedBox(height: 12),
-
-              // Barre de répartition
-              ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: SizedBox(
-                  height: 10,
-                  child: Row(
-                    children: breakdown.entries.map((entry) {
-                      final ratio = entry.value / total;
-                      return Expanded(
-                        flex: (ratio * 100).round().clamp(1, 100),
-                        child: Container(
-                          color: _methodColor(entry.key),
-                          margin: const EdgeInsets.only(right: 2),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
+              _PeriodTab(
+                label: 'Semaine',
+                key_: 'week',
+                active: controller.selectedPeriod.value == 'week',
+                onTap: () => controller.setPeriod('week'),
               ),
-              const SizedBox(height: 12),
-
-              // Légende
-              Row(
-                children: breakdown.entries.map((entry) {
-                  final percent = ((entry.value / total) * 100).round();
-                  return Expanded(
-                    child: Row(
-                      children: [
-                        PaymentBrandBadge(
-                          method: _methodToBrandKey(entry.key),
-                          size: 28,
-                          compact: true,
-                        ),
-                        const SizedBox(width: 5),
-                        Flexible(
-                          child: Text(
-                            '${entry.key} $percent%',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: kTextSub,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
+              _PeriodTab(
+                label: 'Mois',
+                key_: 'month',
+                active: controller.selectedPeriod.value == 'month',
+                onTap: () => controller.setPeriod('month'),
               ),
             ],
           ),
         ),
-      ).animate().fadeIn(delay: 150.ms, duration: 300.ms);
-    });
-  }
-
-  Color _methodColor(String method) {
-    switch (method) {
-      case 'Wave':
-        return kBrandWave;
-      case 'Orange Money':
-        return kBrandOrangeMoney;
-      case 'Yas Money':
-        return kBrandYasMoney;
-      default:
-        return kTextSub;
-    }
-  }
-
-  String _methodToBrandKey(String method) {
-    switch (method) {
-      case 'Wave':
-        return 'WAVE';
-      case 'Orange Money':
-        return 'ORANGE_MONEY';
-      case 'Yas Money':
-        return 'FREE_MONEY';
-      default:
-        return method;
-    }
+      ),
+    );
   }
 
   // ── Filtres (Tout / Payé / En attente / Échoué) ───────────────────────────
@@ -733,7 +427,8 @@ class PaymentsScreen extends GetView<PaymentsController> {
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         child: Row(
           children: [
-            PhosphorIcon(PhosphorIconsDuotone.listDashes,
+            PhosphorIcon(
+              PhosphorIconsDuotone.listDashes,
               size: 20,
               color: kTextPrim,
             ),
@@ -868,7 +563,8 @@ class PaymentsScreen extends GetView<PaymentsController> {
                 color: kBgSurface,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: PhosphorIcon(PhosphorIconsDuotone.magnifyingGlass,
+              child: PhosphorIcon(
+                PhosphorIconsDuotone.magnifyingGlass,
                 size: 32,
                 color: kTextLight,
               ),
@@ -939,10 +635,10 @@ class _PeriodTab extends StatelessWidget {
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: active ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(11),
+            color: active ? kGreen : Colors.transparent,
+            borderRadius: AppRadius.xsAll,
           ),
           child: Text(
             label,
@@ -950,55 +646,11 @@ class _PeriodTab extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: active ? kGreen : Colors.white70,
+              color: active ? Colors.white : kTextSub,
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-class _HeaderStat extends StatelessWidget {
-  final dynamic icon;
-  final String label;
-  final String value;
-
-  const _HeaderStat({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        PhosphorIcon(icon, color: Colors.white.withValues(alpha: 0.8), size: 16),
-        const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.white.withValues(alpha: 0.65),
-              ),
-            ),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }
@@ -1061,7 +713,8 @@ class _TransactionCard extends StatelessWidget {
       case 'Yas Money':
         return const PaymentBrandBadge(method: 'FREE_MONEY', size: 44);
       default:
-        return PhosphorIcon(PhosphorIconsDuotone.creditCard,
+        return PhosphorIcon(
+          PhosphorIconsDuotone.creditCard,
           color: kTextSub,
           size: 22,
         );
@@ -1165,7 +818,8 @@ class _TransactionCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Row(
                     children: [
-                      PhosphorIcon(PhosphorIconsDuotone.mapPin,
+                      PhosphorIcon(
+                        PhosphorIconsDuotone.mapPin,
                         size: 12,
                         color: kTextLight,
                       ),
@@ -1432,14 +1086,17 @@ class _TransactionDetailSheet extends StatelessWidget {
                           onPressed: () {
                             HapticFeedback.mediumImpact();
                             Navigator.of(context).pop();
-                            AppSnackbar.info('Un rappel a été envoyé à ${transaction.client}.');
+                            AppSnackbar.info(
+                              'Un rappel a été envoyé à ${transaction.client}.',
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: kGold,
                             foregroundColor: Colors.white,
                             elevation: 0,
                           ),
-                          icon: PhosphorIcon(PhosphorIconsDuotone.bellRinging,
+                          icon: PhosphorIcon(
+                            PhosphorIconsDuotone.bellRinging,
                             size: 18,
                           ),
                           label: const Text(
@@ -1467,7 +1124,7 @@ class _WithdrawSheet extends StatefulWidget {
   final String Function(int) formatAmount;
   final String? payoutPhone;
   final String payoutMethodLabel;
-  final Future<void> Function(String phone) onWithdraw;
+  final Future<bool> Function(String phone) onWithdraw;
 
   const _WithdrawSheet({
     required this.availableBalance,
@@ -1522,8 +1179,11 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
     if (phone == null || _submitting) return;
     setState(() => _submitting = true);
     try {
-      await widget.onWithdraw(phone);
-      if (mounted) Navigator.of(context).pop();
+      final succeeded = await widget.onWithdraw(phone);
+      if (!succeeded || !mounted) return;
+      Navigator.of(context).pop();
+      await Future<void>.delayed(const Duration(milliseconds: 220));
+      AppSnackbar.success('Votre retrait a été soumis avec succès.');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -1532,14 +1192,8 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+    return OwnerSheetFrame(
       padding: EdgeInsets.fromLTRB(24, 20, 24, 24 + bottom),
-      decoration: BoxDecoration(
-        color: kBgCard,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: kElevatedShadow,
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1566,7 +1220,8 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                   color: kGreenLight,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: PhosphorIcon(PhosphorIconsDuotone.arrowLineDown,
+                child: PhosphorIcon(
+                  PhosphorIconsDuotone.arrowLineDown,
                   color: kGreen,
                   size: 22,
                 ),
@@ -1605,7 +1260,11 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
               children: [
                 const Text(
                   'Solde disponible',
-                  style: TextStyle(fontSize: 12, color: kGreen, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: kGreen,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -1687,14 +1346,21 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: kGreen.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
                         'Configuré',
-                        style: TextStyle(fontSize: 10, color: kGreen, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: kGreen,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -1727,7 +1393,11 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                     const SizedBox(width: 10),
                     const Text(
                       'Autre numéro',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: kTextPrim),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: kTextPrim,
+                      ),
                     ),
                   ],
                 ),
@@ -1755,7 +1425,8 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                 hintStyle: const TextStyle(color: kTextLight, fontSize: 14),
                 filled: true,
                 fillColor: kBgSurface,
-                prefixIcon: PhosphorIcon(PhosphorIconsDuotone.phone,
+                prefixIcon: PhosphorIcon(
+                  PhosphorIconsDuotone.phone,
                   color: kTextSub,
                   size: 20,
                 ),
@@ -1771,7 +1442,10 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(color: kGreen, width: 1.5),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
               ),
             ),
             const SizedBox(height: 6),
@@ -1828,64 +1502,6 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
       ),
     );
   }
-}
-
-// ── Widgets utilitaires commission ────────────────────────────────────────────
-
-class _CommissionChip extends StatelessWidget {
-  final String label;
-  final String percent;
-  final bool light;
-  final bool highlight;
-
-  const _CommissionChip({
-    required this.label,
-    required this.percent,
-    required this.light,
-    this.highlight = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final textColor = light
-        ? (highlight ? Colors.white : Colors.white70)
-        : (highlight ? kGreen : kTextSub);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          percent,
-          style: TextStyle(
-            fontSize: highlight ? 15 : 12,
-            fontWeight: FontWeight.w800,
-            color: textColor,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            color: light ? Colors.white60 : kTextLight,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CommissionDot extends StatelessWidget {
-  final bool light;
-  const _CommissionDot({required this.light});
-
-  @override
-  Widget build(BuildContext context) => Container(
-        width: 4,
-        height: 4,
-        decoration: BoxDecoration(
-          color: light ? Colors.white30 : kBorder,
-          shape: BoxShape.circle,
-        ),
-      );
 }
 
 class _DetailRow extends StatelessWidget {

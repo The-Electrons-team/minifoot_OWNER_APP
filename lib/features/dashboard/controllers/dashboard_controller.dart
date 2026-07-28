@@ -8,7 +8,6 @@ class DashboardController extends GetxController {
   final _service = DashboardService();
   final _auth = Get.find<AuthController>();
 
-
   final isLoading = false.obs;
   final errorMessage = ''.obs;
 
@@ -71,6 +70,7 @@ class DashboardController extends GetxController {
   }
 
   bool get isController => _auth.user.value?.isController == true;
+  String? get avatarUrl => _auth.user.value?.avatarUrl;
 
   Future<void> loadDashboard() async {
     isLoading.value = true;
@@ -103,8 +103,6 @@ class DashboardController extends GetxController {
   Future<void> refreshDashboard() async {
     await loadDashboard();
   }
-
-
 
   /// Coquille de navigation, si le tableau de bord y est hébergé.
   ///

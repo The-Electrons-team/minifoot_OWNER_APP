@@ -115,20 +115,21 @@ class PaymentsController extends GetxController {
 
   /// Lance un retrait DexPay. [phone] : numéro du compte à créditer.
   /// DexPay détecte l'opérateur automatiquement (Wave, Orange, WhatsApp...).
-  Future<void> withdraw(String phone, {int? amount}) async {
+  Future<bool> withdraw(String phone, {int? amount}) async {
     isWithdrawing.value = true;
     try {
       final token = await _authService.savedToken();
       if (token == null || token.isEmpty) throw Exception('Non connecté');
       await _authService.requestPayout(token, phone: phone, amount: amount);
       await Future.wait([_loadPayoutBalance(), loadPayments()]);
-      AppSnackbar.success('Votre retrait a été soumis avec succès.');
+      return true;
     } catch (e) {
       final raw = e.toString().replaceFirst('Exception: ', '');
       final msg = raw.contains('Non connecté')
           ? 'Session expirée. Reconnectez-vous.'
           : 'Impossible d\'effectuer le retrait. Réessayez.';
       AppSnackbar.error(msg);
+      return false;
     } finally {
       isWithdrawing.value = false;
     }

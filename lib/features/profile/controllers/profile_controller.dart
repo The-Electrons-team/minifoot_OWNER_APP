@@ -24,6 +24,7 @@ class ProfileController extends GetxController {
   final lastName = ''.obs;
   final phone = 'Pas de numéro'.obs;
   final avatarUrl = RxnString();
+  final pendingAvatarPath = RxnString();
   final payoutWavePhone = RxnString();
   final payoutOrangePhone = RxnString();
   final payoutFreePhone = RxnString();
@@ -101,7 +102,9 @@ class ProfileController extends GetxController {
       rating.value = _averageRating(terrains);
       totalRevenue.value = _confirmedRevenue(reservations);
     } catch (_) {
-      AppSnackbar.error('Impossible de charger votre profil. Vérifiez votre connexion.');
+      AppSnackbar.error(
+        'Impossible de charger votre profil. Vérifiez votre connexion.',
+      );
     } finally {
       isLoading.value = false;
     }
@@ -120,16 +123,19 @@ class ProfileController extends GetxController {
 
     isSaving.value = true;
     try {
-      await _authService.updateProfile(token, {
+      final profileData = await _authService.updateProfile(token, {
         'firstName': nextFirstName,
         'lastName': nextLastName,
       });
-      final profileData = await _authService.getProfile(token);
       final user = UserModel.fromJson(profileData);
-      _authController.user.value = user;
+      await _authController.persistCurrentUser(user);
       _syncUser(user);
-      AppSnackbar.success('Profil mis à jour avec succès.');
       Get.back();
+      // L'alerte doit apparaître sur la page Profil, pas sur le formulaire qui
+      // vient d'être fermé. Sinon Get.back() la ferme en même temps que la
+      // route et l'utilisateur n'a aucun retour visuel.
+      await Future<void>.delayed(const Duration(milliseconds: 220));
+      AppSnackbar.success('Profil mis à jour avec succès.');
     } catch (_) {
       AppSnackbar.error('Impossible de mettre à jour le profil. Réessayez.');
     } finally {
@@ -150,17 +156,29 @@ class ProfileController extends GetxController {
       );
       if (image == null) return;
 
+      pendingAvatarPath.value = image.path;
       isUploadingAvatar.value = true;
-      await _authService.uploadAvatar(
+      final response = await _authService.uploadAvatar(
         token: token,
         image: File(image.path),
       );
-      final profileData = await _authService.getProfile(token);
-      final user = UserModel.fromJson(profileData);
-      _authController.user.value = user;
+      final nextAvatarUrl = response['avatarUrl']?.toString();
+      if (nextAvatarUrl == null || nextAvatarUrl.isEmpty) {
+        throw Exception('URL_AVATAR_MANQUANTE');
+      }
+
+      final current = _authController.user.value;
+      if (current == null) throw Exception('SESSION_EXPIREE');
+      final user = UserModel.fromJson({
+        ...current.toJson(),
+        'avatarUrl': nextAvatarUrl,
+      });
+      await _authController.persistCurrentUser(user);
       _syncUser(user);
+      pendingAvatarPath.value = null;
       AppSnackbar.success('Photo de profil mise à jour.');
     } catch (_) {
+      pendingAvatarPath.value = null;
       AppSnackbar.error('Impossible de mettre à jour la photo. Réessayez.');
     } finally {
       isUploadingAvatar.value = false;
@@ -215,7 +233,9 @@ class ProfileController extends GetxController {
 
     if (preferred != null &&
         _phoneForMethod(preferred, wave, orange, free) == null) {
-      AppSnackbar.warning('Ajoutez le numéro correspondant à la méthode préférée.');
+      AppSnackbar.warning(
+        'Ajoutez le numéro correspondant à la méthode préférée.',
+      );
       return;
     }
 
@@ -234,7 +254,9 @@ class ProfileController extends GetxController {
       resetPayoutForm();
       AppSnackbar.success('Vos numéros de reversement sont à jour.');
     } catch (_) {
-      AppSnackbar.error('Impossible d\'enregistrer les coordonnées. Réessayez.');
+      AppSnackbar.error(
+        'Impossible d\'enregistrer les coordonnées. Réessayez.',
+      );
     } finally {
       isSavingPayout.value = false;
     }
@@ -244,6 +266,12 @@ class ProfileController extends GetxController {
     nextPhoneCtrl.clear();
     phoneOtpCtrl.clear();
     phoneOtpSent.value = false;
+  }
+
+  Future<void> _closeAndConfirm(String message) async {
+    Get.back();
+    await Future<void>.delayed(const Duration(milliseconds: 220));
+    AppSnackbar.success(message);
   }
 
   Future<void> requestPhoneChange() async {
@@ -260,7 +288,9 @@ class ProfileController extends GetxController {
     try {
       await _authService.requestPhoneChange(token: token, phone: nextPhone);
       phoneOtpSent.value = true;
-      AppSnackbar.success('Un code de vérification a été envoyé au nouveau numéro.');
+      AppSnackbar.success(
+        'Un code de vérification a été envoyé au nouveau numéro.',
+      );
     } catch (e) {
       final message = e.toString().contains('PHONE_ALREADY_USED')
           ? 'Ce numéro est déjà utilisé par un autre compte.'
@@ -278,7 +308,9 @@ class ProfileController extends GetxController {
     final nextPhone = _fullPhoneOrNull(nextPhoneCtrl.text);
     final code = phoneOtpCtrl.text.trim();
     if (nextPhone == null || code.length != 6) {
-      AppSnackbar.warning('Vérifiez le numéro et le code de vérification (6 chiffres).');
+      AppSnackbar.warning(
+        'Vérifiez le numéro et le code de vérification (6 chiffres).',
+      );
       return;
     }
 
@@ -294,8 +326,7 @@ class ProfileController extends GetxController {
       _authController.user.value = user;
       _syncUser(user);
       resetPhoneChangeForm();
-      Get.back();
-      AppSnackbar.success('Votre nouveau numéro de téléphone est actif.');
+      await _closeAndConfirm('Votre nouveau numéro de téléphone est actif.');
     } catch (e) {
       final message = e.toString().contains('CODE_INVALIDE')
           ? 'Code invalide ou expiré. Demandez un nouveau code.'
@@ -330,7 +361,9 @@ class ProfileController extends GetxController {
     }
 
     if (newPassword != confirmPassword) {
-      AppSnackbar.warning('Les deux nouveaux mots de passe ne correspondent pas.');
+      AppSnackbar.warning(
+        'Les deux nouveaux mots de passe ne correspondent pas.',
+      );
       return;
     }
 
@@ -342,8 +375,7 @@ class ProfileController extends GetxController {
         newPassword: newPassword,
       );
       resetPasswordForm();
-      AppSnackbar.success('Votre nouveau mot de passe est actif.');
-      Get.back();
+      await _closeAndConfirm('Votre nouveau mot de passe est actif.');
     } catch (e) {
       final message = e.toString().contains('MOT_DE_PASSE_ACTUEL_INCORRECT')
           ? 'Le mot de passe actuel est incorrect.'

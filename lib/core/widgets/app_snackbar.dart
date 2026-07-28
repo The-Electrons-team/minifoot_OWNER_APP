@@ -16,9 +16,9 @@ class AppSnackbar {
   // ── Couleurs ────────────────────────────────────────────────────────────────
   // Issues de la palette : ces teintes étaient recopiées en hexadécimal ici, et
   // ne suivaient donc plus le thème.
-  static const _kError   = kRed;
+  static const _kError = kRed;
   static const _kSuccess = kGreen;
-  static const _kInfo    = kBlue;
+  static const _kInfo = kBlue;
   static const _kWarning = kGoldDeep;
 
   // ── API publique ────────────────────────────────────────────────────────────
@@ -28,43 +28,47 @@ class AppSnackbar {
   /// [onRetry] ajoute un bouton d'action. Pour un échec de chargement de page,
   /// préférez toutefois `AppErrorState` : un toast disparaît en 4 secondes et
   /// laisse l'utilisateur devant une liste vide sans moyen de réessayer.
-  static void error(String message, {String? title, VoidCallback? onRetry,
-      String retryLabel = 'Réessayer'}) => _show(
-        title: title ?? 'Une erreur est survenue',
-        message: message,
-        background: _kError,
-        icon: PhosphorIconsFill.warningCircle,
-        duration: const Duration(seconds: 5),
-        onAction: onRetry,
-        actionLabel: retryLabel,
-      );
+  static void error(
+    String message, {
+    String? title,
+    VoidCallback? onRetry,
+    String retryLabel = 'Réessayer',
+  }) => _show(
+    title: title ?? 'Une erreur est survenue',
+    message: message,
+    background: _kError,
+    icon: PhosphorIconsFill.warningCircle,
+    duration: const Duration(seconds: 5),
+    onAction: onRetry,
+    actionLabel: retryLabel,
+  );
 
   /// Succès — fond vert.
   static void success(String message, {String? title}) => _show(
-        title: title ?? 'Succès',
-        message: message,
-        background: _kSuccess,
-        icon: PhosphorIconsFill.checkCircle,
-        duration: const Duration(seconds: 3),
-      );
+    title: title ?? 'Succès',
+    message: message,
+    background: _kSuccess,
+    icon: PhosphorIconsFill.checkCircle,
+    duration: const Duration(seconds: 3),
+  );
 
   /// Information — fond bleu.
   static void info(String message, {String? title}) => _show(
-        title: title ?? 'Information',
-        message: message,
-        background: _kInfo,
-        icon: PhosphorIconsFill.info,
-        duration: const Duration(seconds: 3),
-      );
+    title: title ?? 'Information',
+    message: message,
+    background: _kInfo,
+    icon: PhosphorIconsFill.info,
+    duration: const Duration(seconds: 3),
+  );
 
   /// Avertissement — fond orange.
   static void warning(String message, {String? title}) => _show(
-        title: title ?? 'Attention',
-        message: message,
-        background: _kWarning,
-        icon: PhosphorIconsFill.warning,
-        duration: const Duration(seconds: 4),
-      );
+    title: title ?? 'Attention',
+    message: message,
+    background: _kWarning,
+    icon: PhosphorIconsFill.warning,
+    duration: const Duration(seconds: 4),
+  );
 
   // ── Implémentation interne ──────────────────────────────────────────────────
 
@@ -86,12 +90,20 @@ class AppSnackbar {
       snackPosition: SnackPosition.TOP,
       backgroundColor: background,
       colorText: Colors.white,
-      borderRadius: 14,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      borderRadius: AppRadius.md,
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        0,
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       duration: duration,
       animationDuration: const Duration(milliseconds: 300),
-      icon: Icon(icon, color: Colors.white, size: 24),
+      icon: PhosphorIcon(icon, color: Colors.white, size: AppIconBox.mdIcon),
       mainButton: onAction == null
           ? null
           : TextButton(

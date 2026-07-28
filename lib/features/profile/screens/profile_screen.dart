@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,7 +25,8 @@ class ProfileScreen extends GetView<ProfileController> {
           onTap: () => Get.back(),
           behavior: HitTestBehavior.opaque,
           child: const Center(
-            child: PhosphorIcon(PhosphorIcons.caretLeft,
+            child: PhosphorIcon(
+              PhosphorIcons.caretLeft,
               color: kTextPrim,
               size: 24,
             ),
@@ -45,7 +48,8 @@ class ProfileScreen extends GetView<ProfileController> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               alignment: Alignment.center,
-              child: PhosphorIcon(PhosphorIconsDuotone.pencilSimpleLine,
+              child: PhosphorIcon(
+                PhosphorIconsDuotone.pencilSimpleLine,
                 color: kGreen,
                 size: 22,
               ),
@@ -93,6 +97,7 @@ class ProfileScreen extends GetView<ProfileController> {
             _ProfileAvatar(
               initials: controller.initials,
               imageUrl: controller.avatarUrl.value,
+              localImagePath: controller.pendingAvatarPath.value,
               isUploading: controller.isUploadingAvatar.value,
               onTap: _showAvatarPicker,
             ),
@@ -198,7 +203,8 @@ class ProfileScreen extends GetView<ProfileController> {
                 color: kGoldLight,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: PhosphorIcon(PhosphorIconsDuotone.wallet,
+              child: PhosphorIcon(
+                PhosphorIconsDuotone.wallet,
                 color: kGold,
                 size: 24,
               ),
@@ -224,10 +230,7 @@ class ProfileScreen extends GetView<ProfileController> {
                 ],
               ),
             ),
-            PhosphorIcon(PhosphorIconsDuotone.trendUp,
-              color: kGold,
-              size: 22,
-            ),
+            PhosphorIcon(PhosphorIconsDuotone.trendUp, color: kGold, size: 22),
           ],
         ),
       ),
@@ -285,8 +288,7 @@ class ProfileScreen extends GetView<ProfileController> {
           children: [
             const OwnerSectionHeader(
               title: 'Informations du compte',
-              subtitle:
-                  'Identité, sécurité et coordonnées de reversement',
+              subtitle: 'Identité, sécurité et coordonnées de reversement',
             ),
             const SizedBox(height: 10),
             _InfoRow(
@@ -343,57 +345,50 @@ class ProfileScreen extends GetView<ProfileController> {
 
   void _showAvatarPicker() {
     Get.bottomSheet(
-      Container(
+      OwnerSheetFrame(
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 26),
-        decoration: const BoxDecoration(
-          color: kBgCard,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 42,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: kBorder,
-                  borderRadius: BorderRadius.circular(10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 42,
+              height: 4,
+              decoration: BoxDecoration(
+                color: kBorder,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(height: 18),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Photo de profil',
+                style: TextStyle(
+                  color: kTextPrim,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
-              const SizedBox(height: 18),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Photo de profil',
-                  style: TextStyle(
-                    color: kTextPrim,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              _AvatarSourceTile(
-                icon: PhosphorIconsDuotone.camera,
-                title: 'Prendre une photo',
-                onTap: () {
-                  Get.back();
-                  controller.pickAndUploadAvatar(ImageSource.camera);
-                },
-              ),
-              const SizedBox(height: 10),
-              _AvatarSourceTile(
-                icon: PhosphorIconsDuotone.images,
-                title: 'Choisir depuis la galerie',
-                onTap: () {
-                  Get.back();
-                  controller.pickAndUploadAvatar(ImageSource.gallery);
-                },
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 14),
+            _AvatarSourceTile(
+              icon: PhosphorIconsDuotone.camera,
+              title: 'Prendre une photo',
+              onTap: () {
+                Get.back();
+                controller.pickAndUploadAvatar(ImageSource.camera);
+              },
+            ),
+            const SizedBox(height: 10),
+            _AvatarSourceTile(
+              icon: PhosphorIconsDuotone.images,
+              title: 'Choisir depuis la galerie',
+              onTap: () {
+                Get.back();
+                controller.pickAndUploadAvatar(ImageSource.gallery);
+              },
+            ),
+          ],
         ),
       ),
       isScrollControlled: true,
@@ -404,21 +399,18 @@ class ProfileScreen extends GetView<ProfileController> {
   Widget _buildLogoutButton() {
     return InkWell(
       onTap: _showLogoutDialog,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: AppRadius.mdAll,
       child: Container(
         height: 54,
         decoration: BoxDecoration(
           color: kBgCard,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppRadius.mdAll,
           border: Border.all(color: kRed.withValues(alpha: 0.25)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            PhosphorIcon(PhosphorIconsDuotone.signOut,
-              color: kRed,
-              size: 18,
-            ),
+            PhosphorIcon(PhosphorIconsDuotone.signOut, color: kRed, size: 18),
             SizedBox(width: 10),
             Text(
               'Déconnexion',
@@ -455,7 +447,8 @@ class ProfileScreen extends GetView<ProfileController> {
                   color: kRedLight,
                   shape: BoxShape.circle,
                 ),
-                child: PhosphorIcon(PhosphorIconsDuotone.signOut,
+                child: PhosphorIcon(
+                  PhosphorIconsDuotone.signOut,
                   color: kRed,
                   size: 28,
                 ),
@@ -652,12 +645,14 @@ class _StatCard extends StatelessWidget {
 class _ProfileAvatar extends StatelessWidget {
   final String initials;
   final String? imageUrl;
+  final String? localImagePath;
   final bool isUploading;
   final VoidCallback onTap;
 
   const _ProfileAvatar({
     required this.initials,
     required this.imageUrl,
+    required this.localImagePath,
     required this.isUploading,
     required this.onTap,
   });
@@ -665,6 +660,7 @@ class _ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasImage = imageUrl != null && imageUrl!.isNotEmpty;
+    final hasLocalImage = localImagePath != null && localImagePath!.isNotEmpty;
 
     return InkWell(
       onTap: isUploading ? null : onTap,
@@ -680,11 +676,13 @@ class _ProfileAvatar extends StatelessWidget {
               gradient: kGreenGradient,
             ),
             clipBehavior: Clip.antiAlias,
-            child: AppNetworkImage(
-              url: hasImage ? imageUrl : null,
-              fit: BoxFit.cover,
-              fallback: _AvatarInitials(initials: initials),
-            ),
+            child: hasLocalImage
+                ? Image.file(File(localImagePath!), fit: BoxFit.cover)
+                : AppNetworkImage(
+                    url: hasImage ? imageUrl : null,
+                    fit: BoxFit.cover,
+                    fallback: _AvatarInitials(initials: initials),
+                  ),
           ),
           if (isUploading)
             Positioned.fill(
@@ -791,9 +789,7 @@ class _AvatarSourceTile extends StatelessWidget {
                 ),
               ),
             ),
-            PhosphorIcon(PhosphorIcons.caretRight,
-              color: kTextLight,
-            ),
+            PhosphorIcon(PhosphorIcons.caretRight, color: kTextLight),
           ],
         ),
       ),
@@ -931,9 +927,7 @@ class _AccountAction extends StatelessWidget {
                 ],
               ),
             ),
-            PhosphorIcon(PhosphorIcons.caretRight,
-              color: kTextLight,
-            ),
+            PhosphorIcon(PhosphorIcons.caretRight, color: kTextLight),
           ],
         ),
       ),

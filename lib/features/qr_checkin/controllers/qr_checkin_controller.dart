@@ -36,9 +36,9 @@ class QrCheckInController extends GetxController {
     }
   }
 
-  Future<void> confirmCheckIn() async {
+  Future<bool> confirmCheckIn() async {
     final id = reservation.value?['id']?.toString();
-    if (id == null || id.isEmpty || isConfirming.value) return;
+    if (id == null || id.isEmpty || isConfirming.value) return false;
 
     isConfirming.value = true;
     try {
@@ -48,8 +48,10 @@ class QrCheckInController extends GetxController {
       reservation.value = result['reservation'] is Map<String, dynamic>
           ? result['reservation'] as Map<String, dynamic>
           : reservation.value;
+      return true;
     } catch (_) {
       AppSnackbar.error('Impossible de confirmer la présence. Réessayez.');
+      return false;
     } finally {
       isConfirming.value = false;
     }

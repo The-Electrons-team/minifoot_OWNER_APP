@@ -27,10 +27,7 @@ class ControllersScreen extends GetView<ControllersController> {
         elevation: 0,
         leading: IconButton(
           onPressed: () => Get.back(),
-          icon: const Icon(
-            PhosphorIconsRegular.caretLeft,
-            size: 18,
-          ),
+          icon: const Icon(PhosphorIconsRegular.caretLeft, size: 18),
         ),
         title: const Text(
           'Contrôleurs',
@@ -96,35 +93,35 @@ class ControllersScreen extends GetView<ControllersController> {
               return false;
             },
             child: ListView.separated(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-            itemCount:
-                controller.controllers.length + (controller.hasMore ? 1 : 0),
-            separatorBuilder: (_, index) => const SizedBox(height: 12),
-            itemBuilder: (_, index) {
-              if (index >= controller.controllers.length) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Center(
-                    child: SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: kGreen,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+              itemCount:
+                  controller.controllers.length + (controller.hasMore ? 1 : 0),
+              separatorBuilder: (_, index) => const SizedBox(height: 12),
+              itemBuilder: (_, index) {
+                if (index >= controller.controllers.length) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: kGreen,
+                        ),
                       ),
                     ),
-                  ),
+                  );
+                }
+                final item = controller.controllers[index];
+                return _ControllerCard(
+                  item: item,
+                  onTap: () =>
+                      Get.toNamed(Routes.controllerDetail, arguments: item),
+                  onToggle: () => controller.toggleActive(item),
                 );
-              }
-              final item = controller.controllers[index];
-              return _ControllerCard(
-                item: item,
-                onTap: () =>
-                    Get.toNamed(Routes.controllerDetail, arguments: item),
-                onToggle: () => controller.toggleActive(item),
-              );
-            },
+              },
             ),
           );
         }),
@@ -132,10 +129,7 @@ class ControllersScreen extends GetView<ControllersController> {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: kGreen,
         onPressed: () => _showCreateSheet(context),
-        icon: Icon(
-          PhosphorIconsBold.plus,
-          color: Colors.white,
-        ),
+        icon: Icon(PhosphorIconsBold.plus, color: Colors.white),
         label: const Text(
           'Ajouter',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
@@ -158,7 +152,6 @@ class ControllersScreen extends GetView<ControllersController> {
       ),
     );
   }
-
 
   void _showCredentials(Map<String, dynamic> credentials) {
     final message = (credentials['message'] ?? '').toString();
@@ -190,7 +183,7 @@ class ControllersScreen extends GetView<ControllersController> {
           AppButton(
             label: 'Partager',
             icon: PhosphorIconsRegular.shareNetwork,
-            onPressed: () {
+            onPressed: () async {
               Get.back();
               SharePlus.instance.share(ShareParams(text: message));
             },
@@ -200,17 +193,17 @@ class ControllersScreen extends GetView<ControllersController> {
             label: 'Copier',
             icon: PhosphorIconsRegular.copy,
             variant: AppButtonVariant.secondary,
-            onPressed: () {
+            onPressed: () async {
               Clipboard.setData(ClipboardData(text: message));
               Get.back();
-              AppSnackbar.success('Identifiants copiés dans le presse-papiers.');
+              await Future<void>.delayed(const Duration(milliseconds: 220));
+              AppSnackbar.success(
+                'Identifiants copiés dans le presse-papiers.',
+              );
             },
           ),
           const SizedBox(height: AppSpacing.xs),
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Fermer'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Fermer')),
         ],
       ),
     );
@@ -227,7 +220,6 @@ class _ControllerCard extends StatelessWidget {
     required this.onTap,
     required this.onToggle,
   });
-
 
   @override
   Widget build(BuildContext context) {
@@ -250,7 +242,8 @@ class _ControllerCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     backgroundColor: item.isActive ? kGreenLight : kBgSurface,
-                    child: PhosphorIcon(PhosphorIconsDuotone.identificationBadge,
+                    child: PhosphorIcon(
+                      PhosphorIconsDuotone.identificationBadge,
                       color: item.isActive ? kGreen : kTextSub,
                     ),
                   ),
@@ -319,7 +312,8 @@ class _EmptyControllerIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PhosphorIcon(PhosphorIconsDuotone.identificationBadge,
+    return PhosphorIcon(
+      PhosphorIconsDuotone.identificationBadge,
       color: kGreen,
       size: 54,
     );

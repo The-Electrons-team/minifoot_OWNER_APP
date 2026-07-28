@@ -26,7 +26,6 @@ class _ControllerDetailScreenState extends State<ControllerDetailScreen> {
     controller.loadActivity(item.id);
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,10 +35,7 @@ class _ControllerDetailScreenState extends State<ControllerDetailScreen> {
         elevation: 0,
         leading: IconButton(
           onPressed: () => Get.back(),
-          icon: const Icon(
-            PhosphorIconsRegular.caretLeft,
-            size: 18,
-          ),
+          icon: const Icon(PhosphorIconsRegular.caretLeft, size: 18),
         ),
         title: const Text(
           'Détail controller',
@@ -240,14 +236,17 @@ class _ControllerDetailScreenState extends State<ControllerDetailScreen> {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: () async {
-                      final updated = await controller.updateControllerComplexes(
-                        item,
-                        selected.toList(),
-                      );
+                      final updated = await controller
+                          .updateControllerComplexes(item, selected.toList());
                       if (updated == null) return;
                       setState(() => item = updated);
                       Get.back();
-                      AppSnackbar.success('Le contrôleur voit maintenant les créneaux des complexes sélectionnés.');
+                      await Future<void>.delayed(
+                        const Duration(milliseconds: 220),
+                      );
+                      AppSnackbar.success(
+                        'Le contrôleur voit maintenant les créneaux des complexes sélectionnés.',
+                      );
                     },
                     child: const Text('Enregistrer'),
                   ),
@@ -281,7 +280,8 @@ class _IdentityCard extends StatelessWidget {
           CircleAvatar(
             radius: 28,
             backgroundColor: item.isActive ? kGreenLight : kBgSurface,
-            child: PhosphorIcon(PhosphorIconsDuotone.identificationBadge,
+            child: PhosphorIcon(
+              PhosphorIconsDuotone.identificationBadge,
               color: item.isActive ? kGreen : kTextSub,
               size: 28,
             ),
@@ -470,7 +470,8 @@ class _ActivityTile extends StatelessWidget {
               color: _resultColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: PhosphorIcon(PhosphorIconsDuotone.clockCounterClockwise,
+            child: PhosphorIcon(
+              PhosphorIconsDuotone.clockCounterClockwise,
               color: _resultColor,
               size: 18,
             ),

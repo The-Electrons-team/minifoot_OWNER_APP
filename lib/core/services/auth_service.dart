@@ -8,6 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_config.dart';
 
+class SessionExpiredException implements Exception {
+  const SessionExpiredException();
+}
+
 class AuthService {
   final String _baseUrl = AppConfig.apiUrl;
 
@@ -57,6 +61,8 @@ class AuthService {
     await prefs.setString(AppConfig.tokenKey, token);
     if (refreshToken != null) {
       await prefs.setString(AppConfig.refreshTokenKey, refreshToken);
+    } else {
+      await prefs.remove(AppConfig.refreshTokenKey);
     }
   }
 
@@ -64,15 +70,18 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(AppConfig.tokenKey);
     await prefs.remove(AppConfig.refreshTokenKey);
+    await prefs.remove(AppConfig.cachedUserKey);
   }
 
   Future<Map<String, dynamic>?> refreshTokens(String refreshToken) async {
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/auth/refresh'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': refreshToken}),
-      ).timeout(AppConfig.shortTimeout);
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/auth/refresh'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'refreshToken': refreshToken}),
+          )
+          .timeout(AppConfig.shortTimeout);
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
@@ -88,7 +97,7 @@ class AuthService {
     var token = prefs.getString(AppConfig.tokenKey);
     if (token == null) throw Exception('Non authentifié');
 
-    var response = await request(token);
+    var response = await request(token).timeout(AppConfig.requestTimeout);
 
     if (response.statusCode == 401) {
       final refresh = prefs.getString(AppConfig.refreshTokenKey);
@@ -97,9 +106,14 @@ class AuthService {
         if (result != null) {
           token = result['token'] as String;
           await saveTokens(token, result['refreshToken'] as String?);
-          response = await request(token);
+          response = await request(token).timeout(AppConfig.requestTimeout);
         }
       }
+    }
+
+    if (response.statusCode == 401) {
+      await clearTokens();
+      throw const SessionExpiredException();
     }
 
     return response;
@@ -112,7 +126,7 @@ class AuthService {
     var token = prefs.getString(AppConfig.tokenKey);
     if (token == null) throw Exception('Non authentifié');
 
-    var response = await request(token);
+    var response = await request(token).timeout(AppConfig.uploadTimeout);
 
     if (response.statusCode == 401) {
       final refresh = prefs.getString(AppConfig.refreshTokenKey);
@@ -121,9 +135,14 @@ class AuthService {
         if (result != null) {
           token = result['token'] as String;
           await saveTokens(token, result['refreshToken'] as String?);
-          response = await request(token);
+          response = await request(token).timeout(AppConfig.uploadTimeout);
         }
       }
+    }
+
+    if (response.statusCode == 401) {
+      await clearTokens();
+      throw const SessionExpiredException();
     }
 
     return response;
@@ -322,13 +341,17 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> getProfile(String token) async {
-    final response = await authenticatedRequest((t) => http.get(
-      Uri.parse('$_baseUrl/users/me?t=${DateTime.now().millisecondsSinceEpoch}'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $t',
-      },
-    ));
+    final response = await authenticatedRequest(
+      (t) => http.get(
+        Uri.parse(
+          '$_baseUrl/users/me?t=${DateTime.now().millisecondsSinceEpoch}',
+        ),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $t',
+        },
+      ),
+    );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -341,14 +364,16 @@ class AuthService {
     String token,
     Map<String, dynamic> data,
   ) async {
-    final response = await authenticatedRequest((t) => http.patch(
-      Uri.parse('$_baseUrl/users/me'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $t',
-      },
-      body: jsonEncode(data),
-    ));
+    final response = await authenticatedRequest(
+      (t) => http.patch(
+        Uri.parse('$_baseUrl/users/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $t',
+        },
+        body: jsonEncode(data),
+      ),
+    );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -379,13 +404,15 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> getPayoutInfo(String token) async {
-    final response = await authenticatedRequest((t) => http.get(
-      Uri.parse('$_baseUrl/users/me/payout-info'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $t',
-      },
-    ));
+    final response = await authenticatedRequest(
+      (t) => http.get(
+        Uri.parse('$_baseUrl/users/me/payout-info'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $t',
+        },
+      ),
+    );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -395,13 +422,15 @@ class AuthService {
 
   /// Solde disponible pour retrait (paiements débloqués après scan QR, non encore virés).
   Future<Map<String, dynamic>> getPayoutBalance(String token) async {
-    final response = await authenticatedRequest((t) => http.get(
-      Uri.parse('$_baseUrl/owner/payout/balance'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $t',
-      },
-    ));
+    final response = await authenticatedRequest(
+      (t) => http.get(
+        Uri.parse('$_baseUrl/owner/payout/balance'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $t',
+        },
+      ),
+    );
     if (response.statusCode == 200) return jsonDecode(response.body);
     throw Exception('Erreur solde retrait: ${response.body}');
   }
@@ -415,14 +444,16 @@ class AuthService {
     final reqBody = <String, dynamic>{'phone': phone};
     if (amount != null) reqBody['amount'] = amount;
 
-    final response = await authenticatedRequest((t) => http.post(
-      Uri.parse('$_baseUrl/owner/payout/withdraw'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $t',
-      },
-      body: jsonEncode(reqBody),
-    ));
+    final response = await authenticatedRequest(
+      (t) => http.post(
+        Uri.parse('$_baseUrl/owner/payout/withdraw'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $t',
+        },
+        body: jsonEncode(reqBody),
+      ),
+    );
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     }
@@ -431,14 +462,16 @@ class AuthService {
   }
 
   Future<void> updateFcmToken(String token, String fcmToken) async {
-    final response = await authenticatedRequest((t) => http.patch(
-      Uri.parse('$_baseUrl/users/me/fcm-token'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $t',
-      },
-      body: jsonEncode({'token': fcmToken}),
-    ));
+    final response = await authenticatedRequest(
+      (t) => http.patch(
+        Uri.parse('$_baseUrl/users/me/fcm-token'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $t',
+        },
+        body: jsonEncode({'token': fcmToken}),
+      ),
+    );
 
     if (response.statusCode != 200) {
       throw Exception('Erreur token notification: ${response.body}');
@@ -449,14 +482,16 @@ class AuthService {
     String token,
     Map<String, dynamic> data,
   ) async {
-    final response = await authenticatedRequest((t) => http.patch(
-      Uri.parse('$_baseUrl/users/me/payout-info'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $t',
-      },
-      body: jsonEncode(data),
-    ));
+    final response = await authenticatedRequest(
+      (t) => http.patch(
+        Uri.parse('$_baseUrl/users/me/payout-info'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $t',
+        },
+        body: jsonEncode(data),
+      ),
+    );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -468,14 +503,16 @@ class AuthService {
     required String token,
     required String phone,
   }) async {
-    final response = await authenticatedRequest((t) => http.post(
-      Uri.parse('$_baseUrl/users/me/phone/request'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $t',
-      },
-      body: jsonEncode({'phone': _normalizePhone(phone)}),
-    ));
+    final response = await authenticatedRequest(
+      (t) => http.post(
+        Uri.parse('$_baseUrl/users/me/phone/request'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $t',
+        },
+        body: jsonEncode({'phone': _normalizePhone(phone)}),
+      ),
+    );
 
     if (response.statusCode == 200 || response.statusCode == 201) return;
     if (response.statusCode == 409) throw Exception('PHONE_ALREADY_USED');
@@ -487,14 +524,16 @@ class AuthService {
     required String phone,
     required String code,
   }) async {
-    final response = await authenticatedRequest((t) => http.patch(
-      Uri.parse('$_baseUrl/users/me/phone/confirm'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $t',
-      },
-      body: jsonEncode({'phone': _normalizePhone(phone), 'code': code}),
-    ));
+    final response = await authenticatedRequest(
+      (t) => http.patch(
+        Uri.parse('$_baseUrl/users/me/phone/confirm'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $t',
+        },
+        body: jsonEncode({'phone': _normalizePhone(phone), 'code': code}),
+      ),
+    );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -509,17 +548,19 @@ class AuthService {
     required String currentPassword,
     required String newPassword,
   }) async {
-    final response = await authenticatedRequest((t) => http.patch(
-      Uri.parse('$_baseUrl/users/me/password'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $t',
-      },
-      body: jsonEncode({
-        'currentPassword': currentPassword,
-        'newPassword': newPassword,
-      }),
-    ));
+    final response = await authenticatedRequest(
+      (t) => http.patch(
+        Uri.parse('$_baseUrl/users/me/password'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $t',
+        },
+        body: jsonEncode({
+          'currentPassword': currentPassword,
+          'newPassword': newPassword,
+        }),
+      ),
+    );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -534,16 +575,16 @@ class AuthService {
     required String token,
     required String newPassword,
   }) async {
-    final response = await authenticatedRequest((t) => http.post(
-      Uri.parse('$_baseUrl/auth/change-password'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $t',
-      },
-      body: jsonEncode({
-        'password': newPassword,
-      }),
-    ));
+    final response = await authenticatedRequest(
+      (t) => http.post(
+        Uri.parse('$_baseUrl/auth/change-password'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $t',
+        },
+        body: jsonEncode({'password': newPassword}),
+      ),
+    );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
@@ -551,5 +592,4 @@ class AuthService {
       throw Exception('Erreur mot de passe: ${response.body}');
     }
   }
-
 }

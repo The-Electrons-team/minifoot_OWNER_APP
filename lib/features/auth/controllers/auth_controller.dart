@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:convert';
 
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/config/app_config.dart';
@@ -9,7 +11,7 @@ import '../../../core/services/notification_service.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../routes/app_routes.dart';
 
-class AuthController extends GetxController {
+class AuthController extends GetxController with WidgetsBindingObserver {
   final AuthService _authService = AuthService();
 
   final isLoading = false.obs;
@@ -19,12 +21,80 @@ class AuthController extends GetxController {
   // States for obscure text (still used in some screens perhaps, but we might remove them later)
   final obscurePass = true.obs;
   final obscureConfirm = true.obs;
+  var _isRevalidatingSession = false;
+
+  @override
+  void onInit() {
+    super.onInit();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.onClose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _revalidateSessionAfterResume();
+    }
+  }
 
   void toggleObscure() => obscurePass.value = !obscurePass.value;
   void toggleObscureConfirm() => obscureConfirm.value = !obscureConfirm.value;
 
   void goToRegister() => Get.toNamed(Routes.register);
   void goToLogin() => Get.back();
+
+  Future<void> _cacheUser(UserModel value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(AppConfig.cachedUserKey, jsonEncode(value.toJson()));
+  }
+
+  Future<UserModel?> _cachedUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(AppConfig.cachedUserKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      return UserModel.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> persistCurrentUser(UserModel value) async {
+    user.value = value;
+    await _cacheUser(value);
+  }
+
+  Future<void> _revalidateSessionAfterResume() async {
+    final currentToken = token.value;
+    if (currentToken == null ||
+        currentToken.isEmpty ||
+        _isRevalidatingSession) {
+      return;
+    }
+
+    _isRevalidatingSession = true;
+    try {
+      final profile = await _authService.getProfile(currentToken);
+      final refreshedToken = await _authService.savedToken() ?? currentToken;
+      token.value = refreshedToken;
+      user.value = UserModel.fromJson(profile);
+      await _cacheUser(user.value!);
+    } on SessionExpiredException {
+      AppSnackbar.warning('Votre session a expiré. Reconnectez-vous.');
+      await logout();
+    } catch (_) {
+      // Le réseau peut être momentanément indisponible : la session locale
+      // reste valide et l'OfflineBanner informe déjà l'utilisateur.
+    } finally {
+      _isRevalidatingSession = false;
+    }
+  }
+
   void goToPostAuthDestination() {
     final current = user.value;
     if (current?.mustChangePassword == true) {
@@ -42,7 +112,7 @@ class AuthController extends GetxController {
     final prefs = await SharedPreferences.getInstance();
     var savedToken = prefs.getString(AppConfig.tokenKey);
 
-    if (savedToken == null) return false;
+    if (savedToken == null || savedToken.isEmpty) return false;
 
     try {
       final userData = await _authService.getProfile(savedToken);
@@ -59,11 +129,25 @@ class AuthController extends GetxController {
         return false;
       }
 
+      await _cacheUser(user.value!);
       await NotificationService.syncToken(savedToken);
-      goToPostAuthDestination();
       return true;
     } catch (e) {
-      await _authService.clearTokens();
+      if (e is SessionExpiredException) {
+        token.value = null;
+        user.value = null;
+        return false;
+      }
+
+      // Une API locale indisponible ou une coupure Wi-Fi ne doit pas effacer
+      // une session valide. On garde le dernier profil connu et l'app affiche
+      // ensuite sa bannière hors-ligne jusqu'au retour du réseau.
+      final cached = await _cachedUser();
+      if (cached != null && cached.canUseOwnerApp) {
+        token.value = savedToken;
+        user.value = cached;
+        return true;
+      }
       return false;
     }
   }
@@ -85,6 +169,7 @@ class AuthController extends GetxController {
           token.value!,
           res['refreshToken'] as String?,
         );
+        await _cacheUser(user.value!);
         await NotificationService.syncToken(token.value!);
 
         goToPostAuthDestination();
@@ -92,11 +177,13 @@ class AuthController extends GetxController {
     } catch (e) {
       String message = 'Impossible de se connecter. Réessayez.';
       if (e.toString().contains('COMPTE_NON_TROUVE')) {
-        message = 'Aucun compte trouvé avec ce numéro. Inscrivez-vous d\'abord.';
+        message =
+            'Aucun compte trouvé avec ce numéro. Inscrivez-vous d\'abord.';
       } else if (e.toString().contains('ID_INVALIDES')) {
         message = 'Mot de passe incorrect. Vérifiez et réessayez.';
       } else if (e.toString().contains('ROLE_NON_AUTORISE')) {
-        message = 'Ce numéro correspond à un compte joueur. Utilisez un compte propriétaire.';
+        message =
+            'Ce numéro correspond à un compte joueur. Utilisez un compte propriétaire.';
       } else if (e.toString().contains('SERVER_UNAVAILABLE')) {
         message = 'Serveur indisponible. Vérifiez votre connexion internet.';
       }
@@ -127,10 +214,12 @@ class AuthController extends GetxController {
       final String msg;
       if (raw.contains('PHONE_ALREADY_TAKEN') || raw.contains('PHONE_TAKEN')) {
         msg = 'Ce numéro est déjà associé à un compte.';
-      } else if (raw.contains('INVALID_PHONE') || raw.contains('PHONE_INVALIDE')) {
+      } else if (raw.contains('INVALID_PHONE') ||
+          raw.contains('PHONE_INVALIDE')) {
         msg = 'Numéro de téléphone invalide.';
       } else {
-        msg = 'Impossible de démarrer l\'inscription. Vérifiez votre connexion.';
+        msg =
+            'Impossible de démarrer l\'inscription. Vérifiez votre connexion.';
       }
       AppSnackbar.error(msg);
       rethrow;
@@ -143,7 +232,9 @@ class AuthController extends GetxController {
     isLoading.value = true;
     try {
       await _authService.forgotPassword(phone);
-      AppSnackbar.success('Un code de réinitialisation a été envoyé sur WhatsApp.');
+      AppSnackbar.success(
+        'Un code de réinitialisation a été envoyé sur WhatsApp.',
+      );
     } catch (e) {
       String message = 'Impossible d\'envoyer le code. Réessayez.';
       if (e.toString().contains('COMPTE_NON_TROUVE')) {
@@ -168,12 +259,11 @@ class AuthController extends GetxController {
         code: code,
         password: password,
       );
-      
+
       AppSnackbar.success('Mot de passe réinitialisé. Connexion en cours...');
 
       // Auto-login the user immediately after reset
       await startLogin(phone, password);
-
     } catch (e) {
       String message = 'Impossible de réinitialiser le mot de passe.';
       if (e.toString().contains('CODE_INVALIDE')) {
@@ -206,6 +296,7 @@ class AuthController extends GetxController {
           token.value!,
           res['refreshToken'] as String?,
         );
+        await _cacheUser(user.value!);
         await NotificationService.syncToken(token.value!);
         if (redirect) goToPostAuthDestination();
       } else {
@@ -230,7 +321,9 @@ class AuthController extends GetxController {
       await _authService.resendOtp(phone);
       AppSnackbar.success('Nouveau code envoyé sur WhatsApp.');
     } catch (e) {
-      AppSnackbar.error('Impossible de renvoyer le code. Réessayez dans quelques instants.');
+      AppSnackbar.error(
+        'Impossible de renvoyer le code. Réessayez dans quelques instants.',
+      );
     }
   }
 
@@ -256,7 +349,9 @@ class AuthController extends GetxController {
         user.value = UserModel.fromJson(res['user'] as Map<String, dynamic>);
       }
     } catch (e) {
-      AppSnackbar.error('Impossible d\'envoyer les documents. Vérifiez votre connexion et réessayez.');
+      AppSnackbar.error(
+        'Impossible d\'envoyer les documents. Vérifiez votre connexion et réessayez.',
+      );
       rethrow;
     } finally {
       isLoading.value = false;
