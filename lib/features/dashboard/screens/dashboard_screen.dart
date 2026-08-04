@@ -1,30 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:intl/intl.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import '../../../core/utils/app_format.dart';
-import '../../../core/utils/app_motion.dart';
-import '../../../core/widgets/app_card.dart';
-import '../../../core/widgets/app_network_image.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/owner_ui.dart';
 import '../controllers/dashboard_controller.dart';
 
-// ─── Constantes de layout ────────────────────────────────────────────────────
-const double _kHeaderImageH = 220.0; // hauteur image expanded
-const double _kCardFullH = 160.0; // hauteur revenue card expanded
-const double _kCardCompactH = 60.0; // hauteur revenue card collapsed
-const double _kOverlapFull = 60.0; // overlap expanded
-const double _kOverlapMin =
-    20.0; // overlap collapsed (card reste dans le header)
-const double _kHeaderMinH = 72.0; // hauteur image collapsed (barre verte)
-
-// expanded = image + card visible sous l'image
-const double _kExpandedH = _kHeaderImageH + _kCardFullH - _kOverlapFull;
-// collapsed = barre verte + card compacte - overlap mini (card chevauche toujours)
-const double _kCollapsedH = _kHeaderMinH + _kCardCompactH - _kOverlapMin;
-
+// Écran 12 (Accueil) et 13 (Accueil — journée creuse) du design
+// "MiniFoot Owner Refonte". Un seul écran principal + une action, comme le
+// reste des écrans (« carte à traiter » exclue tant qu'elle n'a pas de
+// donnée réelle derrière — voir DashboardController.urgentBooking).
 class DashboardScreen extends GetView<DashboardController> {
   const DashboardScreen({super.key});
 
@@ -35,910 +20,195 @@ class DashboardScreen extends GetView<DashboardController> {
       body: RefreshIndicator(
         color: kGreen,
         onRefresh: controller.refreshDashboard,
-        child: CustomScrollView(
+        child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
-          slivers: [
-            _DashboardHeader(controller: controller),
-            // Espace pour la partie de la card qui dépasse sous le header
-            const SliverToBoxAdapter(
-              child: SizedBox(height: _kCardFullH - _kOverlapFull - 48),
-            ),
-            SliverToBoxAdapter(
-              child: Column(
-                children: [
-                  _buildDashboardNotice(),
-                  _buildTodayFocus(),
-                  _buildStatsRow(),
-                  _buildQuickActions(),
-                  _buildWeeklyChart(),
-                  _buildRecentBookings(),
-                  const SizedBox(height: 84),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDashboardNotice() {
-    return Obx(() {
-      if (controller.isLoading.value) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: const LinearProgressIndicator(
-              minHeight: 3,
-              color: kGreen,
-              backgroundColor: kGreenLight,
-            ),
-          ),
-        );
-      }
-
-      if (controller.errorMessage.value.isEmpty) {
-        return const SizedBox.shrink();
-      }
-
-      return Container(
-        margin: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: kRedLight,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            PhosphorIcon(
-              PhosphorIconsDuotone.warningCircle,
-              color: kRed,
-              size: 18,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                controller.errorMessage.value,
-                style: const TextStyle(
-                  color: kRed,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    });
-  }
-
-  // ─── Stats row ───────────────────────────────────────────────────────────
-  /// Ce qui demande une action aujourd'hui.
-  ///
-  /// Le tableau de bord n'avait aucune surface de ce type : les paiements en
-  /// attente n'apparaissaient que comme sous-titre d'une tuile de navigation,
-  /// et rien ne distinguait une journée calme d'une journée chargée. Le bloc
-  /// disparaît quand il n'y a rien à traiter — un encart vide est du bruit.
-  Widget _buildTodayFocus() {
-    return Obx(() {
-      final pending = controller.pendingPayments.value;
-      final today = controller.todayBookings.value;
-      if (pending == 0 && today == 0) return const SizedBox.shrink();
-
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          0,
-          AppSpacing.lg,
-          AppSpacing.md,
-        ),
-        child: AppCard(
-          borderColor: kBorder,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const OwnerSectionHeader(
-                title: "À traiter aujourd'hui",
-                subtitle: 'Ce qui attend une action de votre part',
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              if (today > 0)
-                _FocusRow(
-                  icon: PhosphorIconsRegular.qrCode,
-                  color: kGreen,
-                  label:
-                      "$today réservation${today > 1 ? 's' : ''} aujourd'hui",
-                  actionLabel: 'Scanner',
-                  onTap: controller.goToQrCheckIn,
-                ),
-              if (today > 0 && pending > 0)
-                const SizedBox(height: AppSpacing.xs),
-              if (pending > 0)
-                _FocusRow(
-                  icon: PhosphorIconsRegular.clockCountdown,
-                  color: kGoldDeep,
-                  label:
-                      '$pending paiement${pending > 1 ? 's' : ''} en attente',
-                  actionLabel: 'Traiter',
-                  onTap: controller.goToPayments,
-                ),
-            ],
-          ),
-        ),
-      );
-    });
-  }
-
-  Widget _buildStatsRow() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-      child: Obx(
-        () => Row(
-          children: [
-            Expanded(
-                  child: _StatMiniCard(
-                    icon: PhosphorIconsDuotone.calendarBlank,
-                    iconBgColor: kBlueLight,
-                    iconColor: kBlue,
-                    value: '${controller.todayBookings.value}',
-                    label: "Rés. aujourd'hui",
-                  ),
-                )
-                .animate()
-                .fadeIn(duration: 400.ms, delay: 300.ms)
-                .slideY(begin: 0.2, end: 0),
-            const SizedBox(width: 10),
-            Expanded(
-                  child: _StatMiniCard(
-                    icon: PhosphorIconsDuotone.star,
-                    iconBgColor: kGoldLight,
-                    iconColor: kGold,
-                    value: '${controller.rating.value}',
-                    label: 'Note moyenne',
-                  ),
-                )
-                .animate()
-                .fadeIn(duration: 400.ms, delay: 400.ms)
-                .slideY(begin: 0.2, end: 0),
-            const SizedBox(width: 10),
-            Expanded(
-                  child: _StatMiniCard(
-                    icon: PhosphorIconsDuotone.chartPie,
-                    iconBgColor: kGreenLight,
-                    iconColor: kGreen,
-                    value: '${(controller.occupancyRate.value * 100).round()}%',
-                    label: 'Occupation',
-                  ),
-                )
-                .animate()
-                .fadeIn(duration: 400.ms, delay: 500.ms)
-                .slideY(begin: 0.2, end: 0),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ─── Quick actions ────────────────────────────────────────────────────────
-  Widget _buildQuickActions() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: const OwnerSectionHeader(title: 'Accès rapide'),
-          ),
-          const SizedBox(height: 14),
-          Obx(() {
-            final terrainSubtitle = controller.terrainCount.value == 0
-                ? 'Aucun terrain'
-                : '${controller.activeTerrainCount.value}/${controller.terrainCount.value} actifs';
-            final reservationSubtitle = controller.todayBookings.value > 0
-                ? '${controller.todayBookings.value} aujourd\'hui'
-                : '${controller.totalBookings.value} total';
-            final paymentSubtitle = controller.pendingPayments.value > 0
-                ? '${controller.pendingPayments.value} en attente'
-                : 'À jour';
-
-            final actions = [
-              _ActionData(
-                icon: PhosphorIconsDuotone.calendarCheck,
-                label: 'Réservations',
-                subtitle: reservationSubtitle,
-                color: kBlue,
-                bgColor: kBlueLight,
-                onTap: controller.goToReservations,
-              ),
-              _ActionData(
-                icon: PhosphorIconsDuotone.clockCountdown,
-                label: 'Créneaux',
-                subtitle: 'Disponibilités',
-                color: kGold,
-                bgColor: kGoldLight,
-                onTap: controller.goToAvailability,
-              ),
-              _ActionData(
-                icon: PhosphorIconsDuotone.qrCode,
-                label: 'Scanner',
-                subtitle: 'QR réservation',
-                color: kOrange,
-                bgColor: const Color(0xFFFFF3E0),
-                onTap: controller.goToQrCheckIn,
-              ),
-              if (!controller.isController) ...[
-                _ActionData(
-                  icon: PhosphorIconsDuotone.squaresFour,
-                  label: 'Gérer',
-                  subtitle: terrainSubtitle == 'Aucun terrain'
-                      ? 'Terrains et versements'
-                      : paymentSubtitle,
-                  color: kGreen,
-                  bgColor: kGreenLight,
-                  onTap: _showManagementActions,
-                ),
-              ],
-            ];
-
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final itemWidth = (constraints.maxWidth - 12) / 2;
-                  return Wrap(
-                    spacing: 12,
-                    runSpacing: 14,
-                    children: List.generate(actions.length, (index) {
-                      final a = actions[index];
-                      return GestureDetector(
-                            onTap: a.onTap,
-                            child: Container(
-                              width: itemWidth,
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: kBgCard,
-                                borderRadius: BorderRadius.circular(18),
-                                boxShadow: kCardShadow,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      color: a.bgColor,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: PhosphorIcon(
-                                      a.icon,
-                                      color: a.color,
-                                      size: 22,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 18),
-                                  Text(
-                                    a.label,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: kTextPrim,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    a.subtitle,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: kTextLight,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                          .animate()
-                          .fadeIn(
-                            duration: 400.ms,
-                            delay: AppMotion.stagger(index, base: 400),
-                          )
-                          .slideX(begin: 0.15, end: 0);
+              const _Header(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: 18,
+                  children: [
+                    const _ScanCta(),
+                    Obx(() {
+                      final urgent = controller.urgentBooking;
+                      if (urgent == null) return const SizedBox.shrink();
+                      return _UrgentCard(booking: urgent);
                     }),
-                  );
-                },
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  void _showManagementActions() {
-    Get.bottomSheet(
-      OwnerSheetFrame(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Gérer votre activité',
-              style: TextStyle(
-                color: kTextPrim,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Terrains, équipe et versements',
-              style: TextStyle(color: kTextSub, fontSize: 13),
-            ),
-            const SizedBox(height: 18),
-            _ManagementActionTile(
-              icon: PhosphorIconsDuotone.soccerBall,
-              color: kGreen,
-              label: 'Mes terrains',
-              subtitle: 'Ajouter et modifier vos complexes',
-              onTap: () {
-                Get.back();
-                controller.goToTerrains();
-              },
-            ),
-            _ManagementActionTile(
-              icon: PhosphorIconsDuotone.wallet,
-              color: kOrange,
-              label: 'Paiements',
-              subtitle: 'Consulter le solde et les retraits',
-              onTap: () {
-                Get.back();
-                controller.goToPayments();
-              },
-            ),
-            _ManagementActionTile(
-              icon: PhosphorIconsDuotone.usersThree,
-              color: kBlue,
-              label: 'Contrôleurs',
-              subtitle: 'Gérer les accès de votre équipe',
-              onTap: () {
-                Get.back();
-                controller.goToControllers();
-              },
-            ),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-    );
-  }
-
-  // ─── Weekly chart ─────────────────────────────────────────────────────────
-  Widget _buildWeeklyChart() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: kBgCard,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: kCardShadow,
-        ),
-        child: Obx(() {
-          final isWeek = controller.chartPeriod.value == 'week';
-          final data = controller.activeChartData;
-          final labels = controller.activeChartLabels;
-          final maxVal = data.reduce((a, b) => a > b ? a : b);
-          final hasData = maxVal > 0;
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isWeek ? 'Cette semaine' : 'Par mois',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: kTextPrim,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'Revenus en F CFA',
-                        style: TextStyle(fontSize: 12, color: kTextLight),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: kBgSurface,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.all(3),
-                    child: Row(
-                      children: [
-                        _ChartToggle(
-                          label: 'Sem.',
-                          isActive: isWeek,
-                          onTap: () => controller.toggleChartPeriod('week'),
-                        ),
-                        _ChartToggle(
-                          label: 'Mois',
-                          isActive: !isWeek,
-                          onTap: () => controller.toggleChartPeriod('month'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                height: 160,
-                child: hasData
-                    ? BarChart(
-                        BarChartData(
-                          alignment: BarChartAlignment.spaceAround,
-                          maxY: (maxVal / 1000) * 1.2,
-                          backgroundColor: Colors.transparent,
-                          gridData: FlGridData(
-                            show: true,
-                            drawVerticalLine: false,
-                            horizontalInterval: isWeek ? 20 : 50,
-                            getDrawingHorizontalLine: (v) =>
-                                FlLine(color: kDivider, strokeWidth: 1),
-                          ),
-                          borderData: FlBorderData(show: false),
-                          titlesData: FlTitlesData(
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                getTitlesWidget: (v, _) {
-                                  final idx = v.toInt();
-                                  if (idx < 0 || idx >= labels.length) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: Text(
-                                      labels[idx],
-                                      style: TextStyle(
-                                        fontSize: isWeek ? 11 : 9,
-                                        color: kTextLight,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                reservedSize: 28,
-                              ),
-                            ),
-                            leftTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            topTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            rightTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                          ),
-                          barGroups: data.asMap().entries.map((e) {
-                            final isMax = e.value == maxVal;
-                            return BarChartGroupData(
-                              x: e.key,
-                              barRods: [
-                                BarChartRodData(
-                                  toY: e.value / 1000,
-                                  width: isWeek ? 28 : 16,
-                                  borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(8),
-                                    topRight: Radius.circular(8),
-                                  ),
-                                  gradient: isMax
-                                      ? kGreenGradient
-                                      : LinearGradient(
-                                          colors: [
-                                            kGreen.withValues(alpha: 0.18),
-                                            kGreen.withValues(alpha: 0.08),
-                                          ],
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                        ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
-                          barTouchData: BarTouchData(
-                            touchTooltipData: BarTouchTooltipData(
-                              tooltipRoundedRadius: 10,
-                              getTooltipItem: (group, groupIdx, rod, rodIdx) =>
-                                  BarTooltipItem(
-                                    '${(rod.toY * 1000).toInt()} F',
-                                    const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                            ),
-                          ),
-                        ),
-                        duration: const Duration(milliseconds: 400),
-                      )
-                    : const _EmptyChartState(),
-              ),
-            ],
-          );
-        }),
-      ),
-    ).animate().fadeIn(duration: 500.ms, delay: 600.ms);
-  }
-
-  // ─── Recent bookings ──────────────────────────────────────────────────────
-  Widget _buildRecentBookings() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Text(
-                    'Réservations récentes',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: kTextPrim,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Obx(
-                    () => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: kGreenLight,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${controller.recentBookings.length}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: kGreen,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              GestureDetector(
-                onTap: controller.goToReservations,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: kBgSurface,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Voir tout',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: kGreen,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      PhosphorIcon(
-                        PhosphorIconsBold.caretRight,
-                        color: kGreen,
-                        size: 18,
-                      ),
-                    ],
-                  ),
+                    const _UpcomingSection(),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Obx(() {
-            if (controller.recentBookings.isEmpty) {
-              return const _EmptyRecentBookings();
-            }
-
-            return Column(
-              children: controller.recentBookings
-                  .asMap()
-                  .entries
-                  .map(
-                    (entry) => _BookingTile(booking: entry.value)
-                        .animate()
-                        .fadeIn(
-                          duration: 400.ms,
-                          delay: AppMotion.stagger(entry.key, base: 700),
-                        )
-                        .slideY(begin: 0.1, end: 0),
-                  )
-                  .toList(),
-            );
-          }),
-        ],
+        ),
       ),
     );
   }
-
-  // ─── Bottom nav ───────────────────────────────────────────────────────────
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// SLIVER HEADER — image fixe + revenue card chevauchante
-// ═══════════════════════════════════════════════════════════════════════════════
-
-class _DashboardHeader extends StatelessWidget {
-  final DashboardController controller;
-  const _DashboardHeader({required this.controller});
+// ─── En-tête vert ────────────────────────────────────────────────────────────
+class _Header extends GetView<DashboardController> {
+  const _Header();
 
   @override
   Widget build(BuildContext context) {
-    final topPad = MediaQuery.of(context).padding.top;
-
-    return SliverPersistentHeader(
-      pinned: true,
-      delegate: _HeaderDelegate(
-        controller: controller,
-        topPad: topPad,
-        expandedHeight: _kExpandedH + topPad,
-        collapsedHeight: _kCollapsedH + topPad,
+    return Container(
+      decoration: const BoxDecoration(
+        color: kGreen,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
       ),
-    );
-  }
-}
-
-class _HeaderDelegate extends SliverPersistentHeaderDelegate {
-  final DashboardController controller;
-  final double topPad;
-  final double expandedHeight;
-  final double collapsedHeight;
-
-  const _HeaderDelegate({
-    required this.controller,
-    required this.topPad,
-    required this.expandedHeight,
-    required this.collapsedHeight,
-  });
-
-  @override
-  double get maxExtent => expandedHeight;
-  @override
-  double get minExtent => collapsedHeight;
-  @override
-  bool shouldRebuild(covariant _HeaderDelegate old) => false;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    // t = 1 expanded → 0 collapsed
-    final t = (1.0 - shrinkOffset / (maxExtent - minExtent)).clamp(0.0, 1.0);
-
-    // Hauteur image interpolée : de _kHeaderImageH → _kHeaderMinH
-    final imageH = _kHeaderMinH + (_kHeaderImageH - _kHeaderMinH) * t + topPad;
-
-    // Hauteur card interpolée : de _kCardFullH → _kCardCompactH
-    final cardH = _kCardCompactH + (_kCardFullH - _kCardCompactH) * t;
-
-    // Overlap interpolé : toujours présent, de _kOverlapFull → _kOverlapMin
-    final overlap = _kOverlapMin + (_kOverlapFull - _kOverlapMin) * t;
-
-    // Position top de la card : bas de l'image - overlap
-    final cardTop = imageH - overlap;
-
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // ── Zone image (se réduit au scroll) ────────────────────────────
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          height: imageH,
-          child: ClipRRect(
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(32),
-              bottomRight: Radius.circular(32),
-            ),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.asset(
-                  'assets/images/terrain.webp',
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      Container(color: kGreen),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: [
-                        kGreen.withValues(alpha: 0.75),
-                        Colors.black.withValues(alpha: 0.25),
-                      ],
-                    ),
-                  ),
-                ),
-                // Avatar + nom + cloche (disparaît progressivement)
-                Positioned(
-                  top: topPad,
-                  left: 0,
-                  right: 0,
-                  child: Opacity(
-                    opacity: t.clamp(0.0, 1.0),
-                    child: _buildHeaderContent(context),
-                  ),
-                ),
-                // Barre compacte dans l'image (apparaît quand collapsed)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: _kHeaderMinH + topPad,
-                  child: Opacity(
-                    opacity: (1.0 - t * 3).clamp(0.0, 1.0),
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        top: topPad,
-                        left: 16,
-                        right: 16,
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Obx(
-                              () => AppNetworkImage(
-                                url: controller.avatarUrl,
-                                fit: BoxFit.cover,
-                                fallback: Center(
-                                  child: Text(
-                                    controller.ownerInitials,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                      color: kGreen,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          const Expanded(
-                            child: Text(
-                              'Tableau de bord',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // ── Revenue card (se réduit au scroll, reste visible) ────────────
-        Positioned(
-          top: cardTop,
-          left: 24,
-          right: 24,
-          height: cardH,
-          child: _RevenueCardAnimated(controller: controller, t: t),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeaderContent(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      padding: EdgeInsets.fromLTRB(
+        22,
+        MediaQuery.of(context).padding.top + 12,
+        22,
+        26,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Gauche : titre + nom
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             children: [
-              const Text(
-                'MINIFOOT',
-                style: TextStyle(
-                  fontFamily: 'Orbitron',
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  fontStyle: FontStyle.italic,
+              Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: kBg,
+                  shape: BoxShape.circle,
+                ),
+                child: Obx(
+                  () => Text(
+                    controller.ownerInitials,
+                    style: kArchivo(size: 15, weight: FontWeight.w700, color: kGreen),
+                  ),
                 ),
               ),
-              const SizedBox(height: 2),
-              Obx(
-                () => Text(
-                  controller.ownerName.value,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.75),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _capitalizedToday(),
+                      style: kManrope(
+                        size: 13,
+                        weight: FontWeight.w500,
+                        color: Colors.white.withValues(alpha: 0.72),
+                        height: 1.3,
+                      ),
+                    ),
+                    Obx(
+                      () => Text(
+                        'Bonjour ${controller.ownerName.value.split(' ').first}',
+                        style: kArchivo(size: 17, weight: FontWeight.w700, color: Colors.white, height: 1.3),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: controller.goToNotifications,
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      const PhosphorIcon(
+                        PhosphorIconsRegular.bell,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      Obx(
+                        () => controller.notificationCount.value > 0
+                            ? Positioned(
+                                top: -2,
+                                right: -3,
+                                child: Container(
+                                  width: 9,
+                                  height: 9,
+                                  decoration: BoxDecoration(
+                                    color: kGold,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: kGreen, width: 2),
+                                  ),
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ],
           ),
-          // Droite : notif + toggle thème
+          const SizedBox(height: 26),
+          Obx(() {
+            final count = controller.todayBookings.value;
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '$count',
+                  style: kArchivo(
+                    size: 46,
+                    weight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: -0.03 * 46,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 5),
+                  child: Text(
+                    count <= 1
+                        ? 'réservation aujourd\'hui\nsur ${controller.activeTerrainCount.value} terrain${controller.activeTerrainCount.value > 1 ? 's' : ''} actif${controller.activeTerrainCount.value > 1 ? 's' : ''}'
+                        : 'réservations aujourd\'hui\nsur ${controller.activeTerrainCount.value} terrain${controller.activeTerrainCount.value > 1 ? 's' : ''} actif${controller.activeTerrainCount.value > 1 ? 's' : ''}',
+                    style: kManrope(
+                      size: 14,
+                      weight: FontWeight.w500,
+                      color: Colors.white.withValues(alpha: 0.8),
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
+          const SizedBox(height: 20),
           Row(
             children: [
-              _NotifBell(controller: controller),
-              const SizedBox(width: 8),
-              // Accès profil
-              GestureDetector(
-                onTap: controller.goToProfile,
-                behavior: HitTestBehavior.opaque,
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: Container(
-                    width: 42,
-                    height: 42,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
+              Expanded(
+                child: _StatPill(
+                  label: 'REVENUS DU JOUR',
+                  value: Obx(
+                    () => Text(
+                      '${_thousands(controller.todayRevenue.value)} F',
+                      style: kArchivo(size: 19, weight: FontWeight.w700, color: Colors.white, height: 1.2),
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Obx(
-                      () => AppNetworkImage(
-                        url: controller.avatarUrl,
-                        fit: BoxFit.cover,
-                        fallback: PhosphorIcon(
-                          PhosphorIconsDuotone.user,
-                          color: kGreen,
-                          size: 22,
-                        ),
-                      ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StatPill(
+                  label: 'OCCUPATION',
+                  value: Obx(
+                    () => Text(
+                      '${(controller.occupancyRate.value * 100).round()} %',
+                      style: kArchivo(size: 19, weight: FontWeight.w700, color: Colors.white, height: 1.2),
                     ),
                   ),
                 ),
@@ -949,417 +219,114 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
       ),
     );
   }
+
+  static String _capitalizedToday() {
+    final formatted = DateFormat('EEEE d MMMM', 'fr_FR').format(DateTime.now());
+    return formatted[0].toUpperCase() + formatted.substring(1);
+  }
+
+  static String _thousands(int value) =>
+      NumberFormat.decimalPattern('fr_FR').format(value);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// WIDGETS EXTRAITS (utilisent Obx — ne peuvent pas être dans _HeaderDelegate)
-// ═══════════════════════════════════════════════════════════════════════════════
+class _StatPill extends StatelessWidget {
+  final String label;
+  final Widget value;
 
-class _NotifBell extends StatelessWidget {
-  final DashboardController controller;
-  const _NotifBell({required this.controller});
+  const _StatPill({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.13),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: kManrope(
+              size: 11,
+              weight: FontWeight.w500,
+              color: Colors.white.withValues(alpha: 0.7),
+              letterSpacing: 0.04 * 11,
+            ),
+          ),
+          const SizedBox(height: 7),
+          value,
+        ],
+      ),
+    );
+  }
+}
+
+// ─── CTA scan ────────────────────────────────────────────────────────────────
+class _ScanCta extends GetView<DashboardController> {
+  const _ScanCta();
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: controller.goToNotifications,
       behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
-              child: PhosphorIcon(
-                PhosphorIconsDuotone.bell,
-                color: kGreen,
-                size: 22,
-              ),
-            ),
-            Obx(
-              () => controller.notificationCount.value > 0
-                  ? Positioned(
-                      top: 4,
-                      right: 4,
-                      child: Container(
-                        width: 14,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          color: kRed,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1.5),
-                        ),
-                        child: Center(
-                          child: Text(
-                            controller.notificationCount.value > 9
-                                ? '9+'
-                                : '${controller.notificationCount.value}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 7,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _RevenueCardAnimated extends StatelessWidget {
-  final DashboardController controller;
-  final double t; // 1 = expanded, 0 = collapsed
-
-  const _RevenueCardAnimated({required this.controller, required this.t});
-
-  static String _fmt(int value) => AppFormat.amount(value, withSymbol: false);
-
-  @override
-  Widget build(BuildContext context) {
-    final isExpanded = t > 0.4;
-    // Ombre plus forte quand collapsed (card au-dessus du contenu blanc)
-    final shadowOpacity = 0.12 + (1.0 - t) * 0.14;
-    final shadowBlur = 20.0 + (1.0 - t) * 16.0;
-    return Obx(
-      () => Container(
+      onTap: controller.goToQrCheckIn,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
-          color: kBgCard,
+          color: kTextPrim,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: shadowOpacity),
-              blurRadius: shadowBlur,
-              offset: const Offset(0, 6),
+              color: kTextPrim.withValues(alpha: 0.45),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: isExpanded ? 14 : 11,
-          ),
-          child: OverflowBox(
-            alignment: Alignment.topCenter,
-            maxHeight: double.infinity,
-            child: isExpanded ? _buildExpanded() : _buildCompact(),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExpanded() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
+        child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
-                gradient: kGoldGradient,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: kGold.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: PhosphorIcon(
-                PhosphorIconsDuotone.wallet,
+              child: const PhosphorIcon(
+                PhosphorIconsRegular.scan,
                 color: Colors.white,
                 size: 22,
               ),
             ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'Revenus totaux',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: kTextSub,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: kGreenLight,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  PhosphorIcon(
-                    PhosphorIconsDuotone.checkCircle,
-                    color: kGreen,
-                    size: 13,
-                  ),
-                  const SizedBox(width: 3),
-                  Text(
-                    '${controller.confirmedBookings.value} payées',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: kGreen,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              _fmt(controller.totalRevenue.value),
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-                color: kTextPrim,
-                height: 1,
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.only(bottom: 2, left: 5),
-              child: Text(
-                'F CFA',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: kTextSub,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Container(height: 1, color: kDivider),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Container(
-              width: 7,
-              height: 7,
-              decoration: BoxDecoration(
-                color: kGreen,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: kGreen.withValues(alpha: 0.4),
-                    blurRadius: 5,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              "${_fmt(controller.todayRevenue.value)} F CFA aujourd'hui",
-              style: const TextStyle(
-                fontSize: 12,
-                color: kTextSub,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const Spacer(),
-            GestureDetector(
-              onTap: controller.goToPayments,
-              child: Row(
-                children: [
-                  const Text(
-                    'Détails',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: kGreen,
-                    ),
-                  ),
-                  const SizedBox(width: 3),
-                  PhosphorIcon(
-                    PhosphorIconsBold.caretRight,
-                    color: kGreen,
-                    size: 18,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCompact() {
-    return Row(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            gradient: kGoldGradient,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: PhosphorIcon(
-            PhosphorIconsDuotone.wallet,
-            color: Colors.white,
-            size: 22,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Revenus totaux',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: kTextSub,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '${_fmt(controller.totalRevenue.value)} F CFA',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: kTextPrim,
-                  height: 1,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: kGreenLight,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              PhosphorIcon(
-                PhosphorIconsDuotone.checkCircle,
-                color: kGreen,
-                size: 13,
-              ),
-              const SizedBox(width: 3),
-              Text(
-                '${controller.confirmedBookings.value}',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: kGreen,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// PRIVATE WIDGETS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-class _ActionData {
-  final dynamic icon;
-  final String label;
-  final String subtitle;
-  final Color color;
-  final Color bgColor;
-  final VoidCallback onTap;
-  const _ActionData({
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.color,
-    required this.bgColor,
-    required this.onTap,
-  });
-}
-
-class _ManagementActionTile extends StatelessWidget {
-  final dynamic icon;
-  final Color color;
-  final String label;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _ManagementActionTile({
-    required this.icon,
-    required this.color,
-    required this.label,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: AppRadius.mdAll,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: AppRadius.smAll,
-              ),
-              child: PhosphorIcon(icon, color: color, size: 22),
-            ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    label,
-                    style: const TextStyle(
-                      color: kTextPrim,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
+                    'Scanner un joueur',
+                    style: kArchivo(size: 16, weight: FontWeight.w700, color: Colors.white),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    subtitle,
-                    style: const TextStyle(color: kTextSub, fontSize: 12),
+                    'Check-in en 2 secondes',
+                    style: kManrope(
+                      size: 12.5,
+                      weight: FontWeight.w400,
+                      color: Colors.white.withValues(alpha: 0.6),
+                      height: 1.35,
+                    ),
                   ),
                 ],
               ),
             ),
-            const PhosphorIcon(
+            PhosphorIcon(
               PhosphorIconsRegular.caretRight,
-              color: kTextLight,
-              size: 18,
+              color: Colors.white.withValues(alpha: 0.65),
+              size: 20,
             ),
           ],
         ),
@@ -1368,389 +335,349 @@ class _ManagementActionTile extends StatelessWidget {
   }
 }
 
-class _EmptyChartState extends StatelessWidget {
-  const _EmptyChartState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: kBgSurface,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          PhosphorIcon(
-            PhosphorIconsDuotone.chartBar,
-            color: kTextLight,
-            size: 30,
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Aucun revenu sur cette période',
-            style: TextStyle(
-              color: kTextSub,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyRecentBookings extends StatelessWidget {
-  const _EmptyRecentBookings();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: kBgCard,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: kCardShadow,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: kGreenLight,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: PhosphorIcon(
-              PhosphorIconsDuotone.calendarCheck,
-              color: kGreen,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Aucune réservation récente',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: kTextPrim,
-                  ),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  'Les réservations payées ou en attente apparaîtront ici.',
-                  style: TextStyle(fontSize: 12, color: kTextSub),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatMiniCard extends StatelessWidget {
-  final dynamic icon;
-  final Color iconBgColor;
-  final Color iconColor;
-  final String value;
-  final String label;
-
-  const _StatMiniCard({
-    required this.icon,
-    required this.iconBgColor,
-    required this.iconColor,
-    required this.value,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: kBgCard,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: kCardShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: iconBgColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: PhosphorIcon(icon, color: iconColor, size: 18),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: kTextPrim,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: kTextSub,
-              fontWeight: FontWeight.w500,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BookingTile extends StatelessWidget {
+// ─── Carte "à traiter maintenant" ────────────────────────────────────────────
+class _UrgentCard extends GetView<DashboardController> {
   final Map<String, dynamic> booking;
-  const _BookingTile({required this.booking});
+
+  const _UrgentCard({required this.booking});
 
   @override
   Widget build(BuildContext context) {
-    final status = booking['status'] as String? ?? 'pending';
-    final isConfirmed = status == 'confirmed';
-    final isCancelled = status == 'cancelled';
-    final statusColor = isConfirmed
-        ? kGreen
-        : isCancelled
-        ? kRed
-        : kGold;
-    final statusBgColor = isConfirmed
-        ? kGreenLight
-        : isCancelled
-        ? kRedLight
-        : kGoldLight;
-    final statusText = isConfirmed
-        ? 'Confirmé'
-        : isCancelled
-        ? 'Annulé'
-        : 'En attente';
-    final amount = booking['amount'] as int;
-    final raw = amount.toString();
-    final amountStr = StringBuffer();
-    for (int i = 0; i < raw.length; i++) {
-      if (i > 0 && (raw.length - i) % 3 == 0) amountStr.write(' ');
-      amountStr.write(raw[i]);
-    }
+    final name = (booking['name'] ?? '').toString();
+    final time = (booking['time'] ?? '').toString();
+    final terrain = (booking['terrain'] ?? '').toString();
+    final amount = booking['amount'] is int ? booking['amount'] as int : 0;
+    final id = (booking['id'] ?? '').toString();
+    final initials = _initialsOf(name);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: kBgCard,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: kCardShadow,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: statusBgColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: PhosphorIcon(
-              isConfirmed
-                  ? PhosphorIconsDuotone.checkCircle
-                  : isCancelled
-                  ? PhosphorIconsDuotone.xCircle
-                  : PhosphorIconsDuotone.clock,
-              color: statusColor,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  booking['name'] as String,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: kTextPrim,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: kGold,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: kGold.withValues(alpha: 0.2),
+                    blurRadius: 0,
+                    spreadRadius: 4,
                   ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    PhosphorIcon(
-                      PhosphorIconsDuotone.mapPin,
-                      size: 13,
-                      color: kTextLight,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      booking['terrain'] as String,
-                      style: const TextStyle(fontSize: 12, color: kTextSub),
-                    ),
-                    Container(
-                      width: 3,
-                      height: 3,
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      decoration: const BoxDecoration(
-                        color: kTextLight,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    PhosphorIcon(
-                      PhosphorIconsDuotone.clock,
-                      size: 13,
-                      color: kTextLight,
-                    ),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        booking['time'] as String,
-                        style: const TextStyle(fontSize: 12, color: kTextSub),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '$amountStr F',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: kTextPrim,
-                ),
+                ],
               ),
-              const SizedBox(height: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: statusBgColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  statusText,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: statusColor,
-                    fontWeight: FontWeight.w700,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'À TRAITER MAINTENANT',
+              style: kManrope(
+                size: 13,
+                weight: FontWeight.w700,
+                color: kTextPrim,
+                letterSpacing: 0.09 * 13,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: kBgCard,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(color: kTextPrim.withValues(alpha: 0.07), blurRadius: 2, offset: const Offset(0, 1)),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: kGoldLight,
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: Text(
+                      initials,
+                      style: kArchivo(size: 13, weight: FontWeight.w700, color: kGoldDeep),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$name · $time',
+                          style: kArchivo(size: 15, weight: FontWeight.w700, color: kTextPrim, height: 1.3),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '$terrain · ${_thousands(amount)} F',
+                          style: kManrope(size: 13, weight: FontWeight.w400, color: kTextSub, height: 1.45),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                spacing: 9,
+                children: [
+                  GestureDetector(
+                    onTap: id.isEmpty
+                        ? null
+                        : () => Get.find<DashboardController>().refuseUrgentBooking(id),
+                    child: Container(
+                      height: 48,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: kRed.withValues(alpha: 0.35), width: 1.5),
+                      ),
+                      child: Text(
+                        'Refuser',
+                        style: kManrope(size: 14, weight: FontWeight.w700, color: kRed),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: id.isEmpty
+                          ? null
+                          : () => Get.find<DashboardController>().confirmUrgentBooking(id),
+                      child: Container(
+                        height: 48,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: kGreen,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          'Confirmer',
+                          style: kManrope(size: 14.5, weight: FontWeight.w700, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
+        ),
+      ],
+    );
+  }
+
+  static String _thousands(int value) =>
+      NumberFormat.decimalPattern('fr_FR').format(value);
+
+  static String _initialsOf(String name) {
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return '?';
+    final first = parts.first[0];
+    final second = parts.length > 1 ? parts.last[0] : '';
+    return '$first$second'.toUpperCase();
+  }
+}
+
+// ─── Section "Prochainement" ─────────────────────────────────────────────────
+class _UpcomingSection extends GetView<DashboardController> {
+  const _UpcomingSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'PROCHAINEMENT',
+              style: kManrope(size: 13, weight: FontWeight.w700, color: kTextPrim, letterSpacing: 0.09 * 13),
+            ),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: controller.goToReservations,
+              child: Text(
+                'Tout voir',
+                style: kManrope(size: 13, weight: FontWeight.w600, color: kGreen),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Obx(() {
+          if (controller.isLoading.value && controller.recentBookings.isEmpty) {
+            return const _UpcomingLoading();
+          }
+          final upcoming = controller.upcomingBookings;
+          if (upcoming.isEmpty) return const _NoUpcoming();
+          return Container(
+            decoration: BoxDecoration(
+              color: kBgCard,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(color: kTextPrim.withValues(alpha: 0.07), blurRadius: 2, offset: const Offset(0, 1)),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                for (var i = 0; i < upcoming.length; i++) ...[
+                  if (i > 0)
+                    Container(
+                      height: 1,
+                      margin: const EdgeInsets.only(left: 16),
+                      color: kTextPrim.withValues(alpha: 0.07),
+                    ),
+                  _UpcomingTile(booking: upcoming[i]),
+                ],
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+}
+
+class _UpcomingTile extends StatelessWidget {
+  final Map<String, dynamic> booking;
+
+  const _UpcomingTile({required this.booking});
+
+  @override
+  Widget build(BuildContext context) {
+    final time = (booking['time'] ?? '').toString();
+    final startTime = time.split(RegExp(r'[-–]')).first.trim();
+    final name = (booking['name'] ?? '').toString();
+    final terrain = (booking['terrain'] ?? '').toString();
+    final status = (booking['status'] ?? '').toString();
+    final badge = _badgeFor(status);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 56,
+            child: Column(
+              children: [
+                Text(
+                  startTime,
+                  style: kArchivo(size: 17, weight: FontWeight.w700, color: kTextPrim),
+                ),
+              ],
+            ),
+          ),
+          Container(width: 1, height: 32, color: kTextPrim.withValues(alpha: 0.08)),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: kManrope(size: 14.5, weight: FontWeight.w600, color: kTextPrim, height: 1.3),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  terrain,
+                  style: kManrope(size: 12.5, weight: FontWeight.w400, color: kTextSub, height: 1.35),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          if (badge != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(color: badge.$2, borderRadius: BorderRadius.circular(8)),
+              child: Text(
+                badge.$1,
+                style: kManrope(size: 11, weight: FontWeight.w700, color: badge.$3),
+              ),
+            ),
         ],
       ),
     );
   }
-}
 
-class _ChartToggle extends StatelessWidget {
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _ChartToggle({
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-        decoration: BoxDecoration(
-          color: isActive ? kGreen : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: isActive ? Colors.white : kTextSub,
-          ),
-        ),
-      ),
-    );
+  static (String, Color, Color)? _badgeFor(String status) {
+    switch (status) {
+      case 'confirmed':
+        return ('PAYÉ', kGreenLight, const Color(0xFF00552C));
+      case 'pending':
+        return ('ACOMPTE', kBlueLight, const Color(0xFF0F4C99));
+      default:
+        return null;
+    }
   }
 }
 
-/// Une ligne d'« à traiter aujourd'hui » : constat + action directe.
-class _FocusRow extends StatelessWidget {
-  const _FocusRow({
-    required this.icon,
-    required this.color,
-    required this.label,
-    required this.actionLabel,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final Color color;
-  final String label;
-  final String actionLabel;
-  final VoidCallback onTap;
+class _UpcomingLoading extends StatelessWidget {
+  const _UpcomingLoading();
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
+    return Container(
+      height: 96,
+      decoration: BoxDecoration(color: kBgCard, borderRadius: BorderRadius.circular(20)),
+      alignment: Alignment.center,
+      child: const CircularProgressIndicator(color: kGreen, strokeWidth: 2),
+    ).animate(onPlay: (c) => c.repeat()).shimmer(duration: 1200.ms);
+  }
+}
+
+class _NoUpcoming extends StatelessWidget {
+  const _NoUpcoming();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(color: kGreenLight, borderRadius: BorderRadius.circular(20)),
       child: Row(
         children: [
-          AppIconBadge(icon: icon, color: color, size: AppIconBox.sm),
-          const SizedBox(width: AppSpacing.sm),
+          Container(
+            width: 38,
+            height: 38,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: kGreen, borderRadius: BorderRadius.circular(12)),
+            child: const PhosphorIcon(PhosphorIconsBold.check, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 13),
           Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: AppFontSize.bodySmall,
-                fontWeight: FontWeight.w700,
-                color: kTextPrim,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Rien en attente',
+                  style: kArchivo(size: 14.5, weight: FontWeight.w700, color: const Color(0xFF00552C)),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Toutes les demandes sont traitées.',
+                  style: kManrope(size: 12.5, weight: FontWeight.w400, color: const Color(0xFF3F7A55), height: 1.4),
+                ),
+              ],
             ),
-          ),
-          Text(
-            actionLabel,
-            style: TextStyle(
-              fontSize: AppFontSize.label,
-              fontWeight: FontWeight.w800,
-              color: color,
-            ),
-          ),
-          const Icon(
-            PhosphorIconsRegular.caretRight,
-            size: 14,
-            color: kTextLight,
           ),
         ],
       ),

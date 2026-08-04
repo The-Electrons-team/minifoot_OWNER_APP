@@ -1,11 +1,14 @@
 import 'package:get/get.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../core/services/dashboard_service.dart';
+import '../../../core/services/reservation_service.dart';
+import '../../../core/widgets/app_snackbar.dart';
 import '../../../routes/app_routes.dart';
 import '../../shell/controllers/shell_controller.dart';
 
 class DashboardController extends GetxController {
   final _service = DashboardService();
+  final _reservationService = ReservationService();
   final _auth = Get.find<AuthController>();
 
   final isLoading = false.obs;
@@ -72,6 +75,24 @@ class DashboardController extends GetxController {
   bool get isController => _auth.user.value?.isController == true;
   String? get avatarUrl => _auth.user.value?.avatarUrl;
 
+  /// Réservation "sur place" en attente de confirmation manuelle (le
+  /// propriétaire l'a créée pour un joueur payant cash, sans passer par
+  /// l'app). Le backend ne produit pas encore ce statut — cette carte
+  /// n'apparaît donc jamais tant que la fonctionnalité "Réservation sur
+  /// place" (écrans 29-30 du design) n'est pas implémentée côté backend.
+  Map<String, dynamic>? get urgentBooking {
+    for (final booking in recentBookings) {
+      if (booking['status'] == 'awaiting_owner_confirmation') return booking;
+    }
+    return null;
+  }
+
+  /// Les 3 prochaines réservations du jour, dans l'ordre du planning.
+  List<Map<String, dynamic>> get upcomingBookings => recentBookings
+      .where((b) => b['status'] != 'cancelled' && b != urgentBooking)
+      .take(3)
+      .toList();
+
   Future<void> loadDashboard() async {
     isLoading.value = true;
     errorMessage.value = '';
@@ -102,6 +123,24 @@ class DashboardController extends GetxController {
 
   Future<void> refreshDashboard() async {
     await loadDashboard();
+  }
+
+  Future<void> refuseUrgentBooking(String id) async {
+    try {
+      await _reservationService.cancelOwnerReservation(id);
+      AppSnackbar.success('Réservation refusée.');
+      await loadDashboard();
+    } catch (_) {
+      AppSnackbar.error('Impossible de refuser cette réservation. Réessayez.');
+    }
+  }
+
+  /// La confirmation manuelle n'existe pas encore côté backend : elle
+  /// suppose la fonctionnalité "Réservation sur place" (écrans 29-30 du
+  /// design), pas encore implémentée. `urgentBooking` ne renvoie donc jamais
+  /// de résultat aujourd'hui — ce bouton reste inatteignable en pratique.
+  Future<void> confirmUrgentBooking(String id) async {
+    AppSnackbar.info('Disponible avec les réservations sur place, à venir.');
   }
 
   /// Coquille de navigation, si le tableau de bord y est hébergé.
