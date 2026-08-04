@@ -11,14 +11,19 @@ class ReservationModel {
   final String terrain;
   final String subTerrainName;
   final String date;
+  final DateTime? rawDate;
   final String timeSlot;
+  final String startSlot;
   final int amount;
-  final String status; // confirmed / pending / cancelled
+  // confirmed / pending / awaiting_owner_confirmation / cancelled
+  final String status;
   final String phone;
   final String reference;
   final String paymentMethod;
   final String paymentStatus;
   final String checkedInAt;
+  final bool isDeposit;
+  final int? depositAmount;
 
   ReservationModel({
     required this.id,
@@ -27,7 +32,9 @@ class ReservationModel {
     required this.terrain,
     required this.subTerrainName,
     required this.date,
+    this.rawDate,
     required this.timeSlot,
+    required this.startSlot,
     required this.amount,
     required this.status,
     required this.phone,
@@ -35,7 +42,13 @@ class ReservationModel {
     required this.paymentMethod,
     required this.paymentStatus,
     required this.checkedInAt,
+    this.isDeposit = false,
+    this.depositAmount,
   });
+
+  /// Solde restant à encaisser en espèces sur place (design écran 27).
+  int get balanceDue =>
+      isDeposit && depositAmount != null ? amount - depositAmount! : 0;
 
   factory ReservationModel.fromJson(Map<String, dynamic> json) {
     final user = json['user'] as Map<String, dynamic>?;
@@ -44,6 +57,10 @@ class ReservationModel {
     final firstName = (user?['firstName'] ?? '').toString().trim();
     final lastName = (user?['lastName'] ?? '').toString().trim();
     final clientName = '$firstName $lastName'.trim();
+    final isDeposit =
+        json['paymentType']?.toString() == 'DEPOSIT' &&
+        json['depositAmount'] != null;
+    final depositPaidAt = json['depositPaidAt'];
 
     return ReservationModel(
       id: (json['id'] ?? '').toString(),
@@ -52,18 +69,23 @@ class ReservationModel {
       terrain: (terrain?['name'] ?? 'Terrain').toString(),
       subTerrainName: (subTerrain?['name'] ?? '').toString(),
       date: _formatDate(json['date']),
+      rawDate: DateTime.tryParse(json['date']?.toString() ?? '')?.toLocal(),
       timeSlot: _formatSlot(json['startSlot'], json['endSlot']),
+      startSlot: (json['startSlot'] ?? '').toString(),
       amount: _asInt(json['finalPrice'] ?? json['totalPrice']),
-      status: _mapStatus(json['status']),
+      status: _mapStatus(json['status'], isDeposit, depositPaidAt),
       phone: (user?['phone'] ?? '').toString(),
       reference: (json['reference'] ?? '').toString(),
       paymentMethod: _formatPaymentMethod(json['paymentMethod']),
       paymentStatus: _formatPaymentStatus(json['payments']),
       checkedInAt: _formatDateTime(json['checkedInAt']),
+      isDeposit: isDeposit,
+      depositAmount: isDeposit ? _asInt(json['depositAmount']) : null,
     );
   }
 
-  bool get canCancel => status == 'pending';
+  bool get canCancel =>
+      status == 'pending' || status == 'awaiting_owner_confirmation';
   bool get isCheckedIn => checkedInAt.isNotEmpty;
 
   static int _asInt(dynamic value) {
@@ -91,7 +113,7 @@ class ReservationModel {
     return '$startText – $endText';
   }
 
-  static String _mapStatus(dynamic value) {
+  static String _mapStatus(dynamic value, bool isDeposit, dynamic depositPaidAt) {
     switch (value?.toString()) {
       case 'CONFIRMED':
       case 'COMPLETED':
@@ -100,6 +122,9 @@ class ReservationModel {
         return 'cancelled';
       case 'PENDING_PAYMENT':
       default:
+        if (isDeposit && depositPaidAt != null) {
+          return 'awaiting_owner_confirmation';
+        }
         return 'pending';
     }
   }
@@ -137,10 +162,13 @@ class ReservationModel {
   }
 }
 
+/// Onglets de l'écran Réservations (design "Liste & filtres", écran 25).
+enum ReservationTab { today, upcoming, past }
+
 class ReservationsController extends GetxController {
   final _service = ReservationService();
   final _allReservations = <ReservationModel>[].obs;
-  final selectedFilter = 'all'.obs;
+  final selectedTab = ReservationTab.today.obs;
   final isLoading = false.obs;
 
   /// Message d'erreur du dernier chargement. Vide = pas d'erreur.
@@ -182,14 +210,66 @@ class ReservationsController extends GetxController {
     }
   }
 
-  List<ReservationModel> get filteredReservations {
-    if (selectedFilter.value == 'all') return _allReservations;
-    return _allReservations
-        .where((r) => r.status == selectedFilter.value)
+  static bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  List<ReservationModel> get _sortedByDateThenSlot {
+    final list = List<ReservationModel>.of(_allReservations);
+    list.sort((a, b) {
+      final dateCompare = (a.rawDate ?? DateTime(0)).compareTo(
+        b.rawDate ?? DateTime(0),
+      );
+      if (dateCompare != 0) return dateCompare;
+      return a.startSlot.compareTo(b.startSlot);
+    });
+    return list;
+  }
+
+  /// Réservations du jour, cancelled comprises (le design les affiche
+  /// grisées et barrées plutôt que de les cacher).
+  List<ReservationModel> get todayReservations {
+    final now = DateTime.now();
+    return _sortedByDateThenSlot
+        .where((r) => r.rawDate != null && _isSameDay(r.rawDate!, now))
         .toList();
   }
 
-  void setFilter(String filter) => selectedFilter.value = filter;
+  List<ReservationModel> get upcomingReservations {
+    final now = DateTime.now();
+    return _sortedByDateThenSlot
+        .where(
+          (r) =>
+              r.rawDate != null &&
+              r.rawDate!.isAfter(now) &&
+              !_isSameDay(r.rawDate!, now) &&
+              r.status != 'cancelled',
+        )
+        .toList();
+  }
+
+  List<ReservationModel> get pastReservations {
+    final now = DateTime.now();
+    return _sortedByDateThenSlot.reversed
+        .where(
+          (r) =>
+              r.rawDate == null ||
+              (r.rawDate!.isBefore(now) && !_isSameDay(r.rawDate!, now)),
+        )
+        .toList();
+  }
+
+  List<ReservationModel> get tabReservations {
+    switch (selectedTab.value) {
+      case ReservationTab.today:
+        return todayReservations;
+      case ReservationTab.upcoming:
+        return upcomingReservations;
+      case ReservationTab.past:
+        return pastReservations;
+    }
+  }
+
+  void setTab(ReservationTab tab) => selectedTab.value = tab;
 
   /// Charge la page suivante et l'ajoute à la liste.
   ///
@@ -246,13 +326,27 @@ class ReservationsController extends GetxController {
     }
   }
 
-  int get totalCount => _allReservations.length;
-  int get confirmedCount =>
-      _allReservations.where((r) => r.status == 'confirmed').length;
-  int get pendingCount =>
-      _allReservations.where((r) => r.status == 'pending').length;
-  int get cancelledCount =>
-      _allReservations.where((r) => r.status == 'cancelled').length;
+  /// Confirmation manuelle après encaissement du solde en espèces sur place
+  /// (design "Détail d'une réservation", écran 27).
+  Future<void> confirmDeposit(String id) async {
+    try {
+      await _service.confirmOwnerDeposit(id);
+      await loadReservations();
+      AppSnackbar.success('Réservation confirmée.');
+    } catch (e) {
+      AppSnackbar.error('Impossible de confirmer cette réservation. Réessayez.');
+      rethrow;
+    }
+  }
+
+  /// Résumé de l'onglet actif : "12 réservations · 1 en attente" + le total
+  /// encaissé (paiements complétés uniquement, hors annulées).
+  int get tabPendingCount =>
+      tabReservations.where((r) => r.status == 'pending').length;
+
+  int get tabTotalAmount => tabReservations
+      .where((r) => r.status != 'cancelled')
+      .fold(0, (sum, r) => sum + r.amount);
 
   Future<ReservationModel> getReservationDetail(String id) async {
     final data = await _service.getOwnerReservationDetail(id);

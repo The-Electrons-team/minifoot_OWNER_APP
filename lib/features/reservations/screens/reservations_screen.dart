@@ -1,19 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:get/get.dart';
-import 'package:lottie/lottie.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import '../../../core/utils/app_format.dart';
-import '../../../core/utils/app_motion.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/app_states.dart';
-import '../../../core/widgets/owner_ui.dart';
-import '../../../core/widgets/shimmer_loading.dart';
-import '../../../routes/app_routes.dart';
+import '../../../core/widgets/shimmer_loading.dart' show ShimmerBox;
 import '../../reports/screens/report_screen.dart';
 import '../controllers/reservations_controller.dart';
+import 'reservation_detail_screen.dart';
 
+// Écrans 25 (Liste & filtres) et 26 (Recherche — aucun résultat) du design.
 class ReservationsScreen extends GetView<ReservationsController> {
   const ReservationsScreen({super.key});
 
@@ -21,794 +15,469 @@ class ReservationsScreen extends GetView<ReservationsController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBg,
-      appBar: AppBar(
-        backgroundColor: kBgCard,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Get.back(),
-          icon: const PhosphorIcon(PhosphorIconsRegular.caretLeft, size: 24),
-          color: kTextPrim,
-        ),
-        title: const Text(
-          'Réservations',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: kTextPrim,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: () => Get.to(
-              () => const ReportScreen(),
-              arguments: {'reportType': 'reservations'},
+      body: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          color: kGreen,
+          onRefresh: controller.refreshReservations,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
             ),
-            icon: PhosphorIcon(PhosphorIconsDuotone.filePdf, color: kGreen),
-            tooltip: 'Rapport PDF',
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
+                sliver: SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Réservations',
+                              style: kArchivo(
+                                size: 28,
+                                weight: FontWeight.w800,
+                                letterSpacing: -0.02 * 28,
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => Get.to(
+                              () => const ReportScreen(),
+                              arguments: {'reportType': 'reservations'},
+                            ),
+                            child: const Padding(
+                              padding: EdgeInsets.all(4),
+                              child: PhosphorIcon(
+                                PhosphorIconsRegular.filePdf,
+                                color: kGreen,
+                                size: 22,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      const _SearchBar(),
+                      const SizedBox(height: 14),
+                      const _TabSwitch(),
+                      const SizedBox(height: 16),
+                      const _SummaryLine(),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+              ),
+              Obx(() {
+                if (controller.isLoading.value) {
+                  return const SliverPadding(
+                    padding: EdgeInsets.fromLTRB(18, 0, 18, 24),
+                    sliver: SliverToBoxAdapter(child: _ListLoading()),
+                  );
+                }
+                final query = _searchQuery.value.trim().toLowerCase();
+                var list = controller.tabReservations;
+                if (query.isNotEmpty) {
+                  list = list
+                      .where(
+                        (r) =>
+                            r.clientName.toLowerCase().contains(query) ||
+                            r.teamName.toLowerCase().contains(query),
+                      )
+                      .toList();
+                }
+                if (list.isEmpty) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _EmptyState(query: query),
+                  );
+                }
+                return SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 110),
+                  sliver: SliverList.separated(
+                    itemCount: list.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    itemBuilder: (_, i) => _ReservationTile(reservation: list[i]),
+                  ),
+                );
+              }),
+            ],
           ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: kDivider),
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: controller.refreshReservations,
-        color: kGreen,
-        backgroundColor: kBgCard,
-        child: Column(
+    );
+  }
+}
+
+final _searchQuery = ''.obs;
+
+class _SearchBar extends StatelessWidget {
+  const _SearchBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: kBgCard,
+        borderRadius: BorderRadius.circular(17),
+        boxShadow: [
+          BoxShadow(color: kTextPrim.withValues(alpha: 0.07), blurRadius: 2, offset: const Offset(0, 1)),
+        ],
+      ),
+      child: Row(
+        children: [
+          const PhosphorIcon(PhosphorIconsRegular.magnifyingGlass, color: kTextSub, size: 19),
+          const SizedBox(width: 11),
+          Expanded(
+            child: TextField(
+              onChanged: (v) => _searchQuery.value = v,
+              style: kManrope(size: 15, weight: FontWeight.w600, color: kTextPrim),
+              decoration: InputDecoration(
+                isCollapsed: true,
+                border: InputBorder.none,
+                hintText: 'Chercher un client',
+                hintStyle: kManrope(size: 15, weight: FontWeight.w600, color: kTextLight),
+              ),
+            ),
+          ),
+          Obx(
+            () => _searchQuery.value.isEmpty
+                ? const SizedBox.shrink()
+                : GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _searchQuery.value = '',
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: kBgSurface,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const PhosphorIcon(PhosphorIconsBold.x, color: kTextSub, size: 12),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TabSwitch extends GetView<ReservationsController> {
+  const _TabSwitch();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(color: const Color(0xFFEDE7DB), borderRadius: BorderRadius.circular(14)),
+      child: Obx(
+        () => Row(
           children: [
-            _buildFilterChips(),
-            _buildSummaryStrip(),
-            Expanded(child: _buildReservationList()),
+            _TabButton(
+              label: "Aujourd'hui",
+              selected: controller.selectedTab.value == ReservationTab.today,
+              onTap: () => controller.setTab(ReservationTab.today),
+            ),
+            _TabButton(
+              label: 'À venir',
+              selected: controller.selectedTab.value == ReservationTab.upcoming,
+              onTap: () => controller.setTab(ReservationTab.upcoming),
+            ),
+            _TabButton(
+              label: 'Passées',
+              selected: controller.selectedTab.value == ReservationTab.past,
+              onTap: () => controller.setTab(ReservationTab.past),
+            ),
           ],
         ),
       ),
     );
   }
-
-  // ── Filter chips row ────────────────────────────────────────────────────────
-  Widget _buildFilterChips() {
-    return Obx(() {
-      final filters = [
-        {'key': 'all', 'label': 'Toutes', 'count': controller.totalCount},
-        {
-          'key': 'confirmed',
-          'label': 'Confirmees',
-          'count': controller.confirmedCount,
-        },
-        {
-          'key': 'pending',
-          'label': 'En attente',
-          'count': controller.pendingCount,
-        },
-        {
-          'key': 'cancelled',
-          'label': 'Annulees',
-          'count': controller.cancelledCount,
-        },
-      ];
-
-      return Container(
-        color: kBgCard,
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: filters.map((f) {
-              final isSelected = controller.selectedFilter.value == f['key'];
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: GestureDetector(
-                  onTap: () => controller.setFilter(f['key'] as String),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected ? kGreen : kBgSurface,
-                      borderRadius: AppRadius.xsAll,
-                      border: Border.all(color: isSelected ? kGreen : kBorder),
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          f['label'] as String,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected ? Colors.white : kTextSub,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? Colors.white.withValues(alpha: 0.25)
-                                : kBgCard,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '${f['count']}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: isSelected ? Colors.white : kTextSub,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      );
-    });
-  }
-
-  Widget _buildSummaryStrip() {
-    return Obx(() {
-      final list = controller.filteredReservations;
-      final totalAmount = list.fold<int>(0, (sum, item) => sum + item.amount);
-      final checkedInCount = list.where((item) => item.isCheckedIn).length;
-      final pendingActionCount = list
-          .where((item) => item.status == 'pending')
-          .length;
-
-      return Container(
-        width: double.infinity,
-        color: kBgCard,
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                kGreen.withValues(alpha: 0.08),
-                kBlue.withValues(alpha: 0.05),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: kBorder),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              OwnerSectionHeader(
-                title: 'Priorités de la vue',
-                subtitle:
-                    '${list.length} réservation${list.length > 1 ? 's' : ''} à suivre dans ce filtre',
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: _SummaryMetric(
-                      icon: PhosphorIconsDuotone.wallet,
-                      label: 'Montant',
-                      value: _formatAmount(totalAmount),
-                      accent: kGreen,
-                      background: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _SummaryMetric(
-                      icon: PhosphorIconsDuotone.sealCheck,
-                      label: 'Présences',
-                      value: '$checkedInCount',
-                      accent: kBlue,
-                      background: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _SummaryMetric(
-                      icon: PhosphorIconsDuotone.hourglassMedium,
-                      label: 'À traiter',
-                      value: '$pendingActionCount',
-                      accent: kGold,
-                      background: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      );
-    });
-  }
-
-  // ── Reservation list ────────────────────────────────────────────────────────
-  Widget _buildReservationList() {
-    return Obx(() {
-      // Shimmer loading pendant le chargement
-      if (controller.isLoading.value) {
-        return ShimmerList(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
-          itemBuilder: (context, index) => const ReservationCardSkeleton(),
-        );
-      }
-
-      // L'erreur passe avant le vide : un échec de chargement ne doit pas
-      // s'afficher comme « Aucune réservation ».
-      if (controller.errorMessage.value.isNotEmpty) {
-        return AppErrorState(
-          message: controller.errorMessage.value,
-          onRetry: controller.refreshReservations,
-        );
-      }
-
-      final list = controller.filteredReservations;
-
-      if (list.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Lottie.asset(
-                'assets/lottie/football_bounce.json',
-                width: 120,
-                height: 120,
-                repeat: true,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Aucune réservation',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: kTextSub,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                controller.selectedFilter.value == 'all'
-                    ? 'Les réservations apparaitront ici'
-                    : 'Aucune réservation pour ce filtre',
-                style: TextStyle(fontSize: 13, color: kTextLight),
-              ),
-            ],
-          ),
-        );
-      }
-
-      return NotificationListener<ScrollNotification>(
-        // Charge la page suivante avant d'atteindre le bas, pour que le
-        // défilement ne marque pas d'arrêt.
-        onNotification: (scroll) {
-          if (scroll.metrics.pixels >= scroll.metrics.maxScrollExtent - 400) {
-            controller.loadMore();
-          }
-          return false;
-        },
-        child: ListView.builder(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
-          itemCount: list.length + (controller.hasMore ? 1 : 0),
-          itemBuilder: (_, i) {
-            if (i >= list.length) return const _LoadMoreIndicator();
-            final reservation = list[i];
-            final card = _ReservationCard(
-              reservation: reservation,
-              onTap: () => _openReservationDetails(reservation),
-            );
-
-            // Refuser une réservation demandait d'ouvrir le détail : c'est
-            // l'action la plus fréquente sur cet écran, elle mérite d'être
-            // accessible d'un glissement. Seules les réservations encore
-            // annulables l'exposent.
-            final canRefuse =
-                reservation.status == 'pending' ||
-                reservation.status == 'confirmed';
-
-            return Slidable(
-                  key: ValueKey(reservation.id),
-                  enabled: canRefuse,
-                  endActionPane: ActionPane(
-                    motion: const DrawerMotion(),
-                    extentRatio: 0.28,
-                    children: [
-                      SlidableAction(
-                        onPressed: (_) =>
-                            controller.cancelReservation(reservation.id),
-                        backgroundColor: kRed,
-                        foregroundColor: Colors.white,
-                        icon: PhosphorIconsRegular.x,
-                        label: 'Refuser',
-                        borderRadius: AppRadius.mdAll,
-                        padding: EdgeInsets.zero,
-                      ),
-                    ],
-                  ),
-                  child: card,
-                )
-                .animate()
-                .fadeIn(duration: 400.ms, delay: AppMotion.stagger(i))
-                .slideY(begin: 0.1, end: 0);
-          },
-        ),
-      );
-    });
-  }
-
-  Future<void> _openReservationDetails(ReservationModel reservation) async {
-    final updated = await Get.toNamed(
-      Routes.reservationDetail,
-      arguments: reservation.id,
-    );
-    if (updated == true) {
-      await controller.loadReservations();
-    }
-  }
 }
 
-// ── Reservation card ────────────────────────────────────────────────────────
-
-String _formatAmount(int amount) => AppFormat.amount(amount);
-
-class _ReservationCard extends StatelessWidget {
-  final ReservationModel reservation;
+class _TabButton extends StatelessWidget {
+  final String label;
+  final bool selected;
   final VoidCallback onTap;
 
-  const _ReservationCard({required this.reservation, required this.onTap});
-
-  Color get _statusColor {
-    switch (reservation.status) {
-      case 'confirmed':
-        return kGreen;
-      case 'pending':
-        return kGold;
-      case 'cancelled':
-        return kRed;
-      default:
-        return kTextSub;
-    }
-  }
-
-  Color get _statusBg {
-    switch (reservation.status) {
-      case 'confirmed':
-        return kGreenLight;
-      case 'pending':
-        return kGoldLight;
-      case 'cancelled':
-        return kRedLight;
-      default:
-        return kBgSurface;
-    }
-  }
-
-  String get _statusLabel {
-    switch (reservation.status) {
-      case 'confirmed':
-        return 'Confirme';
-      case 'pending':
-        return 'En attente';
-      case 'cancelled':
-        return 'Annule';
-      default:
-        return reservation.status;
-    }
-  }
-
-  String get _initials {
-    final name = reservation.clientName.trim();
-    if (name.isEmpty) return 'MF';
-    final parts = name.split(' ').where((part) => part.isNotEmpty).toList();
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return parts.first.length >= 2
-        ? parts.first.substring(0, 2).toUpperCase()
-        : parts.first[0].toUpperCase();
-  }
-
-  String get _terrainLabel {
-    if (reservation.subTerrainName.isEmpty) {
-      return reservation.terrain;
-    }
-    return '${reservation.terrain} • ${reservation.subTerrainName}';
-  }
+  const _TabButton({required this.label, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Ink(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: kBgCard,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: kCardShadow,
-              border: Border.all(color: kBorder.withValues(alpha: 0.7)),
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          height: 38,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? kBgCard : Colors.transparent,
+            borderRadius: BorderRadius.circular(11),
+            boxShadow: selected
+                ? [BoxShadow(color: kTextPrim.withValues(alpha: 0.1), blurRadius: 2, offset: const Offset(0, 1))]
+                : null,
+          ),
+          child: Text(
+            label,
+            style: kManrope(
+              size: 12.5,
+              weight: FontWeight.w700,
+              color: selected ? kTextPrim : kTextSub,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryLine extends GetView<ReservationsController> {
+  const _SummaryLine();
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final list = controller.tabReservations;
+      final pending = controller.tabPendingCount;
+      final total = controller.tabTotalAmount;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              pending > 0
+                  ? '${list.length} réservation${list.length > 1 ? 's' : ''} · $pending en attente'
+                  : '${list.length} réservation${list.length > 1 ? 's' : ''}',
+              style: kManrope(size: 13, weight: FontWeight.w600, color: kTextSub),
+            ),
+            Text(
+              '${_thousands(total)} F',
+              style: kArchivo(size: 14, weight: FontWeight.w700, color: kTextPrim),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+class _ReservationTile extends StatelessWidget {
+  final ReservationModel reservation;
+
+  const _ReservationTile({required this.reservation});
+
+  @override
+  Widget build(BuildContext context) {
+    final cancelled = reservation.status == 'cancelled';
+    final startTime = reservation.timeSlot.split(RegExp(r'[-–]')).first.trim();
+    final badge = _badgeFor(reservation);
+    final isNext = _isNextUpcoming(reservation);
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => Get.to(
+        () => const ReservationDetailScreen(),
+        arguments: reservation.id,
+      ),
+      child: Opacity(
+        opacity: cancelled ? 0.55 : 1,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+          decoration: BoxDecoration(
+            color: kBgCard,
+            borderRadius: BorderRadius.circular(20),
+            border: isNext ? Border.all(color: kGreen.withValues(alpha: 0.35), width: 2) : null,
+            boxShadow: [
+              BoxShadow(color: kTextPrim.withValues(alpha: 0.07), blurRadius: 2, offset: const Offset(0, 1)),
+            ],
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 54,
+                child: Text(
+                  startTime,
+                  style: kArchivo(size: 17, weight: FontWeight.w700, color: isNext ? kGreen : kTextPrim),
+                ),
+              ),
+              Container(width: 1, height: 34, color: kTextPrim.withValues(alpha: 0.08)),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: kGreenLight,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          _initials,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: kGreenDim,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            reservation.clientName,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: kTextPrim,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              PhosphorIcon(
-                                PhosphorIconsDuotone.phone,
-                                size: 12,
-                                color: kTextLight,
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  reservation.phone.isEmpty
-                                      ? reservation.teamName
-                                      : reservation.phone,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: kTextSub,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _statusBg,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            _statusLabel,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: _statusColor,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: kBgSurface,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            PhosphorIconsBold.caretRight,
-                            size: 14,
-                            color: kTextSub,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Container(height: 1, color: kDivider),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: kBlueLight,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: PhosphorIcon(
-                        PhosphorIconsDuotone.courtBasketball,
-                        color: kBlue,
-                        size: 16,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _terrainLabel,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: kTextSub,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Wrap(
-                        spacing: 12,
-                        runSpacing: 8,
-                        children: [
-                          _MetaText(
-                            icon: PhosphorIconsDuotone.calendarBlank,
-                            label: reservation.date,
-                          ),
-                          _MetaText(
-                            icon: PhosphorIconsDuotone.clock,
-                            label: reservation.timeSlot,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
                     Text(
-                      _formatAmount(reservation.amount),
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                      reservation.clientName,
+                      style: kManrope(
+                        size: 14.5,
+                        weight: FontWeight.w600,
                         color: kTextPrim,
-                      ),
+                        height: 1.3,
+                      ).copyWith(decoration: cancelled ? TextDecoration.lineThrough : null),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      cancelled
+                          ? 'Annulée'
+                          : '${reservation.terrain}${reservation.subTerrainName.isNotEmpty ? ' — ${reservation.subTerrainName}' : ''}',
+                      style: kManrope(size: 12.5, weight: FontWeight.w400, color: kTextSub, height: 1.35),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: kBgSurface,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _InlineState(
-                          icon: PhosphorIconsDuotone.creditCard,
-                          label: reservation.paymentStatus,
-                          value: reservation.paymentMethod,
-                        ),
-                      ),
-                      Container(width: 1, height: 24, color: kBorder),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _InlineState(
-                          icon: reservation.isCheckedIn
-                              ? PhosphorIconsDuotone.sealCheck
-                              : PhosphorIconsDuotone.mapPinLine,
-                          label: reservation.isCheckedIn
-                              ? 'Présence confirmée'
-                              : 'Check-in en attente',
-                          value: reservation.isCheckedIn
-                              ? 'Joueur arrivé'
-                              : 'En attente',
+              ),
+              if (!cancelled)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${_thousands(reservation.amount)} F',
+                      style: kArchivo(size: 13.5, weight: FontWeight.w700, color: kTextPrim),
+                    ),
+                    if (badge != null) ...[
+                      const SizedBox(height: 7),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(color: badge.$2, borderRadius: BorderRadius.circular(7)),
+                        child: Text(
+                          badge.$1,
+                          style: kManrope(size: 10.5, weight: FontWeight.w700, color: badge.$3),
                         ),
                       ),
                     ],
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SummaryMetric extends StatelessWidget {
-  final dynamic icon;
-  final String label;
-  final String value;
-  final Color accent;
-  final Color background;
-
-  const _SummaryMetric({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.accent,
-    required this.background,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: PhosphorIcon(icon, size: 16, color: accent),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 11,
-              color: kTextSub,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 13,
-              color: kTextPrim,
-              fontWeight: FontWeight.w800,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InlineState extends StatelessWidget {
-  final dynamic icon;
-  final String label;
-  final String value;
-
-  const _InlineState({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: kBgCard,
-            borderRadius: BorderRadius.circular(9),
-          ),
-          child: PhosphorIcon(icon, size: 15, color: kTextSub),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: kTextPrim,
-                  fontWeight: FontWeight.w700,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: kTextSub,
-                  fontWeight: FontWeight.w500,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
             ],
           ),
         ),
-      ],
+      ),
     );
+  }
+
+  static bool _isNextUpcoming(ReservationModel r) {
+    if (r.rawDate == null || r.status == 'cancelled') return false;
+    final now = DateTime.now();
+    final isToday = r.rawDate!.year == now.year && r.rawDate!.month == now.month && r.rawDate!.day == now.day;
+    if (!isToday) return false;
+    final parts = r.startSlot.split(RegExp(r'[hH:]'));
+    if (parts.length < 2) return false;
+    final slotTime = DateTime(now.year, now.month, now.day, int.tryParse(parts[0]) ?? 0, int.tryParse(parts[1]) ?? 0);
+    return slotTime.isAfter(now) && slotTime.difference(now).inHours < 3;
+  }
+
+  static (String, Color, Color)? _badgeFor(ReservationModel r) {
+    if (r.isCheckedIn) return ('PRÉSENT', kGreenLight, const Color(0xFF00552C));
+    if (r.status == 'confirmed') return ('PAYÉ', kGreenLight, const Color(0xFF00552C));
+    if (r.status == 'awaiting_owner_confirmation' || r.paymentStatus == 'Payé') {
+      return ('ACOMPTE', kBlueLight, const Color(0xFF0F4C99));
+    }
+    if (r.status == 'pending') return ('EN ATTENTE', kGoldLight, const Color(0xFF92400E));
+    return null;
   }
 }
 
-class _MetaText extends StatelessWidget {
-  final dynamic icon;
-  final String label;
+class _EmptyState extends GetView<ReservationsController> {
+  final String query;
 
-  const _MetaText({required this.icon, required this.label});
+  const _EmptyState({required this.query});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        PhosphorIcon(icon, color: kTextLight, size: 14),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: kTextSub,
-            fontWeight: FontWeight.w500,
-          ),
+    final hasQuery = query.isNotEmpty;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 88,
+              height: 88,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: const Color(0xFFEFEAE0), borderRadius: BorderRadius.circular(30)),
+              child: PhosphorIcon(
+                hasQuery ? PhosphorIconsRegular.magnifyingGlass : PhosphorIconsRegular.calendarBlank,
+                color: kTextSub,
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 22),
+            Text(
+              hasQuery ? 'Aucun « $query » ici' : 'Rien à afficher',
+              textAlign: TextAlign.center,
+              style: kArchivo(size: 21, weight: FontWeight.w800, color: kTextPrim, height: 1.25),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              hasQuery
+                  ? 'Essayez un autre nom, ou changez d\'onglet.'
+                  : 'Aucune réservation sur cette période.',
+              textAlign: TextAlign.center,
+              style: kManrope(size: 14, weight: FontWeight.w400, color: kTextSub, height: 1.6),
+            ),
+            if (hasQuery) ...[
+              const SizedBox(height: 26),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _searchQuery.value = '',
+                child: Container(
+                  width: double.infinity,
+                  height: 52,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: kBgCard,
+                    borderRadius: BorderRadius.circular(17),
+                    boxShadow: [
+                      BoxShadow(color: kTextPrim.withValues(alpha: 0.07), blurRadius: 2, offset: const Offset(0, 1)),
+                    ],
+                  ),
+                  child: Text(
+                    'Retirer la recherche',
+                    style: kManrope(size: 15, weight: FontWeight.w600, color: kTextPrim),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
-      ],
+      ),
     );
   }
 }
 
-/// Pied de liste affiché pendant le chargement de la page suivante.
-class _LoadMoreIndicator extends StatelessWidget {
-  const _LoadMoreIndicator();
+class _ListLoading extends StatelessWidget {
+  const _ListLoading();
 
   @override
-  Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.symmetric(vertical: 20),
-    child: Center(
-      child: SizedBox(
-        width: 22,
-        height: 22,
-        child: CircularProgressIndicator(strokeWidth: 2, color: kGreen),
+  Widget build(BuildContext context) {
+    return Column(
+      children: List.generate(
+        4,
+        (i) => const Padding(
+          padding: EdgeInsets.only(bottom: 10),
+          child: ShimmerBox(width: double.infinity, height: 74, borderRadius: 20),
+        ),
       ),
-    ),
-  );
+    );
+  }
+}
+
+String _thousands(int value) {
+  final s = value.toString();
+  final buffer = StringBuffer();
+  for (var i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) buffer.write(' ');
+    buffer.write(s[i]);
+  }
+  return buffer.toString();
 }
