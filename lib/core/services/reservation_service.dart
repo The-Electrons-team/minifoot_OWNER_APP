@@ -69,6 +69,19 @@ class ReservationService {
     }
   }
 
+  /// Le propriétaire confirme une réservation en acompte après avoir
+  /// encaissé le solde en espèces sur place (design "Détail d'une
+  /// réservation", écran 27).
+  Future<void> confirmOwnerDeposit(String id) async {
+    final response = await http.patch(
+      Uri.parse('$_base/reservations/owner/$id/confirm'),
+      headers: await _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Erreur confirmation réservation: ${response.body}');
+    }
+  }
+
   Future<Map<String, dynamic>> scanOwnerReservation(String qrData) async {
     final response = await http.post(
       Uri.parse('$_base/reservations/owner/check-in/scan'),

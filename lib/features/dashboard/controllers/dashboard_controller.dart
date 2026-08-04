@@ -75,11 +75,9 @@ class DashboardController extends GetxController {
   bool get isController => _auth.user.value?.isController == true;
   String? get avatarUrl => _auth.user.value?.avatarUrl;
 
-  /// Réservation "sur place" en attente de confirmation manuelle (le
-  /// propriétaire l'a créée pour un joueur payant cash, sans passer par
-  /// l'app). Le backend ne produit pas encore ce statut — cette carte
-  /// n'apparaît donc jamais tant que la fonctionnalité "Réservation sur
-  /// place" (écrans 29-30 du design) n'est pas implémentée côté backend.
+  /// Réservation en acompte dont le solde reste à encaisser en espèces sur
+  /// place (design "Détail d'une réservation", écran 27) : le propriétaire
+  /// doit confirmer manuellement une fois l'argent reçu.
   Map<String, dynamic>? get urgentBooking {
     for (final booking in recentBookings) {
       if (booking['status'] == 'awaiting_owner_confirmation') return booking;
@@ -135,12 +133,14 @@ class DashboardController extends GetxController {
     }
   }
 
-  /// La confirmation manuelle n'existe pas encore côté backend : elle
-  /// suppose la fonctionnalité "Réservation sur place" (écrans 29-30 du
-  /// design), pas encore implémentée. `urgentBooking` ne renvoie donc jamais
-  /// de résultat aujourd'hui — ce bouton reste inatteignable en pratique.
   Future<void> confirmUrgentBooking(String id) async {
-    AppSnackbar.info('Disponible avec les réservations sur place, à venir.');
+    try {
+      await _reservationService.confirmOwnerDeposit(id);
+      AppSnackbar.success('Réservation confirmée.');
+      await loadDashboard();
+    } catch (_) {
+      AppSnackbar.error('Impossible de confirmer cette réservation. Réessayez.');
+    }
   }
 
   /// Coquille de navigation, si le tableau de bord y est hébergé.
