@@ -1,11 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'app_tokens.dart';
 
 // Les tokens sont réexportés : importer `app_theme.dart` suffit pour disposer
 // de la palette, des espacements et des rayons.
 export 'app_tokens.dart';
+
+// ─── Typographie refonte (design "MiniFoot Owner Refonte") ─────────────────
+// Archivo pour les titres/chiffres, Manrope pour le corps de texte.
+// N'affecte que les écrans reconstruits sur le nouveau design — les écrans
+// pas encore migrés continuent d'utiliser fontFamily: 'Orbitron' en dur.
+TextStyle kArchivo({
+  required double size,
+  FontWeight weight = FontWeight.w700,
+  Color color = kTextPrim,
+  double? height,
+  double? letterSpacing,
+}) => GoogleFonts.archivo(
+  fontSize: size,
+  fontWeight: weight,
+  color: color,
+  height: height,
+  letterSpacing: letterSpacing,
+);
+
+TextStyle kManrope({
+  required double size,
+  FontWeight weight = FontWeight.w500,
+  Color color = kTextPrim,
+  double? height,
+  double? letterSpacing,
+}) => GoogleFonts.manrope(
+  fontSize: size,
+  fontWeight: weight,
+  color: color,
+  height: height,
+  letterSpacing: letterSpacing,
+);
 
 // ─── Palette harmonisée avec l'app client ───────────────────────────────────
 const Color kBg        = Color(0xFFF5F0E8);   // fond beige chaud (identique client)
