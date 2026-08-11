@@ -237,6 +237,17 @@ class TerrainModel {
   }
 }
 
+/// Le complexe est bien enregistré, seules les photos n'ont pas pu partir.
+/// Distinguer ce cas évite le message « réessayez » qui poussait à recréer
+/// un complexe déjà existant.
+class TerrainImagesUploadException implements Exception {
+  const TerrainImagesUploadException();
+
+  @override
+  String toString() =>
+      'Complexe enregistré, mais les photos n\'ont pas pu être envoyées.';
+}
+
 class TerrainReviewModel {
   final String id;
   final String terrainId;
@@ -460,6 +471,10 @@ class TerrainController extends GetxController {
     Get.toNamed(Routes.terrainForm, arguments: terrain);
   }
 
+  /// Complexe créé lors de la dernière tentative d'enregistrement, quand
+  /// l'envoi des photos a échoué ensuite. Permet de reprendre sans doublon.
+  final createdTerrainId = ''.obs;
+
   Future<void> saveTerrain({
     required String name,
     required String address,
@@ -495,16 +510,50 @@ class TerrainController extends GetxController {
       if (managerId != null) createData['managerId'] = managerId;
       final result = await _service.creerTerrain(createData);
       terrainId = result['id'] as String;
+      // Le complexe existe désormais côté serveur. On le mémorise tout de
+      // suite : si l'envoi des photos échoue juste après, un nouvel essai
+      // met à jour ce complexe au lieu d'en créer un second — c'est ainsi
+      // qu'on se retrouvait avec des doublons sur réseau instable.
+      createdTerrainId.value = terrainId;
     } else {
       await _service.modifierTerrain(terrain.id, data);
       terrainId = terrain.id;
     }
 
+    // L'échec de l'upload ne doit pas empêcher le rafraîchissement de la
+    // liste : sinon le complexe créé restait invisible dans l'app alors
+    // qu'il existait bien en base.
+    var imagesFailed = false;
     if (images.isNotEmpty) {
-      await _service.uploadImages(terrainId, images);
+      try {
+        await _service.uploadImages(terrainId, images);
+      } catch (_) {
+        imagesFailed = true;
+      }
     }
 
     await loadTerrains();
+    if (imagesFailed) throw const TerrainImagesUploadException();
+  }
+
+  /// Ajoute des photos à un complexe existant, sans toucher au reste de sa
+  /// fiche : repasser par `saveTerrain` obligerait à renvoyer lat/lng et
+  /// écraserait la position par 0,0 quand elle n'est pas chargée.
+  Future<void> addImages(String terrainId, List<XFile> images) async {
+    if (images.isEmpty) return;
+    await _service.uploadImages(terrainId, images);
+    await loadTerrains();
+    final refreshed = allTerrains.firstWhereOrNull((t) => t.id == terrainId);
+    if (refreshed != null) selectedTerrain.value = refreshed;
+  }
+
+  /// Réordonne (ou retire) les photos déjà envoyées — la première devient la
+  /// photo principale (design écran 35).
+  Future<void> reorderImages(String terrainId, List<String> imageUrls) async {
+    await _service.modifierTerrain(terrainId, {'imageUrls': imageUrls});
+    await loadTerrains();
+    final refreshed = allTerrains.firstWhereOrNull((t) => t.id == terrainId);
+    if (refreshed != null) selectedTerrain.value = refreshed;
   }
 
   void goBack() => Get.back();

@@ -64,6 +64,8 @@ class _TerrainDetailScreenState extends State<TerrainDetailScreen> {
                       images: images,
                       pageController: _pageController,
                       onBack: () => Get.back(),
+                      onManagePhotos: () =>
+                          Get.toNamed(Routes.terrainPhotos, arguments: terrain),
                     ),
                     Transform.translate(
                       offset: const Offset(0, -26),
@@ -183,11 +185,13 @@ class _Gallery extends StatefulWidget {
   final List<String> images;
   final PageController pageController;
   final VoidCallback onBack;
+  final VoidCallback onManagePhotos;
 
   const _Gallery({
     required this.images,
     required this.pageController,
     required this.onBack,
+    required this.onManagePhotos,
   });
 
   @override
@@ -268,10 +272,12 @@ class _GalleryState extends State<_Gallery> {
                 ),
               ),
             ),
-          if (!hasImages)
-            Positioned(
-              right: 16,
-              bottom: 14,
+          Positioned(
+            right: 16,
+            bottom: 14,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: widget.onManagePhotos,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
                 decoration: BoxDecoration(
@@ -279,7 +285,7 @@ class _GalleryState extends State<_Gallery> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'PHOTO À AJOUTER',
+                  hasImages ? 'GÉRER LES PHOTOS' : 'PHOTO À AJOUTER',
                   style: kManrope(
                     size: 10.5,
                     weight: FontWeight.w600,
@@ -288,6 +294,7 @@ class _GalleryState extends State<_Gallery> {
                 ),
               ),
             ),
+          ),
         ],
       ),
     );

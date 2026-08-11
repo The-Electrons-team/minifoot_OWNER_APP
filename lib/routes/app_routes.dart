@@ -15,6 +15,7 @@ import '../features/terrain/bindings/terrain_binding.dart';
 import '../features/terrain/screens/terrain_list_screen.dart';
 import '../features/terrain/screens/terrain_detail_screen.dart';
 import '../features/terrain/screens/terrain_form_screen.dart';
+import '../features/terrain/screens/terrain_photos_screen.dart';
 import '../features/reservations/bindings/reservations_binding.dart';
 import '../features/reservations/screens/reservation_detail_screen.dart';
 import '../features/reservations/screens/reservations_screen.dart';
@@ -51,6 +52,7 @@ abstract class Routes {
   static const terrainList = '/terrains';
   static const terrainDetail = '/terrains/detail';
   static const terrainForm = '/terrains/form';
+  static const terrainPhotos = '/terrains/photos';
   static const reservations = '/reservations';
   static const reservationDetail = '/reservations/detail';
   static const availability = '/availability';
@@ -135,6 +137,14 @@ final appPages = [
   GetPage(
     name: Routes.terrainForm,
     page: () => const TerrainFormScreen(),
+    binding: TerrainBinding(),
+    middlewares: [_OwnerOnlyMiddleware()],
+    transition: Transition.rightToLeftWithFade,
+    transitionDuration: const Duration(milliseconds: 300),
+  ),
+  GetPage(
+    name: Routes.terrainPhotos,
+    page: () => const TerrainPhotosScreen(),
     binding: TerrainBinding(),
     middlewares: [_OwnerOnlyMiddleware()],
     transition: Transition.rightToLeftWithFade,
