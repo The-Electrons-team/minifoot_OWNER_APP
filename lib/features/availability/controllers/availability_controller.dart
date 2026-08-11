@@ -136,6 +136,13 @@ class AvailabilityController extends GetxController {
       }
       complexCount.value = loadedComplexes;
       terrains.value = options;
+      // Ouverture depuis un complexe précis (bouton « Disponibilités » de la
+      // liste des complexes) : on se positionne dessus au lieu du premier.
+      final requestedId = Get.arguments is String ? Get.arguments as String : null;
+      if (requestedId != null && requestedId.isNotEmpty) {
+        final index = options.indexWhere((option) => option.id == requestedId);
+        if (index != -1) selectedTerrain.value = index;
+      }
       if (selectedTerrain.value >= terrains.length) {
         selectedTerrain.value = 0;
       }
