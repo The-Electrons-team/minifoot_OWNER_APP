@@ -13,6 +13,9 @@ class QrCheckInController extends GetxController {
   final reservation = Rxn<Map<String, dynamic>>();
   final lastScannedCode = ''.obs;
 
+  /// La caméra est refusée par le système (design écran 24).
+  final cameraDenied = false.obs;
+
   Future<void> scanCode(String rawCode) async {
     final code = rawCode.trim();
     if (code.isEmpty || isProcessing.value) return;
@@ -62,5 +65,47 @@ class QrCheckInController extends GetxController {
     message.value = '';
     reservation.value = null;
     lastScannedCode.value = '';
+  }
+
+  // ── Créneau pas encore commencé (design écran 22) ────────────────────────
+  // Contrôle purement local : le backend valide le billet, l'app prévient
+  // simplement que l'heure n'y est pas encore. Au-delà de 30 min d'avance on
+  // affiche l'avertissement ; en deçà c'est une arrivée en avance normale.
+  static const _earlyThreshold = Duration(minutes: 30);
+
+  DateTime? get _slotStart {
+    final data = reservation.value;
+    if (data == null) return null;
+    final date = DateTime.tryParse(data['date']?.toString() ?? '')?.toLocal();
+    final slot = data['startSlot']?.toString() ?? '';
+    if (date == null || slot.isEmpty) return null;
+    final parts = slot.split(RegExp(r'[hH:]'));
+    if (parts.isEmpty) return null;
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      int.tryParse(parts[0]) ?? 0,
+      parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0,
+    );
+  }
+
+  bool get isTooEarly {
+    if (status.value != 'ready') return false;
+    final start = _slotStart;
+    if (start == null) return false;
+    return start.difference(DateTime.now()) > _earlyThreshold;
+  }
+
+  /// « dans 1 h 47 » — délai restant avant le début du créneau.
+  String get timeUntilSlot {
+    final start = _slotStart;
+    if (start == null) return '';
+    final diff = start.difference(DateTime.now());
+    if (diff.isNegative) return '';
+    final hours = diff.inHours;
+    final minutes = diff.inMinutes % 60;
+    if (hours == 0) return 'dans $minutes min';
+    return 'dans $hours h ${minutes.toString().padLeft(2, '0')}';
   }
 }

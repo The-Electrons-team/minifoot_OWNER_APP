@@ -43,6 +43,9 @@ dependencies:
   flutter_slidable: ^4.0.3
   flutter_image_compress: ^2.5.1
   google_fonts: ^6.2.1
+  # Ouvrir les réglages système quand la caméra est bloquée (design écran 24) :
+  # sans ce raccourci, le check-in devient inutilisable sans explication.
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:
