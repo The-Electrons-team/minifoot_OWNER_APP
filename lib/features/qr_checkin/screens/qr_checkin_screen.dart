@@ -9,6 +9,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../controllers/qr_checkin_controller.dart';
+import 'attendance_screen.dart';
 
 // Écrans 16 à 24 du design : scan, vérification, billet valide, présence
 // confirmée, billet déjà utilisé, créneau pas commencé, caméra refusée.
@@ -228,7 +229,7 @@ class _ScannerView extends StatelessWidget {
                       const SizedBox(height: 10),
                       GestureDetector(
                         behavior: HitTestBehavior.opaque,
-                        onTap: () => AppSnackbar.info('Bientôt disponible.'),
+                        onTap: () => Get.to(() => const AttendanceScreen()),
                         child: SizedBox(
                           height: 46,
                           child: Center(
@@ -548,6 +549,13 @@ class _AlreadyUsedView extends StatelessWidget {
       ),
       primaryLabel: 'Scanner le suivant',
       onPrimary: onScanNext,
+      // Le scan refusé est déjà tracé dans l'historique côté backend : on
+      // laisse donc le propriétaire arbitrer sur place sans rien réécrire.
+      secondaryLabel: 'Laisser entrer quand même',
+      onSecondary: () async {
+        AppSnackbar.info('Entrée autorisée. Le double scan reste tracé.');
+        await onScanNext();
+      },
       busy: false,
     );
   }

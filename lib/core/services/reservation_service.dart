@@ -96,10 +96,16 @@ class ReservationService {
     throw Exception('Erreur scan QR: ${response.body}');
   }
 
-  Future<Map<String, dynamic>> confirmOwnerCheckIn(String id) async {
+  /// `manual: true` pour une présence pointée à la main depuis l'écran
+  /// « Présences du jour » — le backend la trace comme telle.
+  Future<Map<String, dynamic>> confirmOwnerCheckIn(
+    String id, {
+    bool manual = false,
+  }) async {
     final response = await http.patch(
       Uri.parse('$_base/reservations/owner/$id/check-in'),
       headers: await _headers(),
+      body: jsonEncode({'manual': manual}),
     );
 
     if (response.statusCode == 200) {

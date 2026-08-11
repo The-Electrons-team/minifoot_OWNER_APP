@@ -22,6 +22,8 @@ class ReservationModel {
   final String paymentMethod;
   final String paymentStatus;
   final String checkedInAt;
+  /// QR_OWNER (scanné) ou MANUAL_OWNER (validé à la main) — écran 20.
+  final String checkInMethod;
   final bool isDeposit;
   final int? depositAmount;
 
@@ -42,6 +44,7 @@ class ReservationModel {
     required this.paymentMethod,
     required this.paymentStatus,
     required this.checkedInAt,
+    this.checkInMethod = '',
     this.isDeposit = false,
     this.depositAmount,
   });
@@ -79,6 +82,7 @@ class ReservationModel {
       paymentMethod: _formatPaymentMethod(json['paymentMethod']),
       paymentStatus: _formatPaymentStatus(json['payments']),
       checkedInAt: _formatDateTime(json['checkedInAt']),
+      checkInMethod: (json['checkInMethod'] ?? '').toString(),
       isDeposit: isDeposit,
       depositAmount: isDeposit ? _asInt(json['depositAmount']) : null,
     );
