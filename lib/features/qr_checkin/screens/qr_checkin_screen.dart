@@ -658,6 +658,33 @@ class _CheckedInView extends StatelessWidget {
                   height: 1.5,
                 ),
               ),
+              Obx(() {
+                final upcoming = controller.upcomingWithinHour.value;
+                if (upcoming == 0) return const SizedBox.shrink();
+                return Container(
+                  margin: const EdgeInsets.only(top: 26),
+                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(color: kGold, shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        '$upcoming joueur${upcoming > 1 ? 's' : ''} attendu${upcoming > 1 ? 's' : ''} dans l\'heure',
+                        style: kManrope(size: 13, weight: FontWeight.w600, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                );
+              }),
               const Spacer(),
               _WhiteButton(
                 label: 'Scanner le suivant',

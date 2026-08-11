@@ -16,6 +16,10 @@ class QrCheckInController extends GetxController {
   /// La caméra est refusée par le système (design écran 24).
   final cameraDenied = false.obs;
 
+  /// Joueurs encore attendus dans l'heure qui suit (design écran 19).
+  /// Chargé après une présence confirmée, pour enchaîner sans quitter l'écran.
+  final upcomingWithinHour = 0.obs;
+
   Future<void> scanCode(String rawCode) async {
     final code = rawCode.trim();
     if (code.isEmpty || isProcessing.value) return;
@@ -51,12 +55,47 @@ class QrCheckInController extends GetxController {
       reservation.value = result['reservation'] is Map<String, dynamic>
           ? result['reservation'] as Map<String, dynamic>
           : reservation.value;
+      _loadUpcomingWithinHour();
       return true;
     } catch (_) {
       AppSnackbar.error('Impossible de confirmer la présence. Réessayez.');
       return false;
     } finally {
       isConfirming.value = false;
+    }
+  }
+
+  /// Compte les réservations confirmées du jour qui commencent dans l'heure
+  /// et dont personne n'est encore entré. Échec silencieux : ce n'est qu'une
+  /// indication, elle ne doit pas masquer la présence qui vient d'être prise.
+  Future<void> _loadUpcomingWithinHour() async {
+    try {
+      final result = await _service.getOwnerReservations(status: 'CONFIRMED');
+      final now = DateTime.now();
+      final limit = now.add(const Duration(hours: 1));
+      var count = 0;
+      for (final item in result.items) {
+        if (item is! Map<String, dynamic>) continue;
+        if (item['checkedInAt'] != null) continue;
+        final date = DateTime.tryParse(item['date']?.toString() ?? '')?.toLocal();
+        final slot = item['startSlot']?.toString() ?? '';
+        if (date == null || slot.isEmpty) continue;
+        if (date.year != now.year || date.month != now.month || date.day != now.day) {
+          continue;
+        }
+        final parts = slot.split(RegExp(r'[hH:]'));
+        final start = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          int.tryParse(parts.first) ?? 0,
+          parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0,
+        );
+        if (start.isAfter(now) && start.isBefore(limit)) count++;
+      }
+      upcomingWithinHour.value = count;
+    } catch (_) {
+      upcomingWithinHour.value = 0;
     }
   }
 

@@ -496,7 +496,7 @@ class TerrainController extends GetxController {
       'pricePerHour': pricePerHour,
       'lat': lat,
       'lng': lng,
-      if (description != null) 'description': description,
+      'description': ?description,
       'features': features,
       'contactPhones': contactPhones,
       'subTerrains': subTerrains.map((s) => s.toJson()).toList(),

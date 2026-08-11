@@ -37,9 +37,53 @@ class _TerrainPhotosScreenState extends State<TerrainPhotosScreen> {
     ];
   }
 
-  Future<void> _addPhotos() async {
+  /// Galerie ou appareil photo — le design propose les deux (écran 35).
+  Future<void> _chooseSource() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        padding: EdgeInsets.fromLTRB(
+          18,
+          20,
+          18,
+          20 + MediaQuery.of(context).padding.bottom,
+        ),
+        decoration: const BoxDecoration(
+          color: kBgCard,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _SourceTile(
+              icon: PhosphorIconsRegular.camera,
+              label: 'Prendre une photo',
+              onTap: () => Get.back(result: ImageSource.camera),
+            ),
+            const SizedBox(height: 8),
+            _SourceTile(
+              icon: PhosphorIconsRegular.images,
+              label: 'Choisir dans la galerie',
+              onTap: () => Get.back(result: ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+    await _addPhotos(source);
+  }
+
+  Future<void> _addPhotos(ImageSource source) async {
     try {
-      final picked = await ImagePicker().pickMultiImage(imageQuality: 80);
+      final picker = ImagePicker();
+      final picked = source == ImageSource.camera
+          ? [
+              ?await picker.pickImage(source: ImageSource.camera, imageQuality: 80),
+            ]
+          : await picker.pickMultiImage(imageQuality: 80);
       if (picked.isEmpty) return;
       setState(() => _busy = true);
       await controller.addImages(_terrain.id, picked);
@@ -114,32 +158,40 @@ class _TerrainPhotosScreenState extends State<TerrainPhotosScreen> {
                     ),
                   ),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Photos du complexe',
-                          style: kArchivo(
-                            size: 21,
-                            weight: FontWeight.w800,
-                            color: kTextPrim,
-                            height: 1.15,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          'Glissez pour réordonner — la première est la principale.',
-                          style: kManrope(
-                            size: 12.5,
-                            weight: FontWeight.w400,
-                            color: kTextSub,
-                            height: 1.3,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      'Photos',
+                      style: kArchivo(
+                        size: 21,
+                        weight: FontWeight.w800,
+                        color: kTextPrim,
+                        height: 1.15,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _busy ? null : (_dirty ? _save : () => Get.back()),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Text(
+                        'Terminer',
+                        style: kManrope(size: 14, weight: FontWeight.w700, color: kGreen),
+                      ),
                     ),
                   ),
                 ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
+              child: Text(
+                'La première photo est celle que les joueurs voient dans les résultats de recherche. Glissez pour changer l\'ordre.',
+                style: kManrope(
+                  size: 12.5,
+                  weight: FontWeight.w400,
+                  color: kTextSub,
+                  height: 1.5,
+                ),
               ),
             ),
             Expanded(
@@ -168,14 +220,13 @@ class _TerrainPhotosScreenState extends State<TerrainPhotosScreen> {
                       ),
                     ),
             ),
-            Padding
-              (
+            Padding(
               padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
               child: Column(
                 children: [
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap: _busy ? null : _addPhotos,
+                    onTap: _busy ? null : _chooseSource,
                     child: Container(
                       height: 52,
                       alignment: Alignment.center,
@@ -186,44 +237,50 @@ class _TerrainPhotosScreenState extends State<TerrainPhotosScreen> {
                           width: 1.5,
                         ),
                       ),
-                      child: Text(
-                        '+ Ajouter des photos',
-                        style: kManrope(size: 14, weight: FontWeight.w700, color: kGreen),
-                      ),
+                      child: _busy
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    color: kGreen,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Envoi en cours…',
+                                  style: kManrope(
+                                    size: 14,
+                                    weight: FontWeight.w700,
+                                    color: kGreen,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              'Ajouter',
+                              style: kManrope(
+                                size: 14,
+                                weight: FontWeight.w700,
+                                color: kGreen,
+                              ),
+                            ),
                     ),
                   ),
-                  if (_dirty) ...[
-                    const SizedBox(height: 10),
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: _busy ? null : _save,
-                      child: Container(
-                        height: 56,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: _busy ? kGreen.withValues(alpha: 0.6) : kGreen,
-                          borderRadius: BorderRadius.circular(17),
-                        ),
-                        child: _busy
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(
-                                'Enregistrer l\'ordre',
-                                style: kManrope(
-                                  size: 15.5,
-                                  weight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                              ),
-                      ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Les complexes avec 3 photos ou plus reçoivent en moyenne deux fois plus de réservations.',
+                    textAlign: TextAlign.center,
+                    style: kManrope(
+                      size: 12,
+                      weight: FontWeight.w400,
+                      color: kTextSub,
+                      height: 1.45,
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),
@@ -278,17 +335,20 @@ class _PhotoRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isMain ? 'Photo principale' : 'Photo ${index + 1}',
-                  style: kArchivo(
-                    size: 15,
+                  isMain ? 'PHOTO PRINCIPALE' : 'PHOTO ${index + 1}',
+                  style: kManrope(
+                    size: 11,
                     weight: FontWeight.w700,
-                    color: isMain ? kGreen : kTextPrim,
+                    color: isMain ? kGreen : kTextSub,
+                    letterSpacing: 0.06 * 11,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 5),
                 Text(
-                  isMain ? 'Affichée dans la liste et la recherche' : 'Vue dans la galerie',
-                  style: kManrope(size: 12, weight: FontWeight.w400, color: kTextSub),
+                  isMain
+                      ? 'Vue par les joueurs dans la recherche'
+                      : 'Déplacer pour changer l\'ordre',
+                  style: kManrope(size: 12.5, weight: FontWeight.w500, color: kTextPrim),
                 ),
               ],
             ),
@@ -309,6 +369,40 @@ class _PhotoRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SourceTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _SourceTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(color: kBg, borderRadius: BorderRadius.circular(16)),
+        child: Row(
+          children: [
+            PhosphorIcon(icon, color: kGreen, size: 20),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: kManrope(size: 14.5, weight: FontWeight.w600, color: kTextPrim),
+            ),
+          ],
+        ),
       ),
     );
   }
