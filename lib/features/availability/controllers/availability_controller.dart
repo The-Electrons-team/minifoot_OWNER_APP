@@ -526,6 +526,55 @@ class AvailabilityController extends GetxController {
     }
   }
 
+  // ── Sélection multiple (design "Sélection multiple", écran 32) ────────────
+  // Seuls les créneaux libres ou bloqués sont sélectionnables : un créneau
+  // réservé par un joueur n'est pas modifiable par le propriétaire.
+  final isSelecting = false.obs;
+  final selectedTimes = <String>{}.obs;
+
+  void enterSelection() {
+    selectedTimes.clear();
+    isSelecting.value = true;
+  }
+
+  void exitSelection() {
+    selectedTimes.clear();
+    isSelecting.value = false;
+  }
+
+  bool isSelectable(TimeSlot slot) => !slot.isBooked;
+
+  void toggleSelection(TimeSlot slot) {
+    if (!isSelectable(slot)) return;
+    if (selectedTimes.contains(slot.time)) {
+      selectedTimes.remove(slot.time);
+    } else {
+      selectedTimes.add(slot.time);
+    }
+  }
+
+  void selectAllSelectable() {
+    selectedTimes
+      ..clear()
+      ..addAll(slots.where(isSelectable).map((slot) => slot.time));
+  }
+
+  /// Tous les créneaux choisis sont libres → l'action groupée bloque ;
+  /// sinon elle libère. Le libellé du bouton suit la même logique.
+  bool get selectionWillBlock => selectedTimes.every(
+    (time) => slots.firstWhereOrNull((slot) => slot.time == time)?.isAvailable ?? false,
+  );
+
+  Future<int> applySelection() async {
+    final times = slots
+        .where((slot) => selectedTimes.contains(slot.time))
+        .map((slot) => slot.time)
+        .toList();
+    final changed = await _bulkToggle(times);
+    exitSelection();
+    return changed;
+  }
+
   // ── Marqueurs calendrier ────────────────────────────────────────────────────
   List<SlotStatus> getEventsForDay(DateTime day) {
     if (!isSameDay(day, selectedDate.value)) return [];
