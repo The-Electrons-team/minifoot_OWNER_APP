@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/services/in_app_notification_service.dart';
+import '../../../core/services/reservation_service.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 
@@ -13,6 +15,11 @@ class NotificationItem {
   final bool isRead;
   final DateTime createdAt;
 
+  /// Réservation concernée, quand la notification en porte une : permet
+  /// d'ouvrir son détail et d'agir directement depuis la liste (écran 14).
+  final String? reservationId;
+  final String? reservationStatus;
+
   NotificationItem({
     required this.id,
     required this.title,
@@ -21,12 +28,18 @@ class NotificationItem {
     required this.time,
     required this.createdAt,
     this.isRead = false,
+    this.reservationId,
+    this.reservationStatus,
   });
+
+  /// Une demande encore en attente de décision du propriétaire.
+  bool get needsOwnerDecision => reservationStatus == 'PENDING_PAYMENT';
 
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
     final createdAt =
         DateTime.tryParse(json['createdAt']?.toString() ?? '')?.toLocal() ??
         DateTime.now();
+    final data = json['data'];
     return NotificationItem(
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? 'Notification',
@@ -35,6 +48,8 @@ class NotificationItem {
       time: _relativeTime(createdAt),
       isRead: json['read'] == true,
       createdAt: createdAt,
+      reservationId: data is Map ? data['reservationId']?.toString() : null,
+      reservationStatus: data is Map ? data['status']?.toString() : null,
     );
   }
 
@@ -47,6 +62,8 @@ class NotificationItem {
       time: time,
       createdAt: createdAt,
       isRead: isRead ?? this.isRead,
+      reservationId: reservationId,
+      reservationStatus: reservationStatus,
     );
   }
 
@@ -79,6 +96,10 @@ class NotificationItem {
 
 class NotificationsController extends GetxController {
   final _service = InAppNotificationService();
+  final _reservations = ReservationService();
+
+  /// Une action (confirmer / refuser) est en cours : empêche le double-tap.
+  final isActing = false.obs;
 
   final notifications = <NotificationItem>[].obs;
   final selectedFilter = 'all'.obs;
@@ -109,6 +130,65 @@ class NotificationsController extends GetxController {
   }
 
   int get unreadCount => notifications.where((n) => !n.isRead).length;
+
+  /// Notifications groupées par jour, dans l'ordre d'arrivée (design écran
+  /// 14 : « groupées par nature, jamais en vrac »).
+  List<(String, List<NotificationItem>)> get groupedByDay {
+    final groups = <String, List<NotificationItem>>{};
+    final order = <String>[];
+    for (final item in filteredNotifications) {
+      final label = _dayLabel(item.createdAt);
+      if (!groups.containsKey(label)) {
+        groups[label] = [];
+        order.add(label);
+      }
+      groups[label]!.add(item);
+    }
+    return order.map((label) => (label, groups[label]!)).toList();
+  }
+
+  static String _dayLabel(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(date.year, date.month, date.day);
+    final diff = today.difference(day).inDays;
+    if (diff == 0) return "AUJOURD'HUI";
+    if (diff == 1) return 'HIER';
+    return DateFormat('d MMMM', 'fr_FR').format(date).toUpperCase();
+  }
+
+  /// Confirme la réservation liée à la notification (solde encaissé sur
+  /// place). Voir ReservationsController.confirmDeposit pour le même geste
+  /// depuis le détail d'une réservation.
+  Future<void> confirmReservation(NotificationItem item) async {
+    final id = item.reservationId;
+    if (id == null || id.isEmpty || isActing.value) return;
+    isActing.value = true;
+    try {
+      await _reservations.confirmOwnerDeposit(id);
+      AppSnackbar.success('Réservation confirmée.');
+      await loadNotifications();
+    } catch (_) {
+      AppSnackbar.error('Impossible de confirmer cette réservation. Réessayez.');
+    } finally {
+      isActing.value = false;
+    }
+  }
+
+  Future<void> refuseReservation(NotificationItem item) async {
+    final id = item.reservationId;
+    if (id == null || id.isEmpty || isActing.value) return;
+    isActing.value = true;
+    try {
+      await _reservations.cancelOwnerReservation(id);
+      AppSnackbar.success('Réservation refusée.');
+      await loadNotifications();
+    } catch (_) {
+      AppSnackbar.error('Impossible de refuser cette réservation. Réessayez.');
+    } finally {
+      isActing.value = false;
+    }
+  }
 
   Future<void> loadNotifications() async {
     isLoading.value = true;

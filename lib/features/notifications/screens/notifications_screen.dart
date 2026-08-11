@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/app_states.dart';
+import '../../../core/widgets/shimmer_loading.dart' show ShimmerBox;
+import '../../reservations/screens/reservation_detail_screen.dart';
 import '../controllers/notifications_controller.dart';
 
+// Écran 14 (Notifications) du design : groupées par jour, décision possible
+// directement depuis la liste pour les demandes en attente.
 class NotificationsScreen extends GetView<NotificationsController> {
   const NotificationsScreen({super.key});
 
@@ -12,265 +16,300 @@ class NotificationsScreen extends GetView<NotificationsController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBg,
-      appBar: AppBar(
-        backgroundColor: kBg,
-        centerTitle: true,
-        title: const Text(
-          'Notifications',
-          style: TextStyle(
-            fontFamily: 'Orbitron',
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: kTextPrim,
-          ),
-        ),
-        leading: GestureDetector(
-          onTap: () => Get.back(),
-          behavior: HitTestBehavior.opaque,
-          child: const Center(
-            child: PhosphorIcon(PhosphorIcons.caretLeft,
-              color: kTextPrim,
-              size: 24,
-            ),
-          ),
-        ),
-        actions: [
-          GestureDetector(
-            onTap: () => controller.markAllRead(),
-            behavior: HitTestBehavior.opaque,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              alignment: Alignment.center,
-              child: PhosphorIcon(PhosphorIconsDuotone.checkCircle,
-                color: kGreen,
-                size: 22,
+      body: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          color: kGreen,
+          onRefresh: controller.refreshNotifications,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+                sliver: SliverToBoxAdapter(
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => Get.back(),
+                        child: const Padding(
+                          padding: EdgeInsets.only(right: 8, top: 4, bottom: 4),
+                          child: PhosphorIcon(
+                            PhosphorIconsRegular.caretLeft,
+                            size: 24,
+                            color: kTextPrim,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          'Notifications',
+                          style: kArchivo(size: 21, weight: FontWeight.w800, color: kTextPrim, height: 1.15),
+                        ),
+                      ),
+                      Obx(
+                        () => controller.unreadCount == 0
+                            ? const SizedBox.shrink()
+                            : GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: controller.markAllRead,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4),
+                                  child: Text(
+                                    'Tout lire',
+                                    style: kManrope(size: 13, weight: FontWeight.w700, color: kGreen),
+                                  ),
+                                ),
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _FilterChips(),
-          Expanded(
-            // Le RefreshIndicator était *à l'intérieur* de la branche « liste
-            // non vide » : impossible de tirer pour réessayer précisément dans
-            // les deux cas où on en a besoin, l'erreur et le vide.
-            child: RefreshIndicator(
-              color: kGreen,
-              onRefresh: controller.refreshNotifications,
-              child: Obx(() {
-                if (controller.isLoading.value &&
-                    controller.notifications.isEmpty) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: kGreen),
+              Obx(() {
+                if (controller.isLoading.value && controller.notifications.isEmpty) {
+                  return const SliverPadding(
+                    padding: EdgeInsets.fromLTRB(18, 22, 18, 24),
+                    sliver: SliverToBoxAdapter(child: _ListLoading()),
                   );
                 }
-
-                if (controller.errorMessage.value.isNotEmpty &&
-                    controller.notifications.isEmpty) {
-                  return _fullHeight(
-                    context,
-                    AppErrorState(
+                if (controller.errorMessage.value.isNotEmpty && controller.notifications.isEmpty) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _ErrorState(
                       message: controller.errorMessage.value,
-                      onRetry: controller.loadNotifications,
+                      onRetry: controller.refreshNotifications,
                     ),
                   );
                 }
-
-                final items = controller.filteredNotifications;
-                if (items.isEmpty) {
-                  return _fullHeight(context, _EmptyState());
+                final groups = controller.groupedByDay;
+                if (groups.isEmpty) {
+                  return const SliverFillRemaining(hasScrollBody: false, child: _EmptyState());
                 }
-
-                return NotificationListener<ScrollNotification>(
-                  // Charge la page suivante avant d'atteindre le bas, pour que
-                  // le défilement ne marque pas d'arrêt.
-                  onNotification: (scroll) {
-                    final metrics = scroll.metrics;
-                    if (metrics.pixels >= metrics.maxScrollExtent - 400) {
-                      controller.loadMore();
-                    }
-                    return false;
-                  },
-                  child: ListView.builder(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                    itemCount: items.length + (controller.hasMore ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index >= items.length) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 20),
-                          child: Center(
-                            child: SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: kGreen,
+                return SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 110),
+                  sliver: SliverList.builder(
+                    itemCount: groups.length,
+                    itemBuilder: (_, i) {
+                      final (label, items) = groups[i];
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.only(left: 2, top: i == 0 ? 14 : 24, bottom: 10),
+                            child: Text(
+                              label,
+                              style: kManrope(
+                                size: 12,
+                                weight: FontWeight.w700,
+                                color: kTextSub,
+                                letterSpacing: 0.1 * 12,
                               ),
                             ),
                           ),
-                        );
-                      }
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _NotificationTile(
-                          item: items[index],
-                          onTap: () => controller.markRead(items[index]),
-                        ),
+                          for (final item in items) ...[
+                            _NotificationTile(item: item),
+                            const SizedBox(height: 10),
+                          ],
+                        ],
                       );
                     },
                   ),
                 );
               }),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-// ─── Filtre toggle compact ───────────────────────────────────────────────────
+class _NotificationTile extends GetView<NotificationsController> {
+  final NotificationItem item;
 
-class _FilterChips extends GetView<NotificationsController> {
-  static const _filters = [
-    ('all', 'Tout'),
-    ('booking', 'Réserv.'),
-    ('payment', 'Paiem.'),
-    ('system', 'Sys.'),
-  ];
+  const _NotificationTile({required this.item});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
-      child: Obx(() {
-        final selected = controller.selectedFilter.value;
-        final unread = controller.unreadCount;
-        return Container(
-          decoration: BoxDecoration(
-            color: kBgSurface,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.all(3),
-          child: Row(
-            children: _filters.map((f) {
-              final isActive = selected == f.$1;
-              final label = f.$1 == 'all' && unread > 0
-                  ? '${f.$2} ($unread)'
-                  : f.$2;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => controller.setFilter(f.$1),
-                  behavior: HitTestBehavior.opaque,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isActive ? kGreen : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isActive ? Colors.white : kTextSub,
+    final (icon, iconBg, iconFg) = _visualFor(item.type);
+    final canAct = item.needsOwnerDecision && (item.reservationId ?? '').isNotEmpty;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        if (!item.isRead) controller.markRead(item);
+        final id = item.reservationId;
+        if (id != null && id.isNotEmpty) {
+          Get.to(() => const ReservationDetailScreen(), arguments: id);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: kBgCard,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(color: kTextPrim.withValues(alpha: 0.07), blurRadius: 2, offset: const Offset(0, 1)),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(13)),
+                  child: PhosphorIcon(icon, color: iconFg, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        style: kManrope(
+                          size: 14,
+                          weight: item.isRead ? FontWeight.w600 : FontWeight.w700,
+                          color: kTextPrim,
+                          height: 1.35,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 4),
+                      Text(
+                        [item.time, if (item.message.isNotEmpty) item.message].join(' · '),
+                        style: kManrope(size: 12.5, weight: FontWeight.w400, color: kTextSub, height: 1.4),
+                      ),
+                    ],
                   ),
                 ),
-              );
-            }).toList(),
-          ),
-        );
-      }),
+                if (!item.isRead)
+                  Container(
+                    width: 8,
+                    height: 8,
+                    margin: const EdgeInsets.only(left: 8, top: 6),
+                    decoration: const BoxDecoration(color: kGold, shape: BoxShape.circle),
+                  ),
+              ],
+            ),
+            if (canAct) ...[
+              const SizedBox(height: 14),
+              Obx(
+                () => Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: controller.isActing.value
+                            ? null
+                            : () => controller.confirmReservation(item),
+                        child: Container(
+                          height: 44,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: controller.isActing.value ? kGreen.withValues(alpha: 0.6) : kGreen,
+                            borderRadius: BorderRadius.circular(13),
+                          ),
+                          child: Text(
+                            'Confirmer',
+                            style: kManrope(size: 13.5, weight: FontWeight.w700, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 9),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: controller.isActing.value
+                          ? null
+                          : () => controller.refuseReservation(item),
+                      child: Container(
+                        height: 44,
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(13),
+                          border: Border.all(color: kRed.withValues(alpha: 0.35), width: 1.5),
+                        ),
+                        child: Text(
+                          'Refuser',
+                          style: kManrope(size: 13.5, weight: FontWeight.w700, color: kRed),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  static (IconData, Color, Color) _visualFor(String type) {
+    return switch (type) {
+      'booking' => (PhosphorIconsRegular.calendarCheck, kBlueLight, kBlue),
+      'payment' => (PhosphorIconsRegular.wallet, kGreenLight, kGreen),
+      'chat' => (PhosphorIconsRegular.chatCircle, kGoldLight, const Color(0xFF92400E)),
+      _ => (PhosphorIconsRegular.bell, kBg, kTextSub),
+    };
+  }
+}
+
+class _ListLoading extends StatelessWidget {
+  const _ListLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: List.generate(
+        4,
+        (_) => const Padding(
+          padding: EdgeInsets.only(bottom: 10),
+          child: ShimmerBox(width: double.infinity, height: 82, borderRadius: 20),
+        ),
+      ),
     );
   }
 }
 
-// ─── Notification tile ────────────────────────────────────────────────────────
-
-class _NotificationTile extends StatelessWidget {
-  final NotificationItem item;
-  final VoidCallback onTap;
-
-  const _NotificationTile({required this.item, required this.onTap});
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: item.isRead ? kBgCard : kGreenLight.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: item.isRead
-                ? Colors.transparent
-                : kGreen.withValues(alpha: 0.16),
-          ),
-          boxShadow: kCardShadow,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 34),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Icône dans un cercle coloré
-            _TypeIcon(type: item.type),
-            const SizedBox(width: 12),
-            // Contenu texte
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: const TextStyle(
-                      color: kTextPrim,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    item.message,
-                    style: const TextStyle(
-                      color: kTextSub,
-                      fontSize: 13,
-                      height: 1.4,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+            Container(
+              width: 88,
+              height: 88,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFEAE0),
+                borderRadius: BorderRadius.circular(30),
               ),
+              child: const PhosphorIcon(PhosphorIconsRegular.bell, color: kTextSub, size: 40),
             ),
-            const SizedBox(width: 8),
-            // Temps + indicateur non lu
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  item.time,
-                  style: const TextStyle(color: kTextLight, fontSize: 11),
-                ),
-                if (!item.isRead) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: kGreen,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ],
-              ],
+            const SizedBox(height: 22),
+            Text(
+              'Rien de neuf',
+              textAlign: TextAlign.center,
+              style: kArchivo(size: 21, weight: FontWeight.w800, color: kTextPrim, height: 1.25),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Les demandes, paiements et alertes de vos terrains arriveront ici.',
+              textAlign: TextAlign.center,
+              style: kManrope(size: 14, weight: FontWeight.w400, color: kTextSub, height: 1.6),
             ),
           ],
         ),
@@ -279,89 +318,37 @@ class _NotificationTile extends StatelessWidget {
   }
 }
 
-// ─── Icône selon le type ──────────────────────────────────────────────────────
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final Future<void> Function() onRetry;
 
-class _TypeIcon extends StatelessWidget {
-  final String type;
+  const _ErrorState({required this.message, required this.onRetry});
 
-  const _TypeIcon({required this.type});
-
-  @override
-  Widget build(BuildContext context) {
-    final (dynamic icon, Color iconColor, Color bgColor) = switch (type) {
-      'booking' => (
-        PhosphorIconsDuotone.calendarBlank,
-        kBlue,
-        kBlueLight,
-      ),
-      'payment' => (
-        PhosphorIconsDuotone.wallet,
-        kGreen,
-        kGreenLight,
-      ),
-      'chat' => (
-        PhosphorIconsDuotone.chatCircleText,
-        kGold,
-        kGoldLight,
-      ),
-      'system' => (
-        PhosphorIconsDuotone.info,
-        kTextSub,
-        kBgSurface,
-      ),
-      _ => (
-        PhosphorIconsDuotone.bell,
-        kTextSub,
-        kBgSurface,
-      ),
-    };
-
-    return Container(
-      width: 46,
-      height: 46,
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: PhosphorIcon(icon, color: iconColor, size: 22),
-    );
-  }
-}
-
-// ─── État vide ────────────────────────────────────────────────────────────────
-
-class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          PhosphorIcon(PhosphorIconsDuotone.bellSlash,
-            size: 64,
-            color: kTextLight,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Aucune notification',
-            style: TextStyle(
-              color: kTextSub,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 34),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: kManrope(size: 14, weight: FontWeight.w600, color: kTextSub, height: 1.5),
             ),
-          ),
-        ],
+            const SizedBox(height: 14),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => onRetry(),
+              child: Text(
+                'Réessayer',
+                style: kManrope(size: 14, weight: FontWeight.w700, color: kGreen),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-
-
-/// Occupe toute la hauteur disponible tout en restant défilable, pour qu'un
-/// état vide ou en erreur reste tirable vers le bas.
-Widget _fullHeight(BuildContext context, Widget child) => ListView(
-  physics: const AlwaysScrollableScrollPhysics(),
-  children: [
-    SizedBox(height: MediaQuery.sizeOf(context).height * 0.6, child: child),
-  ],
-);
