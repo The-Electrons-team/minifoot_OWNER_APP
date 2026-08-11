@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:intl/intl.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+
+import '../../../core/services/revenue_service.dart';
 import '../../../core/theme/app_theme.dart';
-import '../controllers/revenues_controller.dart';
+import '../../../core/widgets/shimmer_loading.dart' show ShimmerBox;
 import '../../reports/screens/report_screen.dart';
+import '../controllers/revenues_controller.dart';
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Screen principal — Tableau de bord revenus
-// ══════════════════════════════════════════════════════════════════════════════
-
+// Écrans 42 (Revenus & historique) et 43 (Détail d'un versement) du design.
 class RevenuesScreen extends GetView<RevenuesController> {
   const RevenuesScreen({super.key});
 
@@ -19,878 +17,248 @@ class RevenuesScreen extends GetView<RevenuesController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBg,
-      appBar: _buildAppBar(),
       body: RefreshIndicator(
         color: kGreen,
         onRefresh: controller.refreshRevenues,
         child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
           slivers: [
-            SliverToBoxAdapter(child: _buildPeriodTabs()),
-            SliverToBoxAdapter(child: _buildNotice()),
-            SliverToBoxAdapter(child: _buildKpiCards()),
-            SliverToBoxAdapter(child: _buildBarChart()),
-            SliverToBoxAdapter(child: _buildOccupancyChart()),
-            SliverToBoxAdapter(child: _buildTopPerformers()),
-            SliverToBoxAdapter(child: _buildReportButton(context)),
-            const SliverToBoxAdapter(child: SizedBox(height: 40)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── AppBar ──────────────────────────────────────────────────────────────────
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: kBgCard,
-      elevation: 0,
-      leading: IconButton(
-        onPressed: () => Get.back(),
-        icon: const Icon(
-          PhosphorIconsRegular.caretLeft,
-          color: kTextPrim,
-          size: 18,
-        ),
-      ),
-      title: const Text(
-        'Revenus',
-        style: TextStyle(
-          fontFamily: 'Orbitron',
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          color: kTextPrim,
-        ),
-      ),
-      centerTitle: true,
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Container(height: 1, color: kDivider),
-      ),
-    );
-  }
-
-  // ── Onglets Journalier / Hebdo / Mensuel ──────────────────────────────────
-  Widget _buildPeriodTabs() {
-    return Obx(
-      () => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-        child: Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: kBgCard,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: kCardShadow,
-          ),
-          child: Row(
-            children: [
-              _PeriodTab(
-                label: 'Journalier',
-                icon: PhosphorIconsRegular.calendarBlank,
-                isSelected: controller.period.value == RevenuePeriod.daily,
-                onTap: () => controller.setPeriod(RevenuePeriod.daily),
+            const SliverToBoxAdapter(child: _MonthHeader()),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(18, 20, 18, 0),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _PeriodSwitch(),
+                    const SizedBox(height: 18),
+                    const _PeriodTotal(),
+                    const SizedBox(height: 12),
+                  ],
+                ),
               ),
-              _PeriodTab(
-                label: 'Hebdo',
-                icon: PhosphorIconsRegular.calendar,
-                isSelected: controller.period.value == RevenuePeriod.weekly,
-                onTap: () => controller.setPeriod(RevenuePeriod.weekly),
-              ),
-              _PeriodTab(
-                label: 'Mensuel',
-                icon: PhosphorIconsRegular.calendarBlank,
-                isSelected: controller.period.value == RevenuePeriod.monthly,
-                onTap: () => controller.setPeriod(RevenuePeriod.monthly),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNotice() {
-    return Obx(() {
-      if (controller.isLoading.value) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: const LinearProgressIndicator(
-              minHeight: 3,
-              color: kGreen,
-              backgroundColor: kGreenLight,
             ),
-          ),
-        );
-      }
-
-      if (controller.errorMessage.value.isEmpty) {
-        return const SizedBox.shrink();
-      }
-
-      return Container(
-        margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: kRedLight,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            const Icon(PhosphorIconsRegular.info, color: kRed, size: 18),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                controller.errorMessage.value,
-                style: const TextStyle(
-                  color: kRed,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+            Obx(() {
+              if (controller.isLoading.value && controller.transactions.isEmpty) {
+                return const SliverPadding(
+                  padding: EdgeInsets.fromLTRB(18, 0, 18, 24),
+                  sliver: SliverToBoxAdapter(child: _ListLoading()),
+                );
+              }
+              final transactions = controller.transactions.take(12).toList();
+              if (transactions.isEmpty) {
+                return const SliverToBoxAdapter(child: _EmptyState());
+              }
+              return SliverPadding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                sliver: SliverList.separated(
+                  itemCount: transactions.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (_, i) => _TransactionRow(transaction: transactions[i]),
+                ),
+              );
+            }),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    Obx(
+                      () => controller.payouts.isEmpty
+                          ? const SizedBox.shrink()
+                          : _PayoutsSection(payouts: controller.payouts),
+                    ),
+                    const SizedBox(height: 6),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => Get.to(
+                        () => const ReportScreen(),
+                        arguments: {'reportType': 'revenues'},
+                      ),
+                      child: SizedBox(
+                        height: 48,
+                        child: Center(
+                          child: Text(
+                            'Voir tout l\'historique',
+                            style: kManrope(size: 14, weight: FontWeight.w700, color: kGreen),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ],
-        ),
-      );
-    });
-  }
-
-  // ── Cartes KPI ──────────────────────────────────────────────────────────────
-  Widget _buildKpiCards() {
-    return Obx(
-      () => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-        child: Column(
-          children: [
-            // Carte revenus totaux — grande
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: kGreenGradient,
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [
-                  BoxShadow(
-                    color: kGreen.withValues(alpha: 0.35),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          PhosphorIconsRegular.wallet,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        controller.periodLabel,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    '${controller.formatAmountFull(controller.totalRevenue)} F CFA',
-                    style: const TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(
-                        PhosphorIconsRegular.trendUp,
-                        color: Colors.white70,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '+12% vs période précédente',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.75),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
-
-            const SizedBox(height: 12),
-
-            // 2 petites cartes
-            Row(
-              children: [
-                Expanded(
-                  child:
-                      _KpiSmallCard(
-                            icon: PhosphorIconsRegular.calendarBlank,
-                            iconColor: kBlue,
-                            iconBg: kBlueLight,
-                            label: 'Réservations',
-                            value: '${controller.totalBookings}',
-                          )
-                          .animate()
-                          .fadeIn(duration: 400.ms, delay: 100.ms)
-                          .slideY(begin: 0.1),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child:
-                      _KpiSmallCard(
-                            icon: PhosphorIconsRegular.chartPie,
-                            iconColor: kGold,
-                            iconBg: kGoldLight,
-                            label: 'Taux moy.',
-                            value: controller.occupancyPercent,
-                          )
-                          .animate()
-                          .fadeIn(duration: 400.ms, delay: 150.ms)
-                          .slideY(begin: 0.1),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Graphique barre revenus ──────────────────────────────────────────────────
-  Widget _buildBarChart() {
-    return Obx(
-      () => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-          decoration: BoxDecoration(
-            color: kBgCard,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: kCardShadow,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: kGreenLight,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      PhosphorIconsRegular.chartBar,
-                      size: 18,
-                      color: kGreen,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'Revenus',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: kTextPrim,
-                    ),
-                  ),
-                  const Spacer(),
-                  if (controller.selectedEntry != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: kGreenLight,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${controller.selectedEntry!.label} : ${controller.formatAmountFull(controller.selectedEntry!.amount)} F',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: kGreen,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                height: 180,
-                child: controller.hasRevenueData
-                    ? BarChart(
-                        BarChartData(
-                          alignment: BarChartAlignment.spaceAround,
-                          maxY: controller.bestAmount.toDouble() * 1.25,
-                          barTouchData: BarTouchData(
-                            enabled: true,
-                            touchCallback: (event, response) {
-                              if (event is FlTapUpEvent &&
-                                  response?.spot != null) {
-                                HapticFeedback.selectionClick();
-                                controller.selectBar(
-                                  response!.spot!.touchedBarGroupIndex,
-                                );
-                              }
-                            },
-                            touchTooltipData: BarTouchTooltipData(
-                              tooltipRoundedRadius: 10,
-                              getTooltipColor: (group) => kBgCard,
-                              getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                                final entry = controller.entries[groupIndex];
-                                return BarTooltipItem(
-                                  '${controller.formatAmount(entry.amount)} F\n',
-                                  const TextStyle(
-                                    color: kGreen,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 13,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: '${entry.bookings} rés.',
-                                      style: const TextStyle(
-                                        color: kTextSub,
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                          ),
-                          titlesData: FlTitlesData(
-                            show: true,
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                getTitlesWidget: (value, meta) {
-                                  final i = value.toInt();
-                                  if (i < 0 || i >= controller.entries.length) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return Padding(
-                                    padding: const EdgeInsets.only(top: 6),
-                                    child: Text(
-                                      controller.entries[i].label,
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                        color: kTextSub,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                reservedSize: 28,
-                              ),
-                            ),
-                            leftTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 42,
-                                getTitlesWidget: (value, meta) {
-                                  if (value == 0) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return Text(
-                                    controller.formatAmount(value.toInt()),
-                                    style: const TextStyle(
-                                      fontSize: 9,
-                                      color: kTextLight,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            rightTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            topTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                          ),
-                          gridData: FlGridData(
-                            show: true,
-                            drawVerticalLine: false,
-                            horizontalInterval: (controller.bestAmount / 4)
-                                .clamp(1, double.infinity),
-                            getDrawingHorizontalLine: (value) => FlLine(
-                              color: kBorder,
-                              strokeWidth: 1,
-                              dashArray: [4, 4],
-                            ),
-                          ),
-                          borderData: FlBorderData(show: false),
-                          barGroups: controller.barGroups,
-                        ),
-                        duration: const Duration(milliseconds: 400),
-                        curve: Curves.easeInOut,
-                      )
-                    : const _EmptyRevenueChart(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Courbe taux d'occupation ─────────────────────────────────────────────────
-  Widget _buildOccupancyChart() {
-    return Obx(
-      () => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-          decoration: BoxDecoration(
-            color: kBgCard,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: kCardShadow,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: kGoldLight,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      PhosphorIconsRegular.chartLine,
-                      size: 18,
-                      color: kGold,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'Taux d\'occupation',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: kTextPrim,
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: kGoldLight,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      'Moy. ${controller.occupancyPercent}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: kGold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                height: 140,
-                child: controller.hasRevenueData
-                    ? LineChart(
-                        LineChartData(
-                          minY: 0,
-                          maxY: 100,
-                          lineBarsData: controller.occupancyLine,
-                          titlesData: FlTitlesData(
-                            show: true,
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                getTitlesWidget: (value, meta) {
-                                  final i = value.toInt();
-                                  if (i < 0 || i >= controller.entries.length) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Text(
-                                      controller.entries[i].label,
-                                      style: const TextStyle(
-                                        fontSize: 9,
-                                        color: kTextSub,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                reservedSize: 24,
-                              ),
-                            ),
-                            leftTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 32,
-                                getTitlesWidget: (value, meta) {
-                                  if (value % 25 != 0) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return Text(
-                                    '${value.toInt()}%',
-                                    style: const TextStyle(
-                                      fontSize: 9,
-                                      color: kTextLight,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            rightTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            topTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                          ),
-                          gridData: FlGridData(
-                            show: true,
-                            drawVerticalLine: false,
-                            horizontalInterval: 25,
-                            getDrawingHorizontalLine: (value) => FlLine(
-                              color: kBorder,
-                              strokeWidth: 1,
-                              dashArray: [4, 4],
-                            ),
-                          ),
-                          borderData: FlBorderData(show: false),
-                          lineTouchData: const LineTouchData(enabled: false),
-                        ),
-                        duration: const Duration(milliseconds: 400),
-                      )
-                    : const _EmptyRevenueChart(compact: true),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Top performers par terrain ───────────────────────────────────────────────
-  Widget _buildTopPerformers() {
-    return Obx(
-      () => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: kBgCard,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: kCardShadow,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: kBlueLight,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      PhosphorIconsRegular.buildings,
-                      size: 18,
-                      color: kBlue,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'Par terrain',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: kTextPrim,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (controller.terrainStats.isEmpty)
-                const _EmptyTerrainStats()
-              else
-                ...controller.terrainStats.asMap().entries.map((e) {
-                  final stat = e.value;
-                  final rank = e.key + 1;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 26,
-                              height: 26,
-                              decoration: BoxDecoration(
-                                color: rank == 1 ? kGoldLight : kBgSurface,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '#$rank',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: rank == 1 ? kGold : kTextSub,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                stat.name,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: kTextPrim,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              '${controller.formatAmountFull(stat.amount)} F',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: kTextPrim,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${(stat.rate * 100).round()}%',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: stat.rate >= 0.7 ? kGreen : kTextSub,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: stat.rate,
-                            backgroundColor: kBgSurface,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              rank == 1 ? kGold : kGreen,
-                            ),
-                            minHeight: 5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Bouton générer rapport ──────────────────────────────────────────────────
-  Widget _buildReportButton(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.mediumImpact();
-          Get.to(
-            () => const ReportScreen(),
-            arguments: {
-              'reportType': 'revenues',
-              'periodKey': controller.period.value.name,
-              'period': controller.periodLabel,
-              'totalRevenue': controller.totalRevenue,
-              'totalBookings': controller.totalBookings,
-              'occupancy': controller.occupancyPercent,
-              'entries': controller.entries,
-            },
-          );
-        },
-        child: Container(
-          height: 56,
-          decoration: BoxDecoration(
-            gradient: kGreenGradient,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: kGreen.withValues(alpha: 0.35),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                PhosphorIconsRegular.filePdf,
-                color: Colors.white,
-                size: 22,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                'Générer le rapport PDF — ${controller.periodLabel}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Widgets privés
-// ══════════════════════════════════════════════════════════════════════════════
-
-class _EmptyRevenueChart extends StatelessWidget {
-  final bool compact;
-
-  const _EmptyRevenueChart({this.compact = false});
+// ─── En-tête vert : encaissé du mois ────────────────────────────────────────
+class _MonthHeader extends GetView<RevenuesController> {
+  const _MonthHeader();
 
   @override
   Widget build(BuildContext context) {
+    final month = DateFormat('MMMM', 'fr_FR').format(DateTime.now()).toUpperCase();
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(
-        color: kBgSurface,
-        borderRadius: BorderRadius.circular(16),
+      padding: EdgeInsets.fromLTRB(22, MediaQuery.of(context).padding.top + 18, 22, 26),
+      decoration: const BoxDecoration(
+        color: kGreen,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            compact ? PhosphorIconsRegular.chartLine : PhosphorIconsRegular.chartBar,
-            color: kTextLight,
-            size: compact ? 26 : 30,
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Aucune donnée sur cette période',
-            style: TextStyle(
-              color: kTextSub,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+          Text(
+            'REVENUS ENCAISSÉS · $month',
+            style: kManrope(
+              size: 11.5,
+              weight: FontWeight.w700,
+              color: Colors.white.withValues(alpha: 0.75),
+              letterSpacing: 0.08 * 11.5,
             ),
           ),
+          const SizedBox(height: 10),
+          Obx(
+            () => Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  _thousands(controller.monthPaid.value),
+                  style: kArchivo(
+                    size: 40,
+                    weight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: -0.02 * 40,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text(
+                    'FCFA',
+                    style: kManrope(
+                      size: 14,
+                      weight: FontWeight.w600,
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Obx(() {
+            if (controller.pendingAmount.value == 0) return const SizedBox.shrink();
+            final count = controller.pendingCount.value;
+            return Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                '${_thousands(controller.pendingAmount.value)} F encore en attente de validation'
+                '${count > 0 ? ' ($count résa${count > 1 ? 's' : ''})' : ''}',
+                style: kManrope(
+                  size: 13,
+                  weight: FontWeight.w400,
+                  color: Colors.white.withValues(alpha: 0.7),
+                  height: 1.4,
+                ),
+              ),
+            );
+          }),
+          Obx(() {
+            final last = controller.payouts.isEmpty ? null : controller.payouts.first;
+            if (last == null || (last.phone ?? '').isEmpty) return const SizedBox.shrink();
+            return Container(
+              margin: const EdgeInsets.only(top: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.13),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  const PhosphorIcon(PhosphorIconsRegular.arrowsClockwise, color: Colors.white, size: 16),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Dernier versement reçu sur ${_maskPhone(last.phone!)}',
+                      style: kManrope(
+                        size: 12.5,
+                        weight: FontWeight.w500,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ],
       ),
     );
   }
+
+  static String _maskPhone(String phone) {
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    if (digits.length < 4) return phone;
+    return '•• ${digits.substring(digits.length - 4, digits.length - 2)} ${digits.substring(digits.length - 2)}';
+  }
 }
 
-class _EmptyTerrainStats extends StatelessWidget {
-  const _EmptyTerrainStats();
+// ─── Filtre Jour / Semaine / Mois ───────────────────────────────────────────
+class _PeriodSwitch extends GetView<RevenuesController> {
+  const _PeriodSwitch();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: kBgSurface,
+        color: const Color(0xFFEDE7DB),
         borderRadius: BorderRadius.circular(14),
       ),
-      child: const Text(
-        'Aucun terrain avec revenu confirmé pour le moment.',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: kTextSub,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+      child: Obx(
+        () => Row(
+          children: [
+            _tab('Jour', RevenuePeriod.daily),
+            _tab('Semaine', RevenuePeriod.weekly),
+            _tab('Mois', RevenuePeriod.monthly),
+          ],
         ),
       ),
     );
   }
-}
 
-class _PeriodTab extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _PeriodTab({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _tab(String label, RevenuePeriod value) {
+    final selected = controller.period.value == value;
     return Expanded(
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: () {
-          HapticFeedback.selectionClick();
-          onTap();
+          controller.period.value = value;
+          controller.selectedBar.value = -1;
         },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Container(
+          height: 40,
+          alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isSelected ? kGreen : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
+            color: selected ? kBgCard : Colors.transparent,
+            borderRadius: BorderRadius.circular(11),
+            boxShadow: selected
+                ? [BoxShadow(color: kTextPrim.withValues(alpha: 0.1), blurRadius: 2, offset: const Offset(0, 1))]
+                : null,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 18, color: isSelected ? Colors.white : kTextSub),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : kTextSub,
-                ),
-              ),
-            ],
+          child: Text(
+            label,
+            style: kManrope(
+              size: 13,
+              weight: FontWeight.w700,
+              color: selected ? kTextPrim : kTextSub,
+            ),
           ),
         ),
       ),
@@ -898,57 +266,146 @@ class _PeriodTab extends StatelessWidget {
   }
 }
 
-class _KpiSmallCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final Color iconBg;
-  final String label;
-  final String value;
-
-  const _KpiSmallCard({
-    required this.icon,
-    required this.iconColor,
-    required this.iconBg,
-    required this.label,
-    required this.value,
-  });
+class _PeriodTotal extends GetView<RevenuesController> {
+  const _PeriodTotal();
 
   @override
   Widget build(BuildContext context) {
+    return Obx(() {
+      final entries = controller.entries;
+      final total = controller.totalRevenue;
+      // Variation vs la période précédente, uniquement quand les deux
+      // existent : un « +100 % » sorti d'une seule valeur n'informe personne.
+      int? delta;
+      if (entries.length >= 2) {
+        final previous = entries[entries.length - 2].amount;
+        final current = entries.last.amount;
+        if (previous > 0) {
+          delta = (((current - previous) / previous) * 100).round();
+        }
+      }
+
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ENCAISSÉ · ${controller.periodLabel.toUpperCase()}',
+                  style: kManrope(
+                    size: 11,
+                    weight: FontWeight.w600,
+                    color: kTextSub,
+                    letterSpacing: 0.06 * 11,
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  '${_thousands(total)} F',
+                  style: kArchivo(size: 26, weight: FontWeight.w800, color: kTextPrim),
+                ),
+              ],
+            ),
+          ),
+          if (delta != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: delta >= 0 ? kGreenLight : kRedLight,
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: Text(
+                '${delta >= 0 ? '+' : ''}$delta %',
+                style: kManrope(
+                  size: 12,
+                  weight: FontWeight.w700,
+                  color: delta >= 0 ? const Color(0xFF00552C) : kRed,
+                ),
+              ),
+            ),
+        ],
+      );
+    });
+  }
+}
+
+// ─── Ligne de transaction ───────────────────────────────────────────────────
+class _TransactionRow extends StatelessWidget {
+  final OwnerTransaction transaction;
+
+  const _TransactionRow({required this.transaction});
+
+  @override
+  Widget build(BuildContext context) {
+    final credited = transaction.status == 'paid';
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: kBgCard,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: kCardShadow,
+        boxShadow: [
+          BoxShadow(color: kTextPrim.withValues(alpha: 0.07), blurRadius: 2, offset: const Offset(0, 1)),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: iconBg,
-              borderRadius: BorderRadius.circular(12),
+              color: credited ? kGreenLight : kGoldLight,
+              borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(icon, color: iconColor, size: 22),
+            child: PhosphorIcon(
+              PhosphorIconsBold.plus,
+              color: credited ? kGreen : const Color(0xFF92400E),
+              size: 14,
+            ),
           ),
           const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  [transaction.client, transaction.terrain]
+                      .where((e) => e.isNotEmpty)
+                      .join(' · '),
+                  style: kManrope(size: 13.5, weight: FontWeight.w600, color: kTextPrim, height: 1.3),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  transaction.dateLabel,
+                  style: kManrope(size: 12, weight: FontWeight.w400, color: kTextSub, height: 1.3),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: kTextPrim,
-                  letterSpacing: -0.5,
+                '+${_thousands(transaction.amount)}',
+                style: kArchivo(
+                  size: 14,
+                  weight: FontWeight.w700,
+                  color: credited ? kGreen : kTextPrim,
                 ),
               ),
+              const SizedBox(height: 5),
               Text(
-                label,
-                style: const TextStyle(fontSize: 11, color: kTextSub),
+                credited ? 'CRÉDITÉ' : 'EN ATTENTE',
+                style: kManrope(
+                  size: 10,
+                  weight: FontWeight.w700,
+                  color: credited ? const Color(0xFF00552C) : const Color(0xFF92400E),
+                ),
               ),
             ],
           ),
@@ -956,4 +413,309 @@ class _KpiSmallCard extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─── Versements reçus (écran 43 en feuille) ─────────────────────────────────
+class _PayoutsSection extends StatelessWidget {
+  final List<OwnerPayout> payouts;
+
+  const _PayoutsSection({required this.payouts});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 2, bottom: 10, top: 8),
+          child: Text(
+            'VERSEMENTS REÇUS',
+            style: kManrope(
+              size: 13,
+              weight: FontWeight.w700,
+              color: kTextPrim,
+              letterSpacing: 0.09 * 13,
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: kBgCard,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(color: kTextPrim.withValues(alpha: 0.07), blurRadius: 2, offset: const Offset(0, 1)),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              for (var i = 0; i < payouts.length; i++) ...[
+                if (i > 0)
+                  Container(
+                    height: 1,
+                    margin: const EdgeInsets.only(left: 16),
+                    color: kTextPrim.withValues(alpha: 0.07),
+                  ),
+                _PayoutRow(payout: payouts[i]),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PayoutRow extends StatelessWidget {
+  final OwnerPayout payout;
+
+  const _PayoutRow({required this.payout});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (_) => _PayoutSheet(payout: payout),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    payout.paidAt == null
+                        ? 'Versement'
+                        : 'Versement du ${DateFormat('d MMMM', 'fr_FR').format(payout.paidAt!)}',
+                    style: kManrope(size: 13.5, weight: FontWeight.w600, color: kTextPrim, height: 1.3),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${payout.reservationCount} réservation${payout.reservationCount > 1 ? 's' : ''}',
+                    style: kManrope(size: 12, weight: FontWeight.w400, color: kTextSub, height: 1.3),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              '${_thousands(payout.netAmount)} F',
+              style: kArchivo(size: 14, weight: FontWeight.w700, color: kTextPrim),
+            ),
+            const SizedBox(width: 8),
+            const PhosphorIcon(PhosphorIconsRegular.caretRight, color: kTextLight, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PayoutSheet extends StatelessWidget {
+  final OwnerPayout payout;
+
+  const _PayoutSheet({required this.payout});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(22, 24, 22, 28 + MediaQuery.of(context).padding.bottom),
+      decoration: const BoxDecoration(
+        color: kBg,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            payout.paidAt == null
+                ? 'VERSEMENT'
+                : 'VERSEMENT DU ${DateFormat('d MMMM', 'fr_FR').format(payout.paidAt!).toUpperCase()}',
+            style: kManrope(
+              size: 11.5,
+              weight: FontWeight.w700,
+              color: kTextSub,
+              letterSpacing: 0.08 * 11.5,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                _thousands(payout.netAmount),
+                style: kArchivo(size: 34, weight: FontWeight.w800, color: kTextPrim),
+              ),
+              const SizedBox(width: 7),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 5),
+                child: Text(
+                  'FCFA',
+                  style: kManrope(size: 13, weight: FontWeight.w600, color: kTextSub),
+                ),
+              ),
+            ],
+          ),
+          if ((payout.phone ?? '').isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Reçu sur ${payout.phone}',
+              style: kManrope(size: 13, weight: FontWeight.w500, color: kTextSub),
+            ),
+          ],
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(color: kBgCard, borderRadius: BorderRadius.circular(20)),
+            child: Column(
+              children: [
+                _Line(
+                  label: '${payout.reservationCount} réservation${payout.reservationCount > 1 ? 's' : ''} encaissée${payout.reservationCount > 1 ? 's' : ''}',
+                  value: _thousands(payout.grossAmount),
+                ),
+                _Line(label: 'Commission MiniFoot', value: '− ${_thousands(payout.platformFee)}'),
+                _Line(label: 'Frais de transfert', value: '− ${_thousands(payout.transferFee)}'),
+                _Line(label: 'Net versé', value: _thousands(payout.netAmount), strong: true, last: true),
+              ],
+            ),
+          ),
+          if (payout.periodStart != null && payout.periodEnd != null) ...[
+            const SizedBox(height: 18),
+            Text(
+              'PÉRIODE COUVERTE',
+              style: kManrope(
+                size: 11,
+                weight: FontWeight.w600,
+                color: kTextSub,
+                letterSpacing: 0.06 * 11,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${DateFormat('d', 'fr_FR').format(payout.periodStart!)} → ${DateFormat('d MMMM yyyy', 'fr_FR').format(payout.periodEnd!)}',
+              style: kArchivo(size: 15, weight: FontWeight.w700, color: kTextPrim),
+            ),
+          ],
+          const SizedBox(height: 10),
+          Text(
+            'Référence ${payout.reference}',
+            style: kManrope(size: 12.5, weight: FontWeight.w400, color: kTextSub),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Line extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool strong;
+  final bool last;
+
+  const _Line({
+    required this.label,
+    required this.value,
+    this.strong = false,
+    this.last = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        border: last ? null : Border(bottom: BorderSide(color: kTextPrim.withValues(alpha: 0.07))),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: kManrope(
+                size: 13.5,
+                weight: strong ? FontWeight.w700 : FontWeight.w500,
+                color: strong ? kTextPrim : kTextSub,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: kArchivo(size: strong ? 17 : 14, weight: FontWeight.w700, color: kTextPrim),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ListLoading extends StatelessWidget {
+  const _ListLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: List.generate(
+        4,
+        (_) => const Padding(
+          padding: EdgeInsets.only(bottom: 10),
+          child: ShimmerBox(width: double.infinity, height: 66, borderRadius: 18),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(34, 40, 34, 20),
+      child: Column(
+        children: [
+          Container(
+            width: 88,
+            height: 88,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFEAE0),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: const PhosphorIcon(PhosphorIconsRegular.wallet, color: kTextSub, size: 40),
+          ),
+          const SizedBox(height: 22),
+          Text(
+            'Aucun encaissement',
+            textAlign: TextAlign.center,
+            style: kArchivo(size: 21, weight: FontWeight.w800, color: kTextPrim, height: 1.25),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Les paiements de vos joueurs apparaîtront ici après le check-in.',
+            textAlign: TextAlign.center,
+            style: kManrope(size: 14, weight: FontWeight.w400, color: kTextSub, height: 1.6),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _thousands(int value) {
+  final s = value.toString();
+  final buffer = StringBuffer();
+  for (var i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) buffer.write(' ');
+    buffer.write(s[i]);
+  }
+  return buffer.toString();
 }

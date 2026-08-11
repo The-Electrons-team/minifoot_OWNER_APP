@@ -1,6 +1,58 @@
-import 'package:intl/intl.dart';
+import 'dart:convert';
 
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../config/app_config.dart';
 import 'reservation_service.dart';
+
+/// Un versement reçu par le propriétaire (design « Détail d'un versement »,
+/// écran 43). Reconstitué par le backend depuis les paiements virés ensemble.
+class OwnerPayout {
+  final String reference;
+  final String? phone;
+  final DateTime? paidAt;
+  final int reservationCount;
+  final int grossAmount;
+  final int platformFee;
+  final int transferFee;
+  final int netAmount;
+  final DateTime? periodStart;
+  final DateTime? periodEnd;
+
+  const OwnerPayout({
+    required this.reference,
+    this.phone,
+    this.paidAt,
+    required this.reservationCount,
+    required this.grossAmount,
+    required this.platformFee,
+    required this.transferFee,
+    required this.netAmount,
+    this.periodStart,
+    this.periodEnd,
+  });
+
+  factory OwnerPayout.fromJson(Map<String, dynamic> json) => OwnerPayout(
+    reference: (json['reference'] ?? '').toString(),
+    phone: json['phone']?.toString(),
+    paidAt: DateTime.tryParse(json['paidAt']?.toString() ?? '')?.toLocal(),
+    reservationCount: _asInt(json['reservationCount']),
+    grossAmount: _asInt(json['grossAmount']),
+    platformFee: _asInt(json['platformFee']),
+    transferFee: _asInt(json['transferFee']),
+    netAmount: _asInt(json['netAmount']),
+    periodStart: DateTime.tryParse(json['periodStart']?.toString() ?? '')?.toLocal(),
+    periodEnd: DateTime.tryParse(json['periodEnd']?.toString() ?? '')?.toLocal(),
+  );
+
+  static int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+}
 
 class OwnerTransaction {
   final String id;
@@ -78,6 +130,32 @@ class OwnerRevenueData {
 
 class RevenueService {
   final _reservationService = ReservationService();
+
+  /// Versements déjà reçus. Échec silencieux : l'écran Revenus reste
+  /// utilisable même si cet historique n'est pas disponible.
+  Future<List<OwnerPayout>> getPayoutHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(AppConfig.tokenKey) ?? '';
+    final response = await http
+        .get(
+          AppConfig.api('/owner/payout/history'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        )
+        .timeout(AppConfig.requestTimeout);
+
+    if (response.statusCode != 200) {
+      throw Exception('Erreur historique versements: ${response.body}');
+    }
+    final body = jsonDecode(response.body);
+    if (body is! List) return const [];
+    return body
+        .whereType<Map<String, dynamic>>()
+        .map(OwnerPayout.fromJson)
+        .toList();
+  }
 
   Future<OwnerRevenueData> getOwnerRevenueData() async {
     final rawReservations = await _reservationService.getAllOwnerReservations();

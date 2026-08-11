@@ -45,6 +45,13 @@ class RevenuesController extends GetxController {
   final monthlyData = <RevenueEntry>[].obs;
   final terrainStats = <TerrainRevenueStat>[].obs;
 
+  // ── Écran 42 : encaissements du mois et transactions ─────────────────────
+  final transactions = <OwnerTransaction>[].obs;
+  final monthPaid = 0.obs;
+  final pendingAmount = 0.obs;
+  final pendingCount = 0.obs;
+  final payouts = <OwnerPayout>[].obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -60,11 +67,24 @@ class RevenuesController extends GetxController {
       weeklyData.value = data.weeklyEntries.map(_fromServiceEntry).toList();
       monthlyData.value = data.monthlyEntries.map(_fromServiceEntry).toList();
       terrainStats.value = data.terrainStats;
+      transactions.value = data.transactions;
+      monthPaid.value = data.monthPaid;
+      pendingAmount.value = data.pendingAmount;
+      pendingCount.value = data.transactions
+          .where((tx) => tx.status == 'pending')
+          .length;
     } catch (_) {
       errorMessage.value =
           'Impossible de charger les revenus. Vérifiez votre connexion.';
     } finally {
       isLoading.value = false;
+    }
+    // L'historique des versements est secondaire : son échec ne doit pas
+    // masquer les revenus déjà chargés.
+    try {
+      payouts.value = await _service.getPayoutHistory();
+    } catch (_) {
+      payouts.clear();
     }
   }
 
