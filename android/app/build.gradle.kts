@@ -15,8 +15,11 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+fun signingValue(propertyName: String, environmentName: String): String? =
+    keystoreProperties[propertyName] as String? ?: System.getenv(environmentName)
+
 android {
-    namespace = "com.electrons.mini_foot_owner_flutter"
+    namespace = "com.electrons.minifootowner"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
@@ -30,8 +33,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.electrons.mini_foot_owner_flutter"
+        applicationId = "com.electrons.minifootowner"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -42,10 +44,10 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String?
-            keyPassword = keystoreProperties["keyPassword"] as String?
-            storeFile = keystoreProperties["storeFile"]?.let { file(it as String) }
-            storePassword = keystoreProperties["storePassword"] as String?
+            keyAlias = signingValue("keyAlias", "MINIFOOT_UPLOAD_KEY_ALIAS")
+            keyPassword = signingValue("keyPassword", "MINIFOOT_UPLOAD_KEY_PASSWORD")
+            storeFile = signingValue("storeFile", "MINIFOOT_UPLOAD_STORE_FILE")?.let { file(it) }
+            storePassword = signingValue("storePassword", "MINIFOOT_UPLOAD_STORE_PASSWORD")
         }
     }
 

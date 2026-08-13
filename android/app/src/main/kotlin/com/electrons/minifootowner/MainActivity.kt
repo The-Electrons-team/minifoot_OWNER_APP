@@ -1,4 +1,4 @@
-package com.electrons.mini_foot_owner_flutter
+package com.electrons.minifootowner
 
 import io.flutter.embedding.android.FlutterActivity
 
