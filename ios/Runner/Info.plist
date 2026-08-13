@@ -26,6 +26,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>MiniFoot utilise votre position pour placer votre terrain sur la carte.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
