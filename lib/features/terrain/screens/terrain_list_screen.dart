@@ -206,50 +206,50 @@ class TerrainListScreen extends GetView<TerrainController> {
                       return false;
                     },
                     child: ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 110),
-                    physics: const AlwaysScrollableScrollPhysics(
-                      parent: BouncingScrollPhysics(),
-                    ),
-                    children: List.generate(controller.terrains.length, (
-                      index,
-                    ) {
-                      final terrain = controller.terrains[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child:
-                            _TerrainCard(
-                              onTap: () => controller.goToDetail(terrain),
-                              terrain: terrain,
-                              onToggle: () =>
-                                  controller.toggleStatus(terrain.id),
-                              onEdit: () => controller.goToForm(terrain),
-                              onDelete: () =>
-                                  controller.deleteConfirm(terrain.id),
-                            ).animate().fadeIn(
-                              duration: 350.ms,
-                              delay: AppMotion.stagger(index, step: 70),
-                            ),
-                      );
-                    })
-                      ..addAll(
-                        controller.hasMore
-                            ? const [
-                                Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 20),
-                                  child: Center(
-                                    child: SizedBox(
-                                      width: 22,
-                                      height: 22,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: kGreen,
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 110),
+                      physics: const AlwaysScrollableScrollPhysics(
+                        parent: BouncingScrollPhysics(),
+                      ),
+                      children:
+                          List.generate(controller.terrains.length, (index) {
+                            final terrain = controller.terrains[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child:
+                                  _TerrainCard(
+                                    onTap: () => controller.goToDetail(terrain),
+                                    terrain: terrain,
+                                    onToggle: () =>
+                                        controller.toggleStatus(terrain.id),
+                                    onEdit: () => controller.goToForm(terrain),
+                                    onDelete: () =>
+                                        controller.deleteConfirm(terrain.id),
+                                  ).animate().fadeIn(
+                                    duration: 350.ms,
+                                    delay: AppMotion.stagger(index, step: 70),
+                                  ),
+                            );
+                          })..addAll(
+                            controller.hasMore
+                                ? const [
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 20,
+                                      ),
+                                      child: Center(
+                                        child: SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: kGreen,
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ),
-                              ]
-                            : const <Widget>[],
-                      ),
+                                  ]
+                                : const <Widget>[],
+                          ),
                     ),
                   );
                 }),
@@ -337,11 +337,12 @@ class TerrainListScreen extends GetView<TerrainController> {
             backgroundColor: kGreen,
             foregroundColor: Colors.white,
             elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-            ),
           ),
-          icon: const Icon(PhosphorIconsLight.plus, size: 20, color: Colors.white),
+          icon: const Icon(
+            PhosphorIconsLight.plus,
+            size: 20,
+            color: Colors.white,
+          ),
           label: const Text(
             'Ajouter un complexe',
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
@@ -447,9 +448,7 @@ class _FilterChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: selected ? kGreen : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: selected ? kGreen : kBorder,
-        ),
+        border: Border.all(color: selected ? kGreen : kBorder),
       ),
       child: Material(
         color: Colors.transparent,
@@ -771,15 +770,11 @@ class _MiniTerrainChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = miniTerrain.isActive
-        ? kGreen
-        : kTextLight;
+    final color = miniTerrain.isActive ? kGreen : kTextLight;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: miniTerrain.isActive
-            ? kGreenLight
-            : const Color(0xFFF3F4F6),
+        color: miniTerrain.isActive ? kGreenLight : const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: color.withValues(alpha: 0.22)),
       ),

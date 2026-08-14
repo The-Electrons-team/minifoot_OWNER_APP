@@ -8,39 +8,41 @@ import 'app_tokens.dart';
 export 'app_tokens.dart';
 
 // ─── Palette harmonisée avec l'app client ───────────────────────────────────
-const Color kBg        = Color(0xFFF5F0E8);   // fond beige chaud (identique client)
-const Color kBgCard    = Color(0xFFFFFFFF);   // cartes blanches
-const Color kBgSurface = Color(0xFFF0EBE3);   // surface inputs (beige plus clair)
-const Color kGreen     = Color(0xFF006F39);   // vert principal (identique client)
-const Color kGreenDark = Color(0xFF00C264);   // vert clair pour dark mode/accents
-const Color kGreenDim  = Color(0xFF005A2E);   // vert foncé
-const Color kGreenLight= Color(0xFFE8F5E9);   // vert très clair (badges, fonds)
-const Color kGold      = Color(0xFFF59E0B);   // or/revenus
-const Color kGoldLight = Color(0xFFFEF3C7);   // or clair (badge fond)
-const Color kRed       = Color(0xFFEF4444);   // danger
-const Color kRedLight  = Color(0xFFFEE2E2);   // danger clair (badge fond)
-const Color kBlue      = Color(0xFF1565C0);   // info (identique client)
-const Color kBlueLight = Color(0xFFDBEAFE);   // info clair
-const Color kOrange    = Color(0xFFE65100);   // orange accent
-const Color kTextPrim  = Color(0xFF1A1A1A);   // texte principal — 15,3:1 sur kBg
+const Color kBg = Color(0xFFF5F0E8); // fond beige chaud (identique client)
+const Color kBgCard = Color(0xFFFFFFFF); // cartes blanches
+const Color kBgSurface = Color(0xFFF0EBE3); // surface inputs (beige plus clair)
+const Color kGreen = Color(0xFF006F39); // vert principal (identique client)
+const Color kGreenDark = Color(0xFF00C264); // vert clair pour dark mode/accents
+const Color kGreenDim = Color(0xFF005A2E); // vert foncé
+const Color kGreenLight = Color(0xFFE8F5E9); // vert très clair (badges, fonds)
+const Color kGold = Color(0xFFF59E0B); // or/revenus
+const Color kGoldLight = Color(0xFFFEF3C7); // or clair (badge fond)
+const Color kRed = Color(0xFFEF4444); // danger
+const Color kRedLight = Color(0xFFFEE2E2); // danger clair (badge fond)
+const Color kBlue = Color(0xFF1565C0); // info (identique client)
+const Color kBlueLight = Color(0xFFDBEAFE); // info clair
+const Color kOrange = Color(0xFFE65100); // orange accent
+const Color kTextPrim = Color(0xFF1A1A1A); // texte principal — 15,3:1 sur kBg
 // Les deux niveaux secondaires ont été assombris pour passer WCAG AA (4,5:1)
 // sur kBg comme sur kBgSurface. Les valeurs d'origine (#6B7280 et #9CA3AF)
 // tombaient à 4,26:1 et 2,24:1 : illisibles au soleil, et #9CA3AF servait de
 // couleur par défaut à *tous* les placeholders. Voir test/theme_contrast_test.dart.
-const Color kTextSub   = Color(0xFF4B5563);   // texte secondaire — 6,66:1 sur kBg
-const Color kTextLight = Color(0xFF5F6672);   // texte léger, placeholders — 5,10:1
+const Color kTextSub = Color(0xFF4B5563); // texte secondaire — 6,66:1 sur kBg
+const Color kTextLight = Color(
+  0xFF5F6672,
+); // texte léger, placeholders — 5,10:1
 // Or lisible en texte sur fond clair : kGold (#F59E0B) ne fait que 2,15:1 avec
 // du blanc, il ne doit servir que de remplissage ou d'accent.
-const Color kGoldDeep  = Color(0xFFB45309);   // 5,02:1 avec du blanc
-const Color kBorder    = Color(0xFFE5E0D8);   // bordures beige
-const Color kDivider   = Color(0xFFF0EBE3);   // séparateurs
+const Color kGoldDeep = Color(0xFFB45309); // 5,02:1 avec du blanc
+const Color kBorder = Color(0xFFE5E0D8); // bordures beige
+const Color kDivider = Color(0xFFF0EBE3); // séparateurs
 
 // ─── Couleurs de marque des moyens de paiement ──────────────────────────────
 // Imposées par les opérateurs : elles ne suivent pas la palette et ne doivent
 // pas être « harmonisées ». Nommées ici pour cesser d'être recopiées à la main.
-const Color kBrandWave        = Color(0xFF00B0F0);
+const Color kBrandWave = Color(0xFF00B0F0);
 const Color kBrandOrangeMoney = Color(0xFFFF6D00);
-const Color kBrandYasMoney    = Color(0xFFFFD100);
+const Color kBrandYasMoney = Color(0xFFFFD100);
 
 // ─── Ombres (style client) ──────────────────────────────────────────────────
 List<BoxShadow> get kCardShadow => [
@@ -310,7 +312,8 @@ ThemeData get appTheme => ThemeData(
 
   switchTheme: SwitchThemeData(
     thumbColor: WidgetStateProperty.resolveWith(
-      (states) => states.contains(WidgetState.selected) ? Colors.white : kBgCard,
+      (states) =>
+          states.contains(WidgetState.selected) ? Colors.white : kBgCard,
     ),
     trackColor: WidgetStateProperty.resolveWith(
       (states) => states.contains(WidgetState.selected) ? kGreen : kBorder,
@@ -325,3 +328,27 @@ ThemeData get appTheme => ThemeData(
   dividerColor: kDivider,
   dividerTheme: const DividerThemeData(color: kDivider, thickness: 1),
 );
+
+/// Décoration partagée pour les petites surfaces qui ne sont pas des cartes
+/// complètes (indicateurs, badges, sélecteurs et champs composés).
+Decoration appSurfaceDecoration({
+  Color? color,
+  DecorationImage? image,
+  BoxBorder? border,
+  BorderRadiusGeometry? borderRadius,
+  List<BoxShadow>? boxShadow,
+  Gradient? gradient,
+  BlendMode? backgroundBlendMode,
+  BoxShape shape = BoxShape.rectangle,
+}) {
+  return BoxDecoration(
+    color: color,
+    image: image,
+    border: border,
+    borderRadius: borderRadius,
+    boxShadow: boxShadow,
+    gradient: gradient,
+    backgroundBlendMode: backgroundBlendMode,
+    shape: shape,
+  );
+}

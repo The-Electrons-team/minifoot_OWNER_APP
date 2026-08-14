@@ -75,7 +75,9 @@ class _PricingPeriodDraft {
   String? get validationError {
     final start = startCtrl.text.trim();
     final end = endCtrl.text.trim();
-    final label = labelCtrl.text.trim().isEmpty ? 'une plage tarifaire' : '« ${labelCtrl.text.trim()} »';
+    final label = labelCtrl.text.trim().isEmpty
+        ? 'une plage tarifaire'
+        : '« ${labelCtrl.text.trim()} »';
 
     final price = int.tryParse(priceCtrl.text.trim());
     if (price == null || price <= 0) {
@@ -193,8 +195,7 @@ class _SubTerrainDraft {
     final idsByDivision = <String, String>{};
     for (final model in models) {
       if (model.id == null || model.id!.isEmpty) continue;
-      idsByDivision['${model.divisionType}:${model.divisionIndex}'] =
-          model.id!;
+      idsByDivision['${model.divisionType}:${model.divisionIndex}'] = model.id!;
     }
     final periods = <_PricingPeriodDraft>[
       ...?full?.pricingPeriods.map(
@@ -260,8 +261,12 @@ class _SubTerrainDraft {
     if (selectedFormats.isEmpty) return null;
     if (pricingPeriods.isEmpty) return null;
     if (pricingPeriods.any((period) => period.toModel() == null)) return null;
-    final hasFull = pricingPeriods.any((period) => period.target.value == 'FULL');
-    final hasHalf = pricingPeriods.any((period) => period.target.value == 'HALF');
+    final hasFull = pricingPeriods.any(
+      (period) => period.target.value == 'FULL',
+    );
+    final hasHalf = pricingPeriods.any(
+      (period) => period.target.value == 'HALF',
+    );
     if (!hasFull && !hasHalf) return null;
     final group =
         divisionGroup ??
@@ -301,12 +306,16 @@ class _SubTerrainDraft {
     final units = <SubTerrainModel>[];
     if (hasFull) {
       final periods = pricingPeriodsFor('FULL');
-      final price = periods.isEmpty ? defaultPricePerHour : periods.first.pricePerHour;
+      final price = periods.isEmpty
+          ? defaultPricePerHour
+          : periods.first.pricePerHour;
       units.add(unit('Terrain complet', 'FULL', 0, price, periods));
     }
     if (hasHalf) {
       final periods = pricingPeriodsFor('HALF');
-      final price = periods.isEmpty ? (defaultPricePerHour / 2).ceil() : periods.first.pricePerHour;
+      final price = periods.isEmpty
+          ? (defaultPricePerHour / 2).ceil()
+          : periods.first.pricePerHour;
       units
         ..add(unit('Demi terrain 1', 'HALF', 1, price, periods))
         ..add(unit('Demi terrain 2', 'HALF', 2, price, periods));
@@ -414,7 +423,6 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
     'Gazon naturel',
     'Terre battue',
   ];
-  static const _allCapacities = ['5v5', '7v7', '11v11'];
   static const _miniTerrainTypes = ['5v5', '7v7', '9v9', '11v11'];
   static const _dayLabels = {
     1: 'Lun',
@@ -488,13 +496,16 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
     // Pour un existant, on re-géolocalise si l'adresse stockée ressemble
     // à l'ancienne valeur de fallback ou contient des coordonnées.
     final storedAddress = _addressCtrl.text.trim();
-    final needsGeocode = !_isEditing ||
+    final needsGeocode =
+        !_isEditing ||
         storedAddress.isEmpty ||
         storedAddress.toLowerCase().contains('actuelle') ||
         storedAddress.toLowerCase().contains('détectée') ||
         RegExp(r'^\d+\.\d+').hasMatch(storedAddress);
     if (needsGeocode) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _useCurrentLocation());
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _useCurrentLocation(),
+      );
     }
   }
 
@@ -529,7 +540,8 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
         final data = jsonDecode(res.body);
         final addr = data['address'] as Map<String, dynamic>? ?? {};
         // Priorité : sous-quartier → quartier → arrondissement → ville
-        final commune = addr['suburb']?.toString() ??
+        final commune =
+            addr['suburb']?.toString() ??
             addr['neighbourhood']?.toString() ??
             addr['quarter']?.toString() ??
             addr['city_district']?.toString() ??
@@ -576,7 +588,9 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        AppSnackbar.warning('GPS désactivé. Activez la localisation sur votre appareil.');
+        AppSnackbar.warning(
+          'GPS désactivé. Activez la localisation sur votre appareil.',
+        );
         await Geolocator.openLocationSettings();
         _isLocating.value = false;
         return;
@@ -591,7 +605,9 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
         }
       }
       if (perm == LocationPermission.deniedForever) {
-        AppSnackbar.warning('Localisation bloquée. Activez-la dans les réglages de l\'application.');
+        AppSnackbar.warning(
+          'Localisation bloquée. Activez-la dans les réglages de l\'application.',
+        );
         await Geolocator.openAppSettings();
         _isLocating.value = false;
         return;
@@ -752,7 +768,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
         top: false,
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-          decoration: BoxDecoration(
+          decoration: appSurfaceDecoration(
             color: Colors.white,
             border: const Border(top: BorderSide(color: kBgSurface)),
             boxShadow: [
@@ -775,16 +791,10 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
     final displayIndex = _step.value == 3
         ? 2
         : _step.value > 3
-            ? _step.value - 1
-            : _step.value;
+        ? _step.value - 1
+        : _step.value;
     final current = displayIndex + 1;
-    final titles = [
-      'Infos',
-      'Photos',
-      'Terrains',
-      'Terrain',
-      'Résumé',
-    ];
+    final titles = ['Infos', 'Photos', 'Terrains', 'Terrain', 'Résumé'];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -812,7 +822,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                   child: Container(
                     height: 5,
                     margin: EdgeInsets.only(right: index == 3 ? 0 : 6),
-                    decoration: BoxDecoration(
+                    decoration: appSurfaceDecoration(
                       color: active ? kGreen : kBorder,
                       borderRadius: BorderRadius.circular(999),
                     ),
@@ -835,18 +845,10 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
     );
   }
 
-  Widget _buildCurrentStep() {
-    return _buildStepContent(_step.value);
-  }
-
   Widget _buildStepContent(int step) {
     switch (step) {
       case 0:
-        return Column(
-          children: [
-            _buildInfoSection(),
-          ],
-        );
+        return Column(children: [_buildInfoSection()]);
       case 1:
         return Column(
           children: [
@@ -949,10 +951,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
       }
 
       final index = (_editingTerrainIndex.value ?? 0)
-          .clamp(
-        0,
-        _miniTerrains.length - 1,
-      )
+          .clamp(0, _miniTerrains.length - 1)
           .toInt();
       final terrain = _miniTerrains[index];
       return _buildMiniTerrainCard(terrain, index);
@@ -970,12 +969,15 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
       children: [
         _buildReviewComplexeCard(equipments),
         const SizedBox(height: 16),
-        ...List.generate(_miniTerrains.length, (i) => Padding(
-          padding: EdgeInsets.only(
-            bottom: i == _miniTerrains.length - 1 ? 0 : 14,
+        ...List.generate(
+          _miniTerrains.length,
+          (i) => Padding(
+            padding: EdgeInsets.only(
+              bottom: i == _miniTerrains.length - 1 ? 0 : 14,
+            ),
+            child: _buildReviewTerrainCard(_miniTerrains[i], i),
           ),
-          child: _buildReviewTerrainCard(_miniTerrains[i], i),
-        )),
+        ),
       ],
     );
   }
@@ -1006,7 +1008,9 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
           children: [
             Expanded(
               child: Text(
-                _nameCtrl.text.trim().isEmpty ? 'Sans nom' : _nameCtrl.text.trim(),
+                _nameCtrl.text.trim().isEmpty
+                    ? 'Sans nom'
+                    : _nameCtrl.text.trim(),
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
@@ -1017,13 +1021,17 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
+              decoration: appSurfaceDecoration(
                 color: kGreenLight,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
                 'Actif',
-                style: TextStyle(color: kGreen, fontSize: 11, fontWeight: FontWeight.w800),
+                style: TextStyle(
+                  color: kGreen,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ],
@@ -1039,7 +1047,9 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                 child: Text(
                   _commune.value.trim(),
                   style: const TextStyle(
-                    color: kTextSub, fontSize: 13, fontWeight: FontWeight.w500,
+                    color: kTextSub,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1053,7 +1063,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
         Obx(
           () => Container(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(
+            decoration: appSurfaceDecoration(
               color: kBgCard,
               borderRadius: BorderRadius.circular(18),
               boxShadow: kCardShadow,
@@ -1067,14 +1077,22 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                     value: '${_miniTerrains.length}',
                     label: 'terrain${_miniTerrains.length > 1 ? 's' : ''}',
                   ),
-                  const VerticalDivider(color: kDivider, width: 1, thickness: 1),
+                  const VerticalDivider(
+                    color: kDivider,
+                    width: 1,
+                    thickness: 1,
+                  ),
                   _ReviewStat(
                     icon: PhosphorIconsDuotone.image,
                     color: kBlue,
                     value: '${_images.length}',
                     label: 'photo${_images.length > 1 ? 's' : ''}',
                   ),
-                  const VerticalDivider(color: kDivider, width: 1, thickness: 1),
+                  const VerticalDivider(
+                    color: kDivider,
+                    width: 1,
+                    thickness: 1,
+                  ),
                   _ReviewStat(
                     icon: PhosphorIconsDuotone.shieldCheck,
                     color: kGold,
@@ -1091,7 +1109,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
+            decoration: appSurfaceDecoration(
               color: kBgCard,
               borderRadius: BorderRadius.circular(18),
               boxShadow: kCardShadow,
@@ -1118,7 +1136,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                 final icon = icons[e] ?? PhosphorIconsLight.checks;
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
-                  decoration: BoxDecoration(
+                  decoration: appSurfaceDecoration(
                     color: kGreenLight,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: kGreen.withValues(alpha: 0.3)),
@@ -1166,196 +1184,196 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
 
       return Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
+        decoration: appSurfaceDecoration(
           color: kBgCard,
           borderRadius: BorderRadius.circular(18),
           boxShadow: kCardShadow,
         ),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Nom + modifier
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(
-                  terrain.nameCtrl.text.trim().isEmpty
-                      ? 'Terrain ${index + 1}'
-                      : terrain.nameCtrl.text.trim(),
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
-                    color: kTextPrim,
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: () {
-                  _editingTerrainIndex.value = index;
-                  _setStep(3);
-                },
-                tooltip: 'Modifier',
-                constraints: const BoxConstraints.tightFor(
-                  width: AppTouch.minTarget,
-                  height: AppTouch.minTarget,
-                ),
-                icon: const Icon(
-                  PhosphorIconsLight.pencilSimple,
-                  color: kGreen,
-                  size: 18,
-                ),
-              ),
-            ],
-          ),
-          // Formats + surface
-          Text(
-            '$formats • ${terrain.surface.value}',
-            style: const TextStyle(
-              fontSize: 12,
-              color: kTextSub,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 7),
-          // Badges
-          Row(
-            children: [
-              if (fullPeriods.isNotEmpty)
-                _ReviewBadge(
-                  label: 'Terrain complet',
-                  color: kGreen,
-                  bg: kGreenLight,
-                ),
-              if (fullPeriods.isNotEmpty && halfPeriods.isNotEmpty)
-                const SizedBox(width: 6),
-              if (halfPeriods.isNotEmpty)
-                _ReviewBadge(
-                  label: 'Demi terrain',
-                  color: kBlue,
-                  bg: kBlueLight,
-                ),
-            ],
-          ),
-          // Grille tarifaire collapsible
-          if (terrain.pricingPeriods.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => expanded.value = !expanded.value,
-              child: Row(
-                children: [
-                  const Icon(PhosphorIconsLight.tag, size: 13, color: kGreen),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'GRILLE TARIFAIRE',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.5,
-                      color: kGreen,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '(${terrain.pricingPeriods.length})',
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Nom + modifier
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Text(
+                    terrain.nameCtrl.text.trim().isEmpty
+                        ? 'Terrain ${index + 1}'
+                        : terrain.nameCtrl.text.trim(),
                     style: const TextStyle(
-                      fontSize: 10,
-                      color: kTextSub,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: kTextPrim,
                     ),
                   ),
-                  const Spacer(),
-                  Icon(
-                    isExpanded
-                        ? PhosphorIconsLight.caretUp
-                        : PhosphorIconsLight.caretDown,
-                    size: 14,
-                    color: kTextSub,
+                ),
+                IconButton(
+                  onPressed: () {
+                    _editingTerrainIndex.value = index;
+                    _setStep(3);
+                  },
+                  tooltip: 'Modifier',
+                  constraints: const BoxConstraints.tightFor(
+                    width: AppTouch.minTarget,
+                    height: AppTouch.minTarget,
                   ),
-                ],
+                  icon: const Icon(
+                    PhosphorIconsLight.pencilSimple,
+                    color: kGreen,
+                    size: 18,
+                  ),
+                ),
+              ],
+            ),
+            // Formats + surface
+            Text(
+              '$formats • ${terrain.surface.value}',
+              style: const TextStyle(
+                fontSize: 12,
+                color: kTextSub,
+                fontWeight: FontWeight.w500,
               ),
             ),
-            if (isExpanded) ...[
-              const SizedBox(height: 10),
-              ...terrain.pricingPeriods.asMap().entries.map((entry) {
-                final i = entry.key;
-                final p = entry.value;
-                final lbl = p.labelCtrl.text.trim().isNotEmpty
-                    ? p.labelCtrl.text.trim()
-                    : _periodLabel(p.startCtrl.text, p.endCtrl.text);
-                final price = p.priceCtrl.text.trim();
-                final isHalf = p.target.value == 'HALF';
-                final isLast = i == terrain.pricingPeriods.length - 1;
-                return Column(
+            const SizedBox(height: 7),
+            // Badges
+            Row(
+              children: [
+                if (fullPeriods.isNotEmpty)
+                  _ReviewBadge(
+                    label: 'Terrain complet',
+                    color: kGreen,
+                    bg: kGreenLight,
+                  ),
+                if (fullPeriods.isNotEmpty && halfPeriods.isNotEmpty)
+                  const SizedBox(width: 6),
+                if (halfPeriods.isNotEmpty)
+                  _ReviewBadge(
+                    label: 'Demi terrain',
+                    color: kBlue,
+                    bg: kBlueLight,
+                  ),
+              ],
+            ),
+            // Grille tarifaire collapsible
+            if (terrain.pricingPeriods.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => expanded.value = !expanded.value,
+                child: Row(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      lbl,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        color: kTextPrim,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    _ReviewBadge(
-                                      label: isHalf ? 'Demi' : 'Complet',
-                                      color: isHalf ? kBlue : kGreen,
-                                      bg: isHalf ? kBlueLight : kGreenLight,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 2),
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      PhosphorIconsLight.clock,
-                                      size: 11,
-                                      color: kTextSub,
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      '${p.startCtrl.text} – ${p.endCtrl.text}',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: kTextSub,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (price.isNotEmpty)
-                            Text(
-                              '$price F',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w900,
-                                color: kTextPrim,
-                                fontSize: 14,
-                              ),
-                            ),
-                        ],
+                    const Icon(PhosphorIconsLight.tag, size: 13, color: kGreen),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'GRILLE TARIFAIRE',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                        color: kGreen,
                       ),
                     ),
-                    if (!isLast) const Divider(color: kDivider, height: 1),
+                    const SizedBox(width: 4),
+                    Text(
+                      '(${terrain.pricingPeriods.length})',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: kTextSub,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      isExpanded
+                          ? PhosphorIconsLight.caretUp
+                          : PhosphorIconsLight.caretDown,
+                      size: 14,
+                      color: kTextSub,
+                    ),
                   ],
-                );
-              }),
+                ),
+              ),
+              if (isExpanded) ...[
+                const SizedBox(height: 10),
+                ...terrain.pricingPeriods.asMap().entries.map((entry) {
+                  final i = entry.key;
+                  final p = entry.value;
+                  final lbl = p.labelCtrl.text.trim().isNotEmpty
+                      ? p.labelCtrl.text.trim()
+                      : _periodLabel(p.startCtrl.text, p.endCtrl.text);
+                  final price = p.priceCtrl.text.trim();
+                  final isHalf = p.target.value == 'HALF';
+                  final isLast = i == terrain.pricingPeriods.length - 1;
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        lbl,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: kTextPrim,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      _ReviewBadge(
+                                        label: isHalf ? 'Demi' : 'Complet',
+                                        color: isHalf ? kBlue : kGreen,
+                                        bg: isHalf ? kBlueLight : kGreenLight,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        PhosphorIconsLight.clock,
+                                        size: 11,
+                                        color: kTextSub,
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        '${p.startCtrl.text} – ${p.endCtrl.text}',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: kTextSub,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (price.isNotEmpty)
+                              Text(
+                                '$price F',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  color: kTextPrim,
+                                  fontSize: 14,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (!isLast) const Divider(color: kDivider, height: 1),
+                    ],
+                  );
+                }),
+              ],
             ],
           ],
-        ],
-      ),
+        ),
       );
     });
   }
@@ -1370,7 +1388,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
+        decoration: appSurfaceDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: kBorder),
@@ -1390,7 +1408,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                 Container(
                   width: 36,
                   height: 36,
-                  decoration: BoxDecoration(
+                  decoration: appSurfaceDecoration(
                     color: kGreenLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1534,11 +1552,17 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                             ),
                           )
                         : Text(
-                            commune.isNotEmpty ? commune : 'Choisir l\'adresse…',
+                            commune.isNotEmpty
+                                ? commune
+                                : 'Choisir l\'adresse…',
                             style: TextStyle(
-                              color: commune.isNotEmpty ? kTextPrim : kTextLight,
+                              color: commune.isNotEmpty
+                                  ? kTextPrim
+                                  : kTextLight,
                               fontSize: 13,
-                              fontWeight: commune.isNotEmpty ? FontWeight.w600 : FontWeight.w500,
+                              fontWeight: commune.isNotEmpty
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
                             ),
                           ),
                   ),
@@ -1588,44 +1612,54 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
           ),
         ),
         const SizedBox(height: 6),
-        Obx(() => Column(
-              children: [
-                ..._contactPhones.map((phone) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Container(
-                        height: 48,
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF9FAF7),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: kBorder),
+        Obx(
+          () => Column(
+            children: [
+              ..._contactPhones.map(
+                (phone) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Container(
+                    height: 48,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAF7),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: kBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          PhosphorIconsLight.phone,
+                          color: kGreen,
+                          size: 18,
                         ),
-                        child: Row(
-                          children: [
-                            const Icon(PhosphorIconsLight.phone,
-                                color: kGreen, size: 18),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                phone,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: kTextPrim,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            phone,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: kTextPrim,
+                              fontWeight: FontWeight.w600,
                             ),
-                            IconButton(
-                              onPressed: () => _contactPhones.remove(phone),
-                              icon: const Icon(PhosphorIconsLight.trash,
-                                  color: kRed, size: 18),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                    )),
-              ],
-            )),
+                        IconButton(
+                          onPressed: () => _contactPhones.remove(phone),
+                          icon: const Icon(
+                            PhosphorIconsLight.trash,
+                            color: kRed,
+                            size: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         Container(
           height: 48,
           decoration: BoxDecoration(
@@ -1636,8 +1670,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
           child: Row(
             children: [
               const SizedBox(width: 14),
-              const Icon(PhosphorIconsLight.phone,
-                  color: kGreen, size: 18),
+              const Icon(PhosphorIconsLight.phone, color: kGreen, size: 18),
               const SizedBox(width: 10),
               Expanded(
                 child: TextField(
@@ -1670,8 +1703,11 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                     _phoneCtrl.clear();
                   }
                 },
-                icon: const Icon(PhosphorIconsLight.plusCircle,
-                    color: kGreen, size: 20),
+                icon: const Icon(
+                  PhosphorIconsLight.plusCircle,
+                  color: kGreen,
+                  size: 20,
+                ),
               ),
             ],
           ),
@@ -1728,31 +1764,6 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
         ),
       ),
     ],
-  );
-
-  Widget _buildMiniTerrainsSection() => _Card(
-    title: 'Terrains physiques',
-    icon: PhosphorIconsLight.soccerBall,
-    trailing: _IconPillButton(
-      icon: PhosphorIconsLight.plus,
-      label: 'Ajouter',
-      onTap: _addMiniTerrain,
-    ),
-    child: Obx(
-      () => Column(
-        children: [
-          ...List.generate(_miniTerrains.length, (index) {
-            final miniTerrain = _miniTerrains[index];
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: index == _miniTerrains.length - 1 ? 0 : 12,
-              ),
-              child: _buildMiniTerrainCard(miniTerrain, index),
-            );
-          }),
-        ],
-      ),
-    ),
   );
 
   Widget _buildMiniTerrainCard(_SubTerrainDraft miniTerrain, int index) {
@@ -1839,10 +1850,12 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
 
   Widget _buildPricingSection(_SubTerrainDraft miniTerrain) {
     return Obx(() {
-      final hasFull =
-          miniTerrain.pricingPeriods.any((period) => period.target.value == 'FULL');
-      final hasHalf =
-          miniTerrain.pricingPeriods.any((period) => period.target.value == 'HALF');
+      final hasFull = miniTerrain.pricingPeriods.any(
+        (period) => period.target.value == 'FULL',
+      );
+      final hasHalf = miniTerrain.pricingPeriods.any(
+        (period) => period.target.value == 'HALF',
+      );
 
       if (!hasFull && !hasHalf) {
         return Column(
@@ -1896,8 +1909,11 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
           if (!hasFull || !hasHalf) ...[
             const SizedBox(height: 10),
             _AddPricingTypeButton(
-              label: hasFull ? 'Ajouter demi terrain' : 'Ajouter terrain complet',
-              onTap: () => miniTerrain.addPricingPeriod(hasFull ? 'HALF' : 'FULL'),
+              label: hasFull
+                  ? 'Ajouter demi terrain'
+                  : 'Ajouter terrain complet',
+              onTap: () =>
+                  miniTerrain.addPricingPeriod(hasFull ? 'HALF' : 'FULL'),
             ),
           ],
         ],
@@ -1924,7 +1940,9 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
 
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: isCollapsed ? () => miniTerrain.expandedTarget.value = target : null,
+        onTap: isCollapsed
+            ? () => miniTerrain.expandedTarget.value = target
+            : null,
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -1991,18 +2009,12 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         onPressed: () => miniTerrain.addPricingPeriod(target),
-                        icon: const Icon(
-                          PhosphorIconsLight.plus,
-                          size: 16,
-                        ),
+                        icon: const Icon(PhosphorIconsLight.plus, size: 16),
                         label: const Text('Ajouter un tarif'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.white,
                           backgroundColor: kGreen,
                           side: BorderSide.none,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           textStyle: const TextStyle(
                             fontSize: 13,
@@ -2043,11 +2055,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                 width: AppTouch.minTarget,
                 height: AppTouch.minTarget,
               ),
-              icon: const Icon(
-                PhosphorIconsLight.trash,
-                color: kRed,
-                size: 18,
-              ),
+              icon: const Icon(PhosphorIconsLight.trash, color: kRed, size: 18),
             ),
           ),
           Row(
@@ -2194,17 +2202,9 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                 width: AppTouch.minTarget,
                 height: AppTouch.minTarget,
               ),
-              icon: const Icon(
-                PhosphorIconsLight.trash,
-                color: kRed,
-                size: 18,
-              ),
+              icon: const Icon(PhosphorIconsLight.trash, color: kRed, size: 18),
             ),
-            const Icon(
-              PhosphorIconsLight.caretDown,
-              size: 16,
-              color: kTextSub,
-            ),
+            const Icon(PhosphorIconsLight.caretDown, size: 16, color: kTextSub),
           ],
         ),
       ),
@@ -2267,51 +2267,6 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
     _miniTerrains.remove(miniTerrain);
   }
 
-  // ── 3. Formats de jeu — Chips ─────────────────────────────────────────────
-  Widget _buildCapacitySection() => _Card(
-    title: 'Formats disponibles',
-    icon: PhosphorIconsLight.users,
-    child: Obx(
-      () => Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: _allCapacities.map((c) {
-          final sel = _capacities.contains(c);
-          return GestureDetector(
-            onTap: () {
-              if (sel) {
-                _capacities.remove(c);
-              } else {
-                _capacities.add(c);
-              }
-            },
-            child: AnimatedContainer(
-              duration: 200.ms,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: sel ? kGreen : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: sel
-                      ? kGreen
-                      : kBorder,
-                ),
-              ),
-              child: Text(
-                c,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: sel ? Colors.white : kTextSub,
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    ),
-  );
-
   // ── 4. Équipements — Grid ────────────────────────────────────────────────
   Widget _buildEquipmentsSection() => _Card(
     title: 'Équipements inclus',
@@ -2348,19 +2303,11 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
               decoration: BoxDecoration(
                 color: on ? kGreenLight : Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: on ? kGreen : kBorder,
-                ),
+                border: Border.all(color: on ? kGreen : kBorder),
               ),
               child: Row(
                 children: [
-                  Icon(
-                    icon,
-                    color: on
-                        ? kGreen
-                        : kTextLight,
-                    size: 18,
-                  ),
+                  Icon(icon, color: on ? kGreen : kTextLight, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -2368,9 +2315,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: on ? FontWeight.w600 : FontWeight.w500,
-                        color: on
-                            ? kGreen
-                            : kTextSub,
+                        color: on ? kGreen : kTextSub,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -2391,12 +2336,12 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
     final label = isLast
         ? 'Confirmer'
         : isTerrainEditor
-            ? 'Valider ce terrain'
-            : _step.value == 2 && _miniTerrains.isEmpty
-                ? 'Ajouter un terrain'
-                : _step.value == 2
-                    ? 'Voir le récapitulatif'
-                    : 'Continuer';
+        ? 'Valider ce terrain'
+        : _step.value == 2 && _miniTerrains.isEmpty
+        ? 'Ajouter un terrain'
+        : _step.value == 2
+        ? 'Voir le récapitulatif'
+        : 'Continuer';
 
     return SizedBox(
       width: double.infinity,
@@ -2618,71 +2563,34 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
       await Future.delayed(const Duration(milliseconds: 80));
       _ctrl.goBack();
     } catch (e) {
-      AppSnackbar.error('Impossible d\'enregistrer le terrain. Vérifiez les informations et réessayez.');
+      AppSnackbar.error(
+        'Impossible d\'enregistrer le terrain. Vérifiez les informations et réessayez.',
+      );
     } finally {
       _isSaving.value = false;
     }
   }
 
   int _deriveComplexPrice(List<SubTerrainModel> subTerrains) {
-    final prices = subTerrains
-        .expand(
-          (subTerrain) => [
-            subTerrain.pricePerHour,
-            ...subTerrain.pricingPeriods.map((period) => period.pricePerHour),
-          ],
-        )
-        .whereType<int>()
-        .where((price) => price > 0)
-        .toList()
-      ..sort();
+    final prices =
+        subTerrains
+            .expand(
+              (subTerrain) => [
+                subTerrain.pricePerHour,
+                ...subTerrain.pricingPeriods.map(
+                  (period) => period.pricePerHour,
+                ),
+              ],
+            )
+            .whereType<int>()
+            .where((price) => price > 0)
+            .toList()
+          ..sort();
     return prices.isEmpty ? 10000 : prices.first;
   }
 }
 
 // ─── Widgets de structure ──────────────────────────────────────────────────
-
-class _IconPillButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _IconPillButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 36,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: kGreen,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white, size: 15),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _PhotoThumb extends StatelessWidget {
   final XFile image;
@@ -2710,9 +2618,7 @@ class _PhotoThumb extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: isPrimary
-                      ? kGreen
-                      : kBorder,
+                  color: isPrimary ? kGreen : kBorder,
                   width: isPrimary ? 2 : 1,
                 ),
                 color: const Color(0xFFF9FAF7),
@@ -2731,7 +2637,7 @@ class _PhotoThumb extends StatelessWidget {
                       fit: BoxFit.cover,
                       width: 70,
                       height: 70,
-                      errorBuilder: (_, __, ___) => const Icon(
+                      errorBuilder: (_, _, _) => const Icon(
                         PhosphorIconsLight.imageBroken,
                         color: kTextLight,
                         size: 22,
@@ -2760,7 +2666,11 @@ class _PhotoThumb extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(PhosphorIconsRegular.x, color: Colors.white, size: 12),
+              child: const Icon(
+                PhosphorIconsRegular.x,
+                color: Colors.white,
+                size: 12,
+              ),
             ),
           ),
         ),
@@ -2775,7 +2685,11 @@ class _PhotoThumb extends StatelessWidget {
                 color: kGreen,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(PhosphorIconsRegular.check, color: Colors.white, size: 12),
+              child: const Icon(
+                PhosphorIconsRegular.check,
+                color: Colors.white,
+                size: 12,
+              ),
             ),
           ),
       ],
@@ -2803,9 +2717,13 @@ class _TerrainDraftTile extends StatelessWidget {
           ? 'Aucun format'
           : terrain.formats.join(', ');
       final cuts = [
-        if (terrain.pricingPeriods.any((period) => period.target.value == 'FULL'))
+        if (terrain.pricingPeriods.any(
+          (period) => period.target.value == 'FULL',
+        ))
           'Complet',
-        if (terrain.pricingPeriods.any((period) => period.target.value == 'HALF'))
+        if (terrain.pricingPeriods.any(
+          (period) => period.target.value == 'HALF',
+        ))
           'Demi-terrain',
       ].join(', ');
 
@@ -2978,14 +2896,8 @@ class _Card extends StatelessWidget {
   final String title;
   final IconData icon;
   final Widget child;
-  final Widget? trailing;
 
-  const _Card({
-    required this.title,
-    required this.icon,
-    required this.child,
-    this.trailing,
-  });
+  const _Card({required this.title, required this.icon, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -3019,8 +2931,6 @@ class _Card extends StatelessWidget {
                   color: kTextPrim,
                 ),
               ),
-              const Spacer(),
-              ?trailing,
             ],
           ),
           const SizedBox(height: 16),
@@ -3036,14 +2946,12 @@ class _Field extends StatelessWidget {
   final TextEditingController ctrl;
   final String hint;
   final IconData icon;
-  final TextInputType? keyboardType;
 
   const _Field({
     required this.label,
     required this.ctrl,
     required this.hint,
     required this.icon,
-    this.keyboardType,
   });
 
   @override
@@ -3075,7 +2983,6 @@ class _Field extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: ctrl,
-                  keyboardType: keyboardType,
                   style: const TextStyle(
                     fontSize: 14,
                     color: kTextPrim,
@@ -3133,7 +3040,9 @@ class _CompactField extends StatelessWidget {
     final parts = ctrl.text.split(':');
     final initial = TimeOfDay(
       hour: int.tryParse(parts.first)?.clamp(0, 23) ?? 18,
-      minute: parts.length > 1 ? (int.tryParse(parts[1])?.clamp(0, 59) ?? 0) : 0,
+      minute: parts.length > 1
+          ? (int.tryParse(parts[1])?.clamp(0, 59) ?? 0)
+          : 0,
     );
 
     final picked = await showTimePicker(
@@ -3232,9 +3141,7 @@ class _DivisionChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected ? kGreen : Colors.white,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: selected ? kGreen : kBorder,
-          ),
+          border: Border.all(color: selected ? kGreen : kBorder),
         ),
         child: Text(
           label,
@@ -3253,10 +3160,7 @@ class _AddPricingTypeButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _AddPricingTypeButton({
-    required this.label,
-    required this.onTap,
-  });
+  const _AddPricingTypeButton({required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -3327,13 +3231,23 @@ class _AddressPickerSheetState extends State<_AddressPickerSheet> {
   void _onSearchChanged(String value) {
     _debounce?.cancel();
     if (value.trim().length < 2) {
-      setState(() { _results = []; _searching = false; });
+      setState(() {
+        _results = [];
+        _searching = false;
+      });
       return;
     }
-    setState(() { _searching = true; });
+    setState(() {
+      _searching = true;
+    });
     _debounce = Timer(const Duration(milliseconds: 500), () async {
       final results = await widget.searchFn(value);
-      if (mounted) setState(() { _results = results; _searching = false; });
+      if (mounted) {
+        setState(() {
+          _results = results;
+          _searching = false;
+        });
+      }
     });
   }
 
@@ -3476,13 +3390,15 @@ class _AddressPickerSheetState extends State<_AddressPickerSheet> {
                     decoration: BoxDecoration(
                       color: kGreenLight,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: kGreen.withValues(alpha: 0.3),
-                      ),
+                      border: Border.all(color: kGreen.withValues(alpha: 0.3)),
                     ),
                     child: const Row(
                       children: [
-                        Icon(PhosphorIconsLight.mapPin, size: 18, color: kGreen),
+                        Icon(
+                          PhosphorIconsLight.mapPin,
+                          size: 18,
+                          color: kGreen,
+                        ),
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
@@ -3494,7 +3410,11 @@ class _AddressPickerSheetState extends State<_AddressPickerSheet> {
                             ),
                           ),
                         ),
-                        Icon(PhosphorIconsLight.caretRight, size: 16, color: kGreen),
+                        Icon(
+                          PhosphorIconsLight.caretRight,
+                          size: 16,
+                          color: kGreen,
+                        ),
                       ],
                     ),
                   ),
@@ -3526,10 +3446,13 @@ class _AddressPickerSheetState extends State<_AddressPickerSheet> {
                   itemBuilder: (context, index) {
                     final result = _results[index];
                     final commune = _extractCommune(result);
-                    final displayName = result['display_name']?.toString() ?? '';
+                    final displayName =
+                        result['display_name']?.toString() ?? '';
                     final title = commune.isNotEmpty ? commune : displayName;
-                    final lat = double.tryParse(result['lat']?.toString() ?? '') ?? 0;
-                    final lng = double.tryParse(result['lon']?.toString() ?? '') ?? 0;
+                    final lat =
+                        double.tryParse(result['lat']?.toString() ?? '') ?? 0;
+                    final lng =
+                        double.tryParse(result['lon']?.toString() ?? '') ?? 0;
                     final isLast = index == _results.length - 1;
 
                     return GestureDetector(
@@ -3575,7 +3498,8 @@ class _AddressPickerSheetState extends State<_AddressPickerSheet> {
                                       color: kTextPrim,
                                     ),
                                   ),
-                                  if (displayName.isNotEmpty && displayName != title)
+                                  if (displayName.isNotEmpty &&
+                                      displayName != title)
                                     Text(
                                       displayName,
                                       maxLines: 1,
@@ -3646,10 +3570,7 @@ class _MultilineField extends StatelessWidget {
             style: const TextStyle(fontSize: 14, color: kTextPrim),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(
-                color: kTextLight,
-                fontSize: 13,
-              ),
+              hintStyle: const TextStyle(color: kTextLight, fontSize: 13),
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
               focusedBorder: InputBorder.none,

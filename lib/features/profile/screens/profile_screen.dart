@@ -229,7 +229,8 @@ class ProfileScreen extends GetView<ProfileController> {
                 color: kGoldLight,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: PhosphorIcon(PhosphorIconsDuotone.wallet,
+              child: PhosphorIcon(
+                PhosphorIconsDuotone.wallet,
                 color: kGold,
                 size: 24,
               ),
@@ -255,50 +256,10 @@ class ProfileScreen extends GetView<ProfileController> {
                 ],
               ),
             ),
-            PhosphorIcon(PhosphorIconsDuotone.trendUp,
-              color: kGold,
-              size: 22,
-            ),
+            PhosphorIcon(PhosphorIconsDuotone.trendUp, color: kGold, size: 22),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildQuickActions() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const OwnerSectionHeader(
-          title: 'Accès rapides',
-          subtitle: 'Retrouvez les trois zones de gestion les plus utilisées',
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            _QuickAction(
-              icon: PhosphorIconsDuotone.soccerBall,
-              label: 'Terrains',
-              color: kGreen,
-              onTap: () => Get.toNamed(Routes.terrainList),
-            ),
-            const SizedBox(width: 10),
-            _QuickAction(
-              icon: PhosphorIconsDuotone.calendarBlank,
-              label: 'Réservations',
-              color: kBlue,
-              onTap: () => Get.toNamed(Routes.reservations),
-            ),
-            const SizedBox(width: 10),
-            _QuickAction(
-              icon: PhosphorIconsDuotone.clockCountdown,
-              label: 'Créneaux',
-              color: kGold,
-              onTap: () => Get.toNamed(Routes.availability),
-            ),
-          ],
-        ),
-      ],
     );
   }
 
@@ -316,8 +277,7 @@ class ProfileScreen extends GetView<ProfileController> {
           children: [
             const OwnerSectionHeader(
               title: 'Informations du compte',
-              subtitle:
-                  'Identité, sécurité et coordonnées de reversement',
+              subtitle: 'Identité, sécurité et coordonnées de reversement',
             ),
             const SizedBox(height: 10),
             _InfoRow(
@@ -446,10 +406,7 @@ class ProfileScreen extends GetView<ProfileController> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            PhosphorIcon(PhosphorIconsDuotone.signOut,
-              color: kRed,
-              size: 18,
-            ),
+            PhosphorIcon(PhosphorIconsDuotone.signOut, color: kRed, size: 18),
             SizedBox(width: 10),
             Text(
               'Déconnexion',
@@ -486,7 +443,8 @@ class ProfileScreen extends GetView<ProfileController> {
                   color: kRedLight,
                   shape: BoxShape.circle,
                 ),
-                child: PhosphorIcon(PhosphorIconsDuotone.signOut,
+                child: PhosphorIcon(
+                  PhosphorIconsDuotone.signOut,
                   color: kRed,
                   size: 28,
                 ),
@@ -554,55 +512,6 @@ class ProfileScreen extends GetView<ProfileController> {
         ),
       ),
       barrierDismissible: true,
-    );
-  }
-}
-
-class _QuickAction extends StatelessWidget {
-  final dynamic icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _QuickAction({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          height: 74,
-          decoration: BoxDecoration(
-            color: kBgCard,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: kCardShadow,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              PhosphorIcon(icon, color: color, size: 22),
-              const SizedBox(height: 7),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: kTextPrim,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -815,9 +724,7 @@ class _AvatarSourceTile extends StatelessWidget {
                 ),
               ),
             ),
-            PhosphorIcon(PhosphorIcons.caretRight,
-              color: kTextLight,
-            ),
+            PhosphorIcon(PhosphorIcons.caretRight, color: kTextLight),
           ],
         ),
       ),
@@ -829,13 +736,11 @@ class _InfoRow extends StatelessWidget {
   final dynamic icon;
   final String label;
   final String value;
-  final String? helper;
 
   const _InfoRow({
     required this.icon,
     required this.label,
     required this.value,
-    this.helper,
   });
 
   @override
@@ -878,22 +783,6 @@ class _InfoRow extends StatelessWidget {
             ],
           ),
         ),
-        if (helper != null)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: kBgSurface,
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: Text(
-              helper!,
-              style: const TextStyle(
-                color: kTextLight,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -955,9 +844,7 @@ class _AccountAction extends StatelessWidget {
                 ],
               ),
             ),
-            PhosphorIcon(PhosphorIcons.caretRight,
-              color: kTextLight,
-            ),
+            PhosphorIcon(PhosphorIcons.caretRight, color: kTextLight),
           ],
         ),
       ),

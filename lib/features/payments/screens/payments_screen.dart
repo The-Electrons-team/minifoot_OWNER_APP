@@ -69,141 +69,140 @@ class PaymentsScreen extends GetView<PaymentsController> {
 
       return Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: hasBalance
-                ? const LinearGradient(
-                    colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            color: hasBalance ? null : kBgCard,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: kElevatedShadow,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Revenus totaux ──────────────────────────────────────────
-              Text(
-                'Revenus totaux',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: textSub,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${_fmt(total)} F CFA',
-                style: TextStyle(
-                  fontFamily: 'Orbitron',
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: textPrim,
-                  height: 1,
-                ),
-              ),
-
-              const SizedBox(height: 14),
-              Container(height: 1, color: divColor),
-              const SizedBox(height: 14),
-
-              // ── À retirer + bouton ─────────────────────────────────────
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'À retirer',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: textSub,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          '${_fmt(balance)} F CFA',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: textPrim,
-                            height: 1,
-                          ),
-                        ),
-                        if (count > 0) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            '$count rés. non retirée${count > 1 ? 's' : ''}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: textSub,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+        child:
+            Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: hasBalance
+                        ? const LinearGradient(
+                            colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          )
+                        : null,
+                    color: hasBalance ? null : kBgCard,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: kElevatedShadow,
                   ),
-                  if (hasBalance) ...[
-                    const SizedBox(width: 12),
-                    SizedBox(
-                      height: 42,
-                      child: ElevatedButton.icon(
-                        onPressed: isWithdrawing
-                            ? null
-                            : () {
-                                HapticFeedback.mediumImpact();
-                                _showWithdrawSheet(context, balance);
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: kGreen,
-                          disabledBackgroundColor:
-                              Colors.white.withValues(alpha: 0.4),
-                          elevation: 0,
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        icon: isWithdrawing
-                            ? const SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: kGreen,
-                                ),
-                              )
-                            : const PhosphorIcon(
-                                PhosphorIconsBold.arrowLineDown,
-                                size: 16,
-                              ),
-                        label: Text(
-                          isWithdrawing ? 'En cours…' : 'Retirer',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13,
-                          ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ── Revenus totaux ──────────────────────────────────────────
+                      Text(
+                        'Revenus totaux',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: textSub,
                         ),
                       ),
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ),
-        ).animate().fadeIn(delay: 80.ms, duration: 320.ms).slideY(
-              begin: 0.04,
-              duration: 320.ms,
-            ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${_fmt(total)} F CFA',
+                        style: TextStyle(
+                          fontFamily: 'Orbitron',
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: textPrim,
+                          height: 1,
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
+                      Container(height: 1, color: divColor),
+                      const SizedBox(height: 14),
+
+                      // ── À retirer + bouton ─────────────────────────────────────
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'À retirer',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: textSub,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  '${_fmt(balance)} F CFA',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: textPrim,
+                                    height: 1,
+                                  ),
+                                ),
+                                if (count > 0) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '$count rés. non retirée${count > 1 ? 's' : ''}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: textSub,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          if (hasBalance) ...[
+                            const SizedBox(width: 12),
+                            SizedBox(
+                              height: 42,
+                              child: ElevatedButton.icon(
+                                onPressed: isWithdrawing
+                                    ? null
+                                    : () {
+                                        HapticFeedback.mediumImpact();
+                                        _showWithdrawSheet(context, balance);
+                                      },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: kGreen,
+                                  disabledBackgroundColor: Colors.white
+                                      .withValues(alpha: 0.4),
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                ),
+                                icon: isWithdrawing
+                                    ? const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: kGreen,
+                                        ),
+                                      )
+                                    : const PhosphorIcon(
+                                        PhosphorIconsBold.arrowLineDown,
+                                        size: 16,
+                                      ),
+                                label: Text(
+                                  isWithdrawing ? 'En cours…' : 'Retirer',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                )
+                .animate()
+                .fadeIn(delay: 80.ms, duration: 320.ms)
+                .slideY(begin: 0.04, duration: 320.ms),
       );
     });
   }
@@ -213,14 +212,13 @@ class PaymentsScreen extends GetView<PaymentsController> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder:
-          (_) => _WithdrawSheet(
-            availableBalance: balance,
-            formatAmount: _fmt,
-            payoutPhone: controller.payoutPhone.value,
-            payoutMethodLabel: controller.payoutMethodLabel,
-            onWithdraw: (phone) => controller.withdraw(phone),
-          ),
+      builder: (_) => _WithdrawSheet(
+        availableBalance: balance,
+        formatAmount: _fmt,
+        payoutPhone: controller.payoutPhone.value,
+        payoutMethodLabel: controller.payoutMethodLabel,
+        onWithdraw: (phone) => controller.withdraw(phone),
+      ),
     );
   }
 
@@ -268,7 +266,8 @@ class PaymentsScreen extends GetView<PaymentsController> {
                           child: SizedBox(
                             width: 48,
                             height: 48,
-                            child: PhosphorIcon(PhosphorIconsDuotone.creditCard,
+                            child: PhosphorIcon(
+                              PhosphorIconsDuotone.creditCard,
                               color: kGold,
                               size: 23,
                             ),
@@ -344,7 +343,8 @@ class PaymentsScreen extends GetView<PaymentsController> {
         ),
         child: Row(
           children: [
-            PhosphorIcon(PhosphorIconsDuotone.warningCircle,
+            PhosphorIcon(
+              PhosphorIconsDuotone.warningCircle,
               color: kRed,
               size: 18,
             ),
@@ -364,7 +364,6 @@ class PaymentsScreen extends GetView<PaymentsController> {
       );
     });
   }
-
 
   // ── Barre de répartition par méthode de paiement ──────────────────────────
   Widget _buildMethodBreakdown() {
@@ -663,7 +662,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
               child: Image.asset(
                 'assets/images/terrain.webp',
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: kGreen),
+                errorBuilder: (_, _, _) => Container(color: kGreen),
               ),
             ),
             Positioned.fill(
@@ -807,32 +806,6 @@ class _PeriodTab extends StatelessWidget {
   }
 }
 
-
-class _MiniCount extends StatelessWidget {
-  final int count;
-  final Color color;
-  const _MiniCount({required this.count, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        '$count',
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: color,
-        ),
-      ),
-    );
-  }
-}
-
 class _TransactionCard extends StatelessWidget {
   final TransactionModel transaction;
   final String Function(int) formatAmount;
@@ -866,7 +839,8 @@ class _TransactionCard extends StatelessWidget {
       case 'Yas Money':
         return const PaymentBrandBadge(method: 'FREE_MONEY', size: 44);
       default:
-        return PhosphorIcon(PhosphorIconsDuotone.creditCard,
+        return PhosphorIcon(
+          PhosphorIconsDuotone.creditCard,
           color: kTextSub,
           size: 22,
         );
@@ -970,7 +944,8 @@ class _TransactionCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Row(
                     children: [
-                      PhosphorIcon(PhosphorIconsDuotone.mapPin,
+                      PhosphorIcon(
+                        PhosphorIconsDuotone.mapPin,
                         size: 12,
                         color: kTextLight,
                       ),
@@ -1237,14 +1212,17 @@ class _TransactionDetailSheet extends StatelessWidget {
                           onPressed: () {
                             HapticFeedback.mediumImpact();
                             Navigator.of(context).pop();
-                            AppSnackbar.info('Un rappel a été envoyé à ${transaction.client}.');
+                            AppSnackbar.info(
+                              'Un rappel a été envoyé à ${transaction.client}.',
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: kGold,
                             foregroundColor: Colors.white,
                             elevation: 0,
                           ),
-                          icon: PhosphorIcon(PhosphorIconsDuotone.bellRinging,
+                          icon: PhosphorIcon(
+                            PhosphorIconsDuotone.bellRinging,
                             size: 18,
                           ),
                           label: const Text(
@@ -1371,7 +1349,8 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                   color: kGreenLight,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: PhosphorIcon(PhosphorIconsDuotone.arrowLineDown,
+                child: PhosphorIcon(
+                  PhosphorIconsDuotone.arrowLineDown,
                   color: kGreen,
                   size: 22,
                 ),
@@ -1410,7 +1389,11 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
               children: [
                 const Text(
                   'Solde disponible',
-                  style: TextStyle(fontSize: 12, color: kGreen, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: kGreen,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -1492,14 +1475,21 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: kGreen.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
                         'Configuré',
-                        style: TextStyle(fontSize: 10, color: kGreen, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: kGreen,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -1532,7 +1522,11 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                     const SizedBox(width: 10),
                     const Text(
                       'Autre numéro',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: kTextPrim),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: kTextPrim,
+                      ),
                     ),
                   ],
                 ),
@@ -1560,7 +1554,8 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                 hintStyle: const TextStyle(color: kTextLight, fontSize: 14),
                 filled: true,
                 fillColor: kBgSurface,
-                prefixIcon: PhosphorIcon(PhosphorIconsDuotone.phone,
+                prefixIcon: PhosphorIcon(
+                  PhosphorIconsDuotone.phone,
                   color: kTextSub,
                   size: 20,
                 ),
@@ -1576,7 +1571,10 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(color: kGreen, width: 1.5),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
               ),
             ),
             const SizedBox(height: 6),
@@ -1634,7 +1632,6 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
     );
   }
 }
-
 
 class _DetailRow extends StatelessWidget {
   final String label;

@@ -40,7 +40,7 @@ class _ContractScreenState extends State<ContractScreen> {
                   Container(
                     width: 52,
                     height: 52,
-                    decoration: BoxDecoration(
+                    decoration: appSurfaceDecoration(
                       color: kGreenLight,
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -79,7 +79,7 @@ class _ContractScreenState extends State<ContractScreen> {
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
+                decoration: appSurfaceDecoration(
                   color: kBgCard,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: kCardShadow,
@@ -138,7 +138,7 @@ class _ContractScreenState extends State<ContractScreen> {
                           duration: const Duration(milliseconds: 200),
                           width: 22,
                           height: 22,
-                          decoration: BoxDecoration(
+                          decoration: appSurfaceDecoration(
                             color: _accepted ? kGreen : kBgSurface,
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
@@ -178,9 +178,6 @@ class _ContractScreenState extends State<ContractScreen> {
                         disabledBackgroundColor: kGreen.withValues(alpha: 0.4),
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
                       ),
                       child: _loading
                           ? const SizedBox(
@@ -234,11 +231,7 @@ class _ContractSection extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             body,
-            style: const TextStyle(
-              fontSize: 13,
-              color: kTextSub,
-              height: 1.6,
-            ),
+            style: const TextStyle(fontSize: 13, color: kTextSub, height: 1.6),
           ),
         ],
       ),

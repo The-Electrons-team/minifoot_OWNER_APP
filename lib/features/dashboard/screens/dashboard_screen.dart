@@ -92,7 +92,8 @@ class DashboardScreen extends GetView<DashboardController> {
         ),
         child: Row(
           children: [
-            PhosphorIcon(PhosphorIconsDuotone.warningCircle,
+            PhosphorIcon(
+              PhosphorIconsDuotone.warningCircle,
               color: kRed,
               size: 18,
             ),
@@ -147,7 +148,8 @@ class DashboardScreen extends GetView<DashboardController> {
                 _FocusRow(
                   icon: PhosphorIconsRegular.calendarBlank,
                   color: kBlue,
-                  label: "$today réservation${today > 1 ? 's' : ''} aujourd'hui",
+                  label:
+                      "$today réservation${today > 1 ? 's' : ''} aujourd'hui",
                   actionLabel: 'Voir',
                   onTap: controller.goToReservations,
                 ),
@@ -173,49 +175,59 @@ class DashboardScreen extends GetView<DashboardController> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
       child: Obx(
-        () => Container(
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          decoration: BoxDecoration(
-            color: kBgCard,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: kCardShadow,
-          ),
-          child: IntrinsicHeight(
-            child: Row(
-              children: [
-                Expanded(
-                  child: _StatCell(
-                    icon: PhosphorIconsDuotone.calendarBlank,
-                    iconColor: kBlue,
-                    value: '${controller.todayBookings.value}',
-                    label: "Aujourd'hui",
+        () =>
+            Container(
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  decoration: BoxDecoration(
+                    color: kBgCard,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: kCardShadow,
                   ),
-                ),
-                const VerticalDivider(color: kDivider, width: 1, thickness: 1),
-                Expanded(
-                  child: _StatCell(
-                    icon: PhosphorIconsDuotone.star,
-                    iconColor: kGold,
-                    value: '${controller.rating.value}',
-                    label: 'Note',
+                  child: IntrinsicHeight(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _StatCell(
+                            icon: PhosphorIconsDuotone.calendarBlank,
+                            iconColor: kBlue,
+                            value: '${controller.todayBookings.value}',
+                            label: "Aujourd'hui",
+                          ),
+                        ),
+                        const VerticalDivider(
+                          color: kDivider,
+                          width: 1,
+                          thickness: 1,
+                        ),
+                        Expanded(
+                          child: _StatCell(
+                            icon: PhosphorIconsDuotone.star,
+                            iconColor: kGold,
+                            value: '${controller.rating.value}',
+                            label: 'Note',
+                          ),
+                        ),
+                        const VerticalDivider(
+                          color: kDivider,
+                          width: 1,
+                          thickness: 1,
+                        ),
+                        Expanded(
+                          child: _StatCell(
+                            icon: PhosphorIconsDuotone.chartPie,
+                            iconColor: kGreen,
+                            value:
+                                '${(controller.occupancyRate.value * 100).round()}%',
+                            label: 'Occupation',
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const VerticalDivider(color: kDivider, width: 1, thickness: 1),
-                Expanded(
-                  child: _StatCell(
-                    icon: PhosphorIconsDuotone.chartPie,
-                    iconColor: kGreen,
-                    value: '${(controller.occupancyRate.value * 100).round()}%',
-                    label: 'Occupation',
-                  ),
-                ),
-              ],
-            ),
-          ),
-        )
-            .animate()
-            .fadeIn(duration: 400.ms, delay: 300.ms)
-            .slideY(begin: 0.2, end: 0),
+                )
+                .animate()
+                .fadeIn(duration: 400.ms, delay: 300.ms)
+                .slideY(begin: 0.2, end: 0),
       ),
     );
   }
@@ -354,172 +366,172 @@ class DashboardScreen extends GetView<DashboardController> {
   Widget _buildWeeklyChart() {
     return Obx(() {
       final data = controller.activeChartData;
+      if (data.isEmpty) return const SizedBox.shrink();
       final maxVal = data.reduce((a, b) => a > b ? a : b);
       if (maxVal == 0) return const SizedBox.shrink();
 
       final isWeek = controller.chartPeriod.value == 'week';
       final labels = controller.activeChartLabels;
-      final hasData = true;
 
       return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: kBgCard,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: kCardShadow,
-        ),
-        child: Builder(builder: (_) {
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: kBgCard,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: kCardShadow,
+          ),
+          child: Builder(
+            builder: (_) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        isWeek ? 'Cette semaine' : 'Par mois',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: kTextPrim,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isWeek ? 'Cette semaine' : 'Par mois',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: kTextPrim,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Revenus en F CFA',
+                            style: TextStyle(fontSize: 12, color: kTextLight),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'Revenus en F CFA',
-                        style: TextStyle(fontSize: 12, color: kTextLight),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: kBgSurface,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.all(3),
+                        child: Row(
+                          children: [
+                            _ChartToggle(
+                              label: 'Sem.',
+                              isActive: isWeek,
+                              onTap: () => controller.toggleChartPeriod('week'),
+                            ),
+                            _ChartToggle(
+                              label: 'Mois',
+                              isActive: !isWeek,
+                              onTap: () =>
+                                  controller.toggleChartPeriod('month'),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: kBgSurface,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.all(3),
-                    child: Row(
-                      children: [
-                        _ChartToggle(
-                          label: 'Sem.',
-                          isActive: isWeek,
-                          onTap: () => controller.toggleChartPeriod('week'),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    height: 160,
+                    child: BarChart(
+                      BarChartData(
+                        alignment: BarChartAlignment.spaceAround,
+                        maxY: (maxVal / 1000) * 1.2,
+                        backgroundColor: Colors.transparent,
+                        gridData: FlGridData(
+                          show: true,
+                          drawVerticalLine: false,
+                          horizontalInterval: isWeek ? 20 : 50,
+                          getDrawingHorizontalLine: (v) =>
+                              FlLine(color: kDivider, strokeWidth: 1),
                         ),
-                        _ChartToggle(
-                          label: 'Mois',
-                          isActive: !isWeek,
-                          onTap: () => controller.toggleChartPeriod('month'),
+                        borderData: FlBorderData(show: false),
+                        titlesData: FlTitlesData(
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (v, _) {
+                                final idx = v.toInt();
+                                if (idx < 0 || idx >= labels.length) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    labels[idx],
+                                    style: TextStyle(
+                                      fontSize: isWeek ? 11 : 9,
+                                      color: kTextLight,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                );
+                              },
+                              reservedSize: 28,
+                            ),
+                          ),
+                          leftTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
                         ),
-                      ],
+                        barGroups: data.asMap().entries.map((e) {
+                          final isMax = e.value == maxVal;
+                          return BarChartGroupData(
+                            x: e.key,
+                            barRods: [
+                              BarChartRodData(
+                                toY: e.value / 1000,
+                                width: isWeek ? 28 : 16,
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(8),
+                                  topRight: Radius.circular(8),
+                                ),
+                                gradient: isMax
+                                    ? kGreenGradient
+                                    : LinearGradient(
+                                        colors: [
+                                          kGreen.withValues(alpha: 0.18),
+                                          kGreen.withValues(alpha: 0.08),
+                                        ],
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                      ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                        barTouchData: BarTouchData(
+                          touchTooltipData: BarTouchTooltipData(
+                            tooltipRoundedRadius: 10,
+                            getTooltipItem: (group, groupIdx, rod, rodIdx) =>
+                                BarTooltipItem(
+                                  '${(rod.toY * 1000).toInt()} F',
+                                  const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                          ),
+                        ),
+                      ),
+                      duration: const Duration(milliseconds: 400),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                height: 160,
-                child: hasData
-                    ? BarChart(
-                        BarChartData(
-                          alignment: BarChartAlignment.spaceAround,
-                          maxY: (maxVal / 1000) * 1.2,
-                          backgroundColor: Colors.transparent,
-                          gridData: FlGridData(
-                            show: true,
-                            drawVerticalLine: false,
-                            horizontalInterval: isWeek ? 20 : 50,
-                            getDrawingHorizontalLine: (v) =>
-                                FlLine(color: kDivider, strokeWidth: 1),
-                          ),
-                          borderData: FlBorderData(show: false),
-                          titlesData: FlTitlesData(
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                getTitlesWidget: (v, _) {
-                                  final idx = v.toInt();
-                                  if (idx < 0 || idx >= labels.length) {
-                                    return const SizedBox.shrink();
-                                  }
-                                  return Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: Text(
-                                      labels[idx],
-                                      style: TextStyle(
-                                        fontSize: isWeek ? 11 : 9,
-                                        color: kTextLight,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                reservedSize: 28,
-                              ),
-                            ),
-                            leftTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            topTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            rightTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                          ),
-                          barGroups: data.asMap().entries.map((e) {
-                            final isMax = e.value == maxVal;
-                            return BarChartGroupData(
-                              x: e.key,
-                              barRods: [
-                                BarChartRodData(
-                                  toY: e.value / 1000,
-                                  width: isWeek ? 28 : 16,
-                                  borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(8),
-                                    topRight: Radius.circular(8),
-                                  ),
-                                  gradient: isMax
-                                      ? kGreenGradient
-                                      : LinearGradient(
-                                          colors: [
-                                            kGreen.withValues(alpha: 0.18),
-                                            kGreen.withValues(alpha: 0.08),
-                                          ],
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                        ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
-                          barTouchData: BarTouchData(
-                            touchTooltipData: BarTouchTooltipData(
-                              tooltipRoundedRadius: 10,
-                              getTooltipItem: (group, groupIdx, rod, rodIdx) =>
-                                  BarTooltipItem(
-                                    '${(rod.toY * 1000).toInt()} F',
-                                    const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                            ),
-                          ),
-                        ),
-                        duration: const Duration(milliseconds: 400),
-                      )
-                    : const _EmptyChartState(),
-              ),
-            ],
-          );
-        }),
-      ),
-    ).animate().fadeIn(duration: 500.ms, delay: 600.ms);
+              );
+            },
+          ),
+        ),
+      ).animate().fadeIn(duration: 500.ms, delay: 600.ms);
     });
   }
 
@@ -788,17 +800,18 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
                 child: Padding(
                   padding: const EdgeInsets.all(4),
                   child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
+                    width: 42,
+                    height: 42,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: PhosphorIcon(
+                      PhosphorIconsDuotone.user,
+                      color: kGreen,
+                      size: 22,
+                    ),
                   ),
-                  child: PhosphorIcon(PhosphorIconsDuotone.user,
-                    color: kGreen,
-                    size: 22,
-                  ),
-                ),
                 ),
               ),
             ],
@@ -825,51 +838,52 @@ class _NotifBell extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(4),
         child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: PhosphorIcon(
+                PhosphorIconsDuotone.bell,
+                color: kGreen,
+                size: 22,
+              ),
             ),
-            child: PhosphorIcon(PhosphorIconsDuotone.bell,
-              color: kGreen,
-              size: 22,
-            ),
-          ),
-          Obx(
-            () => controller.notificationCount.value > 0
-                ? Positioned(
-                    top: 4,
-                    right: 4,
-                    child: Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: kRed,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.5),
-                      ),
-                      child: Center(
-                        child: Text(
-                          controller.notificationCount.value > 9
-                              ? '9+'
-                              : '${controller.notificationCount.value}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 7,
-                            fontWeight: FontWeight.w800,
+            Obx(
+              () => controller.notificationCount.value > 0
+                  ? Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: kRed,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        child: Center(
+                          child: Text(
+                            controller.notificationCount.value > 9
+                                ? '9+'
+                                : '${controller.notificationCount.value}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 7,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-        ],
-      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -937,7 +951,8 @@ class _RevenueCardAnimated extends StatelessWidget {
                   ),
                 ],
               ),
-              child: PhosphorIcon(PhosphorIconsDuotone.wallet,
+              child: PhosphorIcon(
+                PhosphorIconsDuotone.wallet,
                 color: Colors.white,
                 size: 22,
               ),
@@ -962,7 +977,8 @@ class _RevenueCardAnimated extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  PhosphorIcon(PhosphorIconsDuotone.checkCircle,
+                  PhosphorIcon(
+                    PhosphorIconsDuotone.checkCircle,
                     color: kGreen,
                     size: 13,
                   ),
@@ -1072,7 +1088,8 @@ class _RevenueCardAnimated extends StatelessWidget {
             gradient: kGoldGradient,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: PhosphorIcon(PhosphorIconsDuotone.wallet,
+          child: PhosphorIcon(
+            PhosphorIconsDuotone.wallet,
             color: Colors.white,
             size: 22,
           ),
@@ -1113,7 +1130,8 @@ class _RevenueCardAnimated extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              PhosphorIcon(PhosphorIconsDuotone.checkCircle,
+              PhosphorIcon(
+                PhosphorIconsDuotone.checkCircle,
                 color: kGreen,
                 size: 13,
               ),
@@ -1153,39 +1171,6 @@ class _ActionData {
   });
 }
 
-class _EmptyChartState extends StatelessWidget {
-  const _EmptyChartState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: kBgSurface,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          PhosphorIcon(PhosphorIconsDuotone.chartBar,
-            color: kTextLight,
-            size: 30,
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Aucun revenu sur cette période',
-            style: TextStyle(
-              color: kTextSub,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _EmptyRecentBookings extends StatelessWidget {
   const _EmptyRecentBookings();
 
@@ -1208,7 +1193,11 @@ class _EmptyRecentBookings extends StatelessWidget {
               color: kGreenLight,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: PhosphorIcon(PhosphorIconsDuotone.calendarCheck, color: kGreen, size: 22),
+            child: PhosphorIcon(
+              PhosphorIconsDuotone.calendarCheck,
+              color: kGreen,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -1358,7 +1347,8 @@ class _BookingTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    PhosphorIcon(PhosphorIconsDuotone.mapPin,
+                    PhosphorIcon(
+                      PhosphorIconsDuotone.mapPin,
                       size: 13,
                       color: kTextLight,
                     ),
@@ -1376,7 +1366,8 @@ class _BookingTile extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                     ),
-                    PhosphorIcon(PhosphorIconsDuotone.clock,
+                    PhosphorIcon(
+                      PhosphorIconsDuotone.clock,
                       size: 13,
                       color: kTextLight,
                     ),

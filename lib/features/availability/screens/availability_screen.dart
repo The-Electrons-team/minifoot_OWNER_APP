@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart' show CupertinoDatePicker, CupertinoDatePickerMode, CupertinoTheme, CupertinoThemeData;
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -184,15 +183,14 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
       child: Obx(() {
         if (controller.isLoadingTerrains.value) {
           return Container(
-            height: 42,
-            decoration: BoxDecoration(
-              color: kBgSurface,
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ).animate(onPlay: (c) => c.repeat()).shimmer(
-                duration: 1200.ms,
-                color: kBgCard,
-              );
+                height: 42,
+                decoration: BoxDecoration(
+                  color: kBgSurface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              )
+              .animate(onPlay: (c) => c.repeat())
+              .shimmer(duration: 1200.ms, color: kBgCard);
         }
 
         if (controller.terrains.isEmpty) {
@@ -217,8 +215,8 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
                   final label = terrain.isComplexView
                       ? terrain.complexName
                       : terrain.isMiniTerrain
-                          ? terrain.name
-                          : terrain.complexName;
+                      ? terrain.name
+                      : terrain.complexName;
                   return GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () {
@@ -507,7 +505,9 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
                     onLongPress: () async {
                       if (slot.isBooked) return;
                       if (!controller.canToggleRange(slot.time, 2)) {
-                        AppSnackbar.warning('Le blocage rapide nécessite au moins 1h de créneaux continus libres.');
+                        AppSnackbar.warning(
+                          'Le blocage rapide nécessite au moins 1h de créneaux continus libres.',
+                        );
                         return;
                       }
                       HapticFeedback.heavyImpact();
@@ -690,7 +690,8 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
                   color: Colors.white,
                 ),
               )
-            : PhosphorIcon(PhosphorIconsDuotone.slidersHorizontal,
+            : PhosphorIcon(
+                PhosphorIconsDuotone.slidersHorizontal,
                 color: Colors.white,
                 size: 20,
               ),
@@ -1041,7 +1042,6 @@ class _NoTerrainChip extends StatelessWidget {
   }
 }
 
-
 class _AvailabilityEmptyState extends StatelessWidget {
   final bool showCreateButton;
 
@@ -1061,9 +1061,6 @@ class _AvailabilityEmptyState extends StatelessWidget {
               backgroundColor: kGreen,
               foregroundColor: Colors.white,
               elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
             ),
             icon: const PhosphorIcon(
               PhosphorIconsRegular.plus,
@@ -1129,7 +1126,6 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
     final endLabel = _formatDateLabel(endDate);
 
     return Container(
-
       decoration: BoxDecoration(
         color: kBgCard,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -1351,15 +1347,15 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
                                   ? null
                                   : () async {
                                       HapticFeedback.mediumImpact();
-                                      final count =
-                                          await controller.toggleBlockPeriod(
-                                        startDate:
-                                            controller.selectedDate.value,
-                                        startTime: slot.time,
-                                        endDate: endDate,
-                                        endTime: endTime,
-                                        unblock: slot.isBlocked,
-                                      );
+                                      final count = await controller
+                                          .toggleBlockPeriod(
+                                            startDate:
+                                                controller.selectedDate.value,
+                                            startTime: slot.time,
+                                            endDate: endDate,
+                                            endTime: endTime,
+                                            unblock: slot.isBlocked,
+                                          );
                                       if (!context.mounted) return;
                                       Navigator.of(context).pop();
                                       AppSnackbar.success(
@@ -1399,8 +1395,6 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
       ),
     );
   }
-
-
 
   bool _isPeriodValid(AvailabilityController controller, TimeSlot slot) {
     final startDate = DateTime(
@@ -1456,9 +1450,7 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
               onSurface: kTextPrim,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: kGreen,
-              ),
+              style: TextButton.styleFrom(foregroundColor: kGreen),
             ),
           ),
           child: child!,
@@ -1490,9 +1482,7 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
               onSurface: kTextPrim,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: kGreen,
-              ),
+              style: TextButton.styleFrom(foregroundColor: kGreen),
             ),
           ),
           child: MediaQuery(
@@ -1505,7 +1495,7 @@ class _SlotDetailSheetState extends State<_SlotDetailSheet> {
     if (picked == null) return;
     final hour = picked.hour.toString().padLeft(2, '0');
     final minute = picked.minute.toString().padLeft(2, '0');
-    setState(() => endTime = '${hour}h${minute}');
+    setState(() => endTime = '${hour}h$minute');
   }
 }
 
@@ -1582,7 +1572,6 @@ class _BulkActionSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-
       decoration: BoxDecoration(
         color: kBgCard,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),

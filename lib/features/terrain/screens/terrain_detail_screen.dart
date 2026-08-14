@@ -32,213 +32,218 @@ class TerrainDetailScreen extends GetView<TerrainController> {
           color: kGreen,
           backgroundColor: kBgCard,
           child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          slivers: [
-            // AppBar avec Image
-            SliverAppBar(
-              expandedHeight: 300,
-              pinned: true,
-              backgroundColor: Colors.white,
-              elevation: 0,
-              scrolledUnderElevation: 0,
-              leading: Center(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => Get.back(),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: const BoxDecoration(
-                      color: kBgSurface,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      PhosphorIconsRegular.caretLeft,
-                      color: kTextPrim,
-                      size: 16,
-                    ),
-                  ),
-                ),
-              ),
-              actions: [
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 16),
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => controller.goToForm(terrain),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: const BoxDecoration(
-                          color: kBgSurface,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          PhosphorIconsLight.pencilSimple,
-                          color: kGreen,
-                          size: 20,
-                        ),
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            slivers: [
+              // AppBar avec Image
+              SliverAppBar(
+                expandedHeight: 300,
+                pinned: true,
+                backgroundColor: Colors.white,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                leading: Center(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => Get.back(),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: kBgSurface,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        PhosphorIconsRegular.caretLeft,
+                        color: kTextPrim,
+                        size: 16,
                       ),
                     ),
                   ),
                 ),
-              ],
-              flexibleSpace: FlexibleSpaceBar(
-                background: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    if (images.isNotEmpty)
-                      PageView.builder(
-                        itemCount: images.length,
-                        onPageChanged: (index) => controller.currentPhotoIndex.value = index,
-                        itemBuilder: (context, index) {
-                          return AppNetworkImage(
-                            url: images[index],
-                            fallback: Container(
-                              color: kGreenLight,
-                              child: const Icon(
-                                PhosphorIconsLight.soccerBall,
-                                size: 64,
-                                color: kGreen,
+                actions: [
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 16),
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => controller.goToForm(terrain),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: const BoxDecoration(
+                            color: kBgSurface,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            PhosphorIconsLight.pencilSimple,
+                            color: kGreen,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      if (images.isNotEmpty)
+                        PageView.builder(
+                          itemCount: images.length,
+                          onPageChanged: (index) =>
+                              controller.currentPhotoIndex.value = index,
+                          itemBuilder: (context, index) {
+                            return AppNetworkImage(
+                              url: images[index],
+                              fallback: Container(
+                                color: kGreenLight,
+                                child: const Icon(
+                                  PhosphorIconsLight.soccerBall,
+                                  size: 64,
+                                  color: kGreen,
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      )
-                    else
-                      Container(
-                        color: kGreenLight,
-                        child: const Icon(
-                          PhosphorIconsLight.soccerBall,
-                          size: 64,
-                          color: kGreen,
+                            );
+                          },
+                        )
+                      else
+                        Container(
+                          color: kGreenLight,
+                          child: const Icon(
+                            PhosphorIconsLight.soccerBall,
+                            size: 64,
+                            color: kGreen,
+                          ),
+                        ),
+                      const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Colors.black54],
+                          ),
                         ),
                       ),
-                    const DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black54,
-                          ],
-                        ),
-                      ),
-                    ),
-                    if (images.length > 1)
-                      Positioned(
-                        bottom: 40,
-                        left: 0,
-                        right: 0,
-                        child: Obx(
-                          () => Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(
-                              images.length,
-                              (index) => AnimatedContainer(
-                                duration: const Duration(milliseconds: 300),
-                                width: controller.currentPhotoIndex.value == index ? 20 : 8,
-                                height: 8,
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(4),
-                                  color: controller.currentPhotoIndex.value == index
-                                      ? Colors.white
-                                      : Colors.white.withValues(alpha: 0.5),
+                      if (images.length > 1)
+                        Positioned(
+                          bottom: 40,
+                          left: 0,
+                          right: 0,
+                          child: Obx(
+                            () => Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(
+                                images.length,
+                                (index) => AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  width:
+                                      controller.currentPhotoIndex.value ==
+                                          index
+                                      ? 20
+                                      : 8,
+                                  height: 8,
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(4),
+                                    color:
+                                        controller.currentPhotoIndex.value ==
+                                            index
+                                        ? Colors.white
+                                        : Colors.white.withValues(alpha: 0.5),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
 
-            // Content
-            SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
-                decoration: const BoxDecoration(
-                  color: kBg,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header Info
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                terrain.name,
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w900,
-                                  color: kTextPrim,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  const Icon(
-                                    PhosphorIconsLight.mapPin,
-                                    color: kTextSub,
-                                    size: 16,
+              // Content
+              SliverToBoxAdapter(
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
+                  decoration: const BoxDecoration(
+                    color: kBg,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(30),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header Info
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  terrain.name,
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w900,
+                                    color: kTextPrim,
                                   ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      terrain.address,
-                                      style: const TextStyle(
-                                        color: kTextSub,
-                                        fontSize: 14,
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      PhosphorIconsLight.mapPin,
+                                      color: kTextSub,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        terrain.address,
+                                        style: const TextStyle(
+                                          color: kTextSub,
+                                          fontSize: 14,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: terrain.isActive
-                                ? kGreenLight
-                                : kRedLight,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            terrain.isActive ? 'Actif' : 'Pause',
-                            style: TextStyle(
-                              color: terrain.isActive
-                                  ? kGreen
-                                  : kRed,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12,
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: terrain.isActive ? kGreenLight : kRedLight,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              terrain.isActive ? 'Actif' : 'Pause',
+                              style: TextStyle(
+                                color: terrain.isActive ? kGreen : kRed,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Bar de navigation par onglets
-                    Obx(() => Container(
+                      // Bar de navigation par onglets
+                      Obx(
+                        () => Container(
                           height: 45,
                           decoration: const BoxDecoration(
                             border: Border(
@@ -250,35 +255,40 @@ class TerrainDetailScreen extends GetView<TerrainController> {
                               _Tab(
                                 label: 'À propos',
                                 index: 0,
-                                selected: controller.selectedTabIndex.value == 0,
-                                onTap: () => controller.selectedTabIndex.value = 0,
+                                selected:
+                                    controller.selectedTabIndex.value == 0,
+                                onTap: () =>
+                                    controller.selectedTabIndex.value = 0,
                               ),
                               _Tab(
                                 label: 'Avis des clients',
                                 index: 1,
-                                selected: controller.selectedTabIndex.value == 1,
+                                selected:
+                                    controller.selectedTabIndex.value == 1,
                                 count: controller.reviews.length,
-                                onTap: () => controller.selectedTabIndex.value = 1,
+                                onTap: () =>
+                                    controller.selectedTabIndex.value = 1,
                               ),
                             ],
                           ),
-                        )),
+                        ),
+                      ),
 
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                    // Contenu des onglets
-                    Obx(() {
-                      if (controller.selectedTabIndex.value == 0) {
-                        return _AboutTab(terrain: terrain);
-                      } else {
-                        return _ReviewsTab(controller: controller);
-                      }
-                    }),
-                  ],
+                      // Contenu des onglets
+                      Obx(() {
+                        if (controller.selectedTabIndex.value == 0) {
+                          return _AboutTab(terrain: terrain);
+                        } else {
+                          return _ReviewsTab(controller: controller);
+                        }
+                      }),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
           ),
         ),
         bottomNavigationBar: Container(
@@ -321,12 +331,6 @@ class TerrainDetailScreen extends GetView<TerrainController> {
 class _PhysicalTerrainCard extends StatelessWidget {
   final List<SubTerrainModel> group;
   const _PhysicalTerrainCard({required this.group});
-
-  static String _formatDays(List<int> days) {
-    if (days.isEmpty) return 'Tous les jours';
-    const n = {1: 'Lun', 2: 'Mar', 3: 'Mer', 4: 'Jeu', 5: 'Ven', 6: 'Sam', 0: 'Dim'};
-    return days.map((d) => n[d] ?? '').join(', ');
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -394,7 +398,10 @@ class _PhysicalTerrainCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: first.isActive ? kGreenLight : kRedLight,
                     borderRadius: BorderRadius.circular(8),
@@ -416,7 +423,9 @@ class _PhysicalTerrainCard extends StatelessWidget {
             Container(
               decoration: const BoxDecoration(
                 color: Color(0xFFF9FAF7),
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(18),
+                ),
                 border: Border(top: BorderSide(color: kBorder)),
               ),
               child: Column(
@@ -463,7 +472,15 @@ class _PricingSection extends StatelessWidget {
 
   static String _formatDays(List<int> days) {
     if (days.isEmpty) return '';
-    const n = {1: 'Lun', 2: 'Mar', 3: 'Mer', 4: 'Jeu', 5: 'Ven', 6: 'Sam', 0: 'Dim'};
+    const n = {
+      1: 'Lun',
+      2: 'Mar',
+      3: 'Mer',
+      4: 'Jeu',
+      5: 'Ven',
+      6: 'Sam',
+      0: 'Dim',
+    };
     return days.map((d) => n[d] ?? '').join(', ');
   }
 
@@ -533,17 +550,27 @@ class _PricingSection extends StatelessWidget {
                             const SizedBox(height: 3),
                             Row(
                               children: [
-                                const Icon(PhosphorIconsLight.clock, size: 11, color: kTextSub),
+                                const Icon(
+                                  PhosphorIconsLight.clock,
+                                  size: 11,
+                                  color: kTextSub,
+                                ),
                                 const SizedBox(width: 3),
                                 Text(
                                   '${p.startTime} – ${p.endTime}',
-                                  style: const TextStyle(fontSize: 11, color: kTextSub),
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: kTextSub,
+                                  ),
                                 ),
                                 if (days.isNotEmpty) ...[
                                   const SizedBox(width: 6),
                                   Text(
                                     days,
-                                    style: const TextStyle(fontSize: 11, color: kTextLight),
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: kTextLight,
+                                    ),
                                   ),
                                 ],
                               ],
@@ -563,7 +590,12 @@ class _PricingSection extends StatelessWidget {
                   ),
                 ),
                 if (!isLast)
-                  const Divider(color: kDivider, height: 20, indent: 14, endIndent: 14),
+                  const Divider(
+                    color: kDivider,
+                    height: 20,
+                    indent: 14,
+                    endIndent: 14,
+                  ),
               ],
             );
           }),
@@ -745,10 +777,7 @@ class _ReviewCard extends StatelessWidget {
                     ),
                     Text(
                       _timeAgo(review.createdAt),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: kTextLight,
-                      ),
+                      style: const TextStyle(fontSize: 11, color: kTextLight),
                     ),
                   ],
                 ),
@@ -756,9 +785,13 @@ class _ReviewCard extends StatelessWidget {
               Row(
                 children: List.generate(5, (index) {
                   return Icon(
-                    index < review.rating ? PhosphorIconsFill.star : PhosphorIconsRegular.star,
+                    index < review.rating
+                        ? PhosphorIconsFill.star
+                        : PhosphorIconsRegular.star,
                     size: 16,
-                    color: index < review.rating ? const Color(0xFFFBBF24) : const Color(0xFFE5E7EB),
+                    color: index < review.rating
+                        ? const Color(0xFFFBBF24)
+                        : const Color(0xFFE5E7EB),
                   );
                 }),
               ),
@@ -870,11 +903,17 @@ class _AboutTab extends StatelessWidget {
     }
 
     // Sépare : formats (capacités), surfaces, équipements
-    const knownSurfaces = {'Gazon synthétique', 'Gazon naturel', 'Terre battue'};
+    const knownSurfaces = {
+      'Gazon synthétique',
+      'Gazon naturel',
+      'Terre battue',
+    };
     const knownCapacities = {'5v5', '7v7', '9v9', '11v11'};
     final formats = terrain.features.where(knownCapacities.contains).toList();
     final equipment = terrain.features
-        .where((f) => !knownCapacities.contains(f) && !knownSurfaces.contains(f))
+        .where(
+          (f) => !knownCapacities.contains(f) && !knownSurfaces.contains(f),
+        )
         .toList();
 
     return Column(
@@ -944,9 +983,7 @@ class _ReviewsTab extends StatelessWidget {
     if (controller.isLoadingReviews.value) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 40),
-        child: Center(
-          child: CircularProgressIndicator(color: kGreen),
-        ),
+        child: Center(child: CircularProgressIndicator(color: kGreen)),
       );
     }
 
@@ -981,10 +1018,7 @@ class _ReviewsTab extends StatelessWidget {
               const SizedBox(height: 8),
               const Text(
                 'Les retours de vos clients s\'afficheront ici.',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: kTextSub,
-                ),
+                style: TextStyle(fontSize: 13, color: kTextSub),
               ),
             ],
           ),

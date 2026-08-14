@@ -133,9 +133,6 @@ class ControllersScreen extends GetView<ControllersController> {
                           backgroundColor: kGreen,
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18),
-                          ),
                           textStyle: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w900,
@@ -151,7 +148,8 @@ class ControllersScreen extends GetView<ControllersController> {
 
           return NotificationListener<ScrollNotification>(
             onNotification: (scroll) {
-              if (scroll.metrics.pixels >= scroll.metrics.maxScrollExtent - 400) {
+              if (scroll.metrics.pixels >=
+                  scroll.metrics.maxScrollExtent - 400) {
                 controller.loadMore();
               }
               return false;
@@ -159,8 +157,9 @@ class ControllersScreen extends GetView<ControllersController> {
             child: ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
-              itemCount: controller.controllers.length + (controller.hasMore ? 1 : 0),
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemCount:
+                  controller.controllers.length + (controller.hasMore ? 1 : 0),
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (_, index) {
                 if (index >= controller.controllers.length) {
                   return const Padding(
@@ -180,7 +179,8 @@ class ControllersScreen extends GetView<ControllersController> {
                 final item = controller.controllers[index];
                 return _ControllerCard(
                   item: item,
-                  onTap: () => Get.toNamed(Routes.controllerDetail, arguments: item),
+                  onTap: () =>
+                      Get.toNamed(Routes.controllerDetail, arguments: item),
                   onToggle: () => controller.toggleActive(item),
                 );
               },
@@ -205,7 +205,6 @@ class ControllersScreen extends GetView<ControllersController> {
       ),
     );
   }
-
 
   void _showCredentials(Map<String, dynamic> credentials) {
     final message = (credentials['message'] ?? '').toString();
@@ -250,14 +249,13 @@ class ControllersScreen extends GetView<ControllersController> {
             onPressed: () {
               Clipboard.setData(ClipboardData(text: message));
               Get.back();
-              AppSnackbar.success('Identifiants copiés dans le presse-papiers.');
+              AppSnackbar.success(
+                'Identifiants copiés dans le presse-papiers.',
+              );
             },
           ),
           const SizedBox(height: AppSpacing.xs),
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Fermer'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Fermer')),
         ],
       ),
     );
@@ -274,7 +272,6 @@ class _ControllerCard extends StatelessWidget {
     required this.onTap,
     required this.onToggle,
   });
-
 
   @override
   Widget build(BuildContext context) {
@@ -297,7 +294,8 @@ class _ControllerCard extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     backgroundColor: item.isActive ? kGreenLight : kBgSurface,
-                    child: PhosphorIcon(PhosphorIconsDuotone.identificationBadge,
+                    child: PhosphorIcon(
+                      PhosphorIconsDuotone.identificationBadge,
                       color: item.isActive ? kGreen : kTextSub,
                     ),
                   ),
