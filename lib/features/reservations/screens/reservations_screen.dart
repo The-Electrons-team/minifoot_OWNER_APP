@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:get/get.dart';
-import 'package:lottie/lottie.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/utils/app_format.dart';
 import '../../../core/utils/app_motion.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_states.dart';
-import '../../../core/widgets/owner_ui.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../../routes/app_routes.dart';
 import '../../reports/screens/report_screen.dart';
@@ -22,41 +20,45 @@ class ReservationsScreen extends GetView<ReservationsController> {
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(
-        backgroundColor: kBgCard,
+        backgroundColor: kBg,
         elevation: 0,
-        leading: IconButton(
-          onPressed: () => Get.back(),
-          icon: const Icon(
-            PhosphorIconsRegular.caretLeft,
-            size: 18,
+        centerTitle: true,
+        leading: GestureDetector(
+          onTap: () => Get.back(),
+          behavior: HitTestBehavior.opaque,
+          child: const Center(
+            child: PhosphorIcon(
+              PhosphorIconsRegular.caretLeft,
+              color: kTextPrim,
+              size: 24,
+            ),
           ),
-          color: kTextPrim,
         ),
         title: const Text(
           'Réservations',
           style: TextStyle(
+            fontFamily: 'Orbitron',
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: kTextPrim,
           ),
         ),
-        centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: () => Get.to(
+          GestureDetector(
+            onTap: () => Get.to(
               () => const ReportScreen(),
               arguments: {'reportType': 'reservations'},
             ),
-            icon: PhosphorIcon(PhosphorIconsDuotone.filePdf,
-              color: kGreen,
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: PhosphorIcon(PhosphorIconsDuotone.filePdf,
+                color: kGreen,
+                size: 22,
+              ),
             ),
-            tooltip: 'Rapport PDF',
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: kDivider),
-        ),
       ),
       body: RefreshIndicator(
         onRefresh: controller.refreshReservations,
@@ -75,90 +77,53 @@ class ReservationsScreen extends GetView<ReservationsController> {
 
   // ── Filter chips row ────────────────────────────────────────────────────────
   Widget _buildFilterChips() {
-    return Obx(() {
-      final filters = [
-        {'key': 'all', 'label': 'Toutes', 'count': controller.totalCount},
-        {
-          'key': 'confirmed',
-          'label': 'Confirmees',
-          'count': controller.confirmedCount,
-        },
-        {
-          'key': 'pending',
-          'label': 'En attente',
-          'count': controller.pendingCount,
-        },
-        {
-          'key': 'cancelled',
-          'label': 'Annulees',
-          'count': controller.cancelledCount,
-        },
-      ];
-
-      return Container(
-        color: kBgCard,
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
+    const filters = [
+      ('all', 'Toutes'),
+      ('confirmed', 'Confirmées'),
+      ('pending', 'En attente'),
+      ('cancelled', 'Annulées'),
+    ];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+      child: Obx(() {
+        final active = controller.selectedFilter.value;
+        return Container(
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: kBgSurface,
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Row(
             children: filters.map((f) {
-              final isSelected = controller.selectedFilter.value == f['key'];
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
+              final isActive = active == f.$1;
+              return Expanded(
                 child: GestureDetector(
-                  onTap: () => controller.setFilter(f['key'] as String),
+                  onTap: () => controller.setFilter(f.$1),
+                  behavior: HitTestBehavior.opaque,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
-                      color: isSelected ? kGreen : kBgSurface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: isSelected ? kGreen : kBorder),
+                      color: isActive ? kGreen : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Row(
-                      children: [
-                        Text(
-                          f['label'] as String,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected ? Colors.white : kTextSub,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? Colors.white.withValues(alpha: 0.25)
-                                : kBgCard,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '${f['count']}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: isSelected ? Colors.white : kTextSub,
-                            ),
-                          ),
-                        ),
-                      ],
+                    alignment: Alignment.center,
+                    child: Text(
+                      f.$2,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isActive ? Colors.white : kTextSub,
+                      ),
                     ),
                   ),
                 ),
               );
             }).toList(),
           ),
-        ),
-      );
-    });
+        );
+      }),
+    );
   }
 
   Widget _buildSummaryStrip() {
@@ -166,71 +131,49 @@ class ReservationsScreen extends GetView<ReservationsController> {
       final list = controller.filteredReservations;
       final totalAmount = list.fold<int>(0, (sum, item) => sum + item.amount);
       final checkedInCount = list.where((item) => item.isCheckedIn).length;
-      final pendingActionCount = list
-          .where((item) => item.status == 'pending')
-          .length;
+      final pendingActionCount =
+          list.where((item) => item.status == 'pending').length;
 
-      return Container(
-        width: double.infinity,
-        color: kBgCard,
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 14, 24, 0),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(vertical: 18),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                kGreen.withValues(alpha: 0.08),
-                kBlue.withValues(alpha: 0.05),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: kBgCard,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: kBorder),
+            boxShadow: kCardShadow,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              OwnerSectionHeader(
-                title: 'Priorités de la vue',
-                subtitle:
-                    '${list.length} réservation${list.length > 1 ? 's' : ''} à suivre dans ce filtre',
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: _SummaryMetric(
-                      icon: PhosphorIconsDuotone.wallet,
-                      label: 'Montant',
-                      value: _formatAmount(totalAmount),
-                      accent: kGreen,
-                      background: Colors.white,
-                    ),
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                Expanded(
+                  child: _ResStatCell(
+                    icon: PhosphorIconsDuotone.wallet,
+                    iconColor: kGreen,
+                    value: _formatAmount(totalAmount),
+                    label: 'Montant',
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _SummaryMetric(
-                      icon: PhosphorIconsDuotone.sealCheck,
-                      label: 'Présences',
-                      value: '$checkedInCount',
-                      accent: kBlue,
-                      background: Colors.white,
-                    ),
+                ),
+                const VerticalDivider(color: kDivider, width: 1, thickness: 1),
+                Expanded(
+                  child: _ResStatCell(
+                    icon: PhosphorIconsDuotone.sealCheck,
+                    iconColor: kBlue,
+                    value: '$checkedInCount',
+                    label: 'Présences',
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _SummaryMetric(
-                      icon: PhosphorIconsDuotone.hourglassMedium,
-                      label: 'À traiter',
-                      value: '$pendingActionCount',
-                      accent: kGold,
-                      background: Colors.white,
-                    ),
+                ),
+                const VerticalDivider(color: kDivider, width: 1, thickness: 1),
+                Expanded(
+                  child: _ResStatCell(
+                    icon: PhosphorIconsDuotone.hourglassMedium,
+                    iconColor: kGold,
+                    value: '$pendingActionCount',
+                    label: 'À traiter',
                   ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -260,33 +203,14 @@ class ReservationsScreen extends GetView<ReservationsController> {
       final list = controller.filteredReservations;
 
       if (list.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Lottie.asset(
-                'assets/lottie/football_bounce.json',
-                width: 120,
-                height: 120,
-                repeat: true,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Aucune réservation',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: kTextSub,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                controller.selectedFilter.value == 'all'
-                    ? 'Les réservations apparaitront ici'
-                    : 'Aucune réservation pour ce filtre',
-                style: TextStyle(fontSize: 13, color: kTextLight),
-              ),
-            ],
+        return const Center(
+          child: Text(
+            'Aucune réservation',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: kTextSub,
+            ),
           ),
         );
       }
@@ -655,63 +579,54 @@ class _ReservationCard extends StatelessWidget {
   }
 }
 
-class _SummaryMetric extends StatelessWidget {
+class _ResStatCell extends StatelessWidget {
   final dynamic icon;
-  final String label;
+  final Color iconColor;
   final String value;
-  final Color accent;
-  final Color background;
+  final String label;
 
-  const _SummaryMetric({
+  const _ResStatCell({
     required this.icon,
-    required this.label,
+    required this.iconColor,
     required this.value,
-    required this.accent,
-    required this.background,
+    required this.label,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: PhosphorIcon(icon, size: 16, color: accent),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(10),
           ),
-          const SizedBox(height: 12),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 11,
-              color: kTextSub,
-              fontWeight: FontWeight.w600,
-            ),
+          child: PhosphorIcon(icon, size: 18, color: iconColor),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+            color: kTextPrim,
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 13,
-              color: kTextPrim,
-              fontWeight: FontWeight.w800,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: kTextSub,
+            fontWeight: FontWeight.w500,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

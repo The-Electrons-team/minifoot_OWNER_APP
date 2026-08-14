@@ -576,11 +576,23 @@ class _ReportScreenState extends State<ReportScreen> {
       appBar: AppBar(
         backgroundColor: kBgCard,
         elevation: 0,
-        leading: IconButton(
-          onPressed: Get.back,
-          icon: PhosphorIcon(PhosphorIconsDuotone.arrowLeft,
-            color: kTextPrim,
-            size: 18,
+        leading: Center(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: Get.back,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: kBgSurface,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                PhosphorIconsRegular.caretLeft,
+                color: kTextPrim,
+                size: 16,
+              ),
+            ),
           ),
         ),
         title: const Text(

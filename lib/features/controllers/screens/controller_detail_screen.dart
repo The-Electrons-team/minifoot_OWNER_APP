@@ -34,11 +34,23 @@ class _ControllerDetailScreenState extends State<ControllerDetailScreen> {
       appBar: AppBar(
         backgroundColor: kBg,
         elevation: 0,
-        leading: IconButton(
-          onPressed: () => Get.back(),
-          icon: const Icon(
-            PhosphorIconsRegular.caretLeft,
-            size: 18,
+        leading: Center(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Get.back(),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: kBgSurface,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                PhosphorIconsRegular.caretLeft,
+                color: kTextPrim,
+                size: 16,
+              ),
+            ),
           ),
         ),
         title: const Text(
@@ -67,19 +79,6 @@ class _ControllerDetailScreenState extends State<ControllerDetailScreen> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Expanded(
-                  child: _MetricCard(
-                    label: 'Présences',
-                    value: '${item.confirmed}',
-                    icon: PhosphorIconsDuotone.sealCheck,
-                    color: kGreen,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
                 Expanded(
                   child: _MetricCard(
                     label: 'Créneaux bloqués',

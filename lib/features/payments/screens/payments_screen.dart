@@ -12,6 +12,7 @@ import '../../../core/utils/app_phone.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../core/widgets/owner_ui.dart';
 import '../controllers/payments_controller.dart';
+import '../../shell/controllers/shell_controller.dart';
 
 class PaymentsScreen extends GetView<PaymentsController> {
   const PaymentsScreen({super.key});
@@ -33,7 +34,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
               parent: BouncingScrollPhysics(),
             ),
             slivers: [
-              SliverToBoxAdapter(child: _buildHeader(context)),
+              _buildHeader(context),
               SliverToBoxAdapter(child: _buildAvailableBalance(context)),
               SliverToBoxAdapter(child: _buildPayoutDestination()),
               SliverToBoxAdapter(child: _buildNotice()),
@@ -49,13 +50,22 @@ class PaymentsScreen extends GetView<PaymentsController> {
     );
   }
 
-  // ── Carte solde disponible + bouton Retirer ────────────────────────────────
+  // ── Carte revenus + solde + bouton Retirer ────────────────────────────────
   Widget _buildAvailableBalance(BuildContext context) {
     return Obx(() {
       final balance = controller.availableBalance.value;
+      final total = controller.totalRevenue.value;
       final count = controller.pendingPaymentsCount.value;
       final isWithdrawing = controller.isWithdrawing.value;
       final hasBalance = balance > 0;
+
+      final textPrim = hasBalance ? Colors.white : kTextPrim;
+      final textSub = hasBalance
+          ? Colors.white.withValues(alpha: 0.70)
+          : kTextSub;
+      final divColor = hasBalance
+          ? Colors.white.withValues(alpha: 0.20)
+          : kDivider;
 
       return Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -76,166 +86,125 @@ class PaymentsScreen extends GetView<PaymentsController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Revenus totaux ──────────────────────────────────────────
+              Text(
+                'Revenus totaux',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: textSub,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${_fmt(total)} F CFA',
+                style: TextStyle(
+                  fontFamily: 'Orbitron',
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: textPrim,
+                  height: 1,
+                ),
+              ),
+
+              const SizedBox(height: 14),
+              Container(height: 1, color: divColor),
+              const SizedBox(height: 14),
+
+              // ── À retirer + bouton ─────────────────────────────────────
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: hasBalance
-                          ? Colors.white.withValues(alpha: 0.18)
-                          : kGreenLight,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: PhosphorIcon(PhosphorIconsDuotone.wallet,
-                      color: hasBalance ? Colors.white : kGreen,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Solde disponible',
+                          'À retirer',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: hasBalance
-                                ? Colors.white.withValues(alpha: 0.75)
-                                : kTextSub,
+                            color: textSub,
                           ),
                         ),
+                        const SizedBox(height: 3),
                         Text(
                           '${_fmt(balance)} F CFA',
                           style: TextStyle(
-                            fontFamily: 'Orbitron',
-                            fontSize: 22,
+                            fontSize: 16,
                             fontWeight: FontWeight.w800,
-                            color: hasBalance ? Colors.white : kTextPrim,
+                            color: textPrim,
+                            height: 1,
                           ),
                         ),
+                        if (count > 0) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '$count rés. non retirée${count > 1 ? 's' : ''}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: textSub,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
-                ],
-              ),
-
-              if (count > 0) ...[
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '$count réservation${count > 1 ? 's' : ''} scannée${count > 1 ? 's' : ''} non retirée${count > 1 ? 's' : ''}',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-
-              const SizedBox(height: 16),
-
-              // Répartition commissions (info)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: hasBalance
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : kBgSurface,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _CommissionChip(
-                      label: 'DexPay',
-                      percent: '2%',
-                      light: hasBalance,
-                    ),
-                    _CommissionDot(light: hasBalance),
-                    _CommissionChip(
-                      label: 'MiniFoot',
-                      percent: '2%',
-                      light: hasBalance,
-                    ),
-                    _CommissionDot(light: hasBalance),
-                    _CommissionChip(
-                      label: 'Vous',
-                      percent: '96%',
-                      light: hasBalance,
-                      highlight: true,
+                  if (hasBalance) ...[
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      height: 42,
+                      child: ElevatedButton.icon(
+                        onPressed: isWithdrawing
+                            ? null
+                            : () {
+                                HapticFeedback.mediumImpact();
+                                _showWithdrawSheet(context, balance);
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: kGreen,
+                          disabledBackgroundColor:
+                              Colors.white.withValues(alpha: 0.4),
+                          elevation: 0,
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: isWithdrawing
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: kGreen,
+                                ),
+                              )
+                            : const PhosphorIcon(
+                                PhosphorIconsBold.arrowLineDown,
+                                size: 16,
+                              ),
+                        label: Text(
+                          isWithdrawing ? 'En cours…' : 'Retirer',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
-                ),
-              ),
-
-              const SizedBox(height: 14),
-
-              // Bouton retirer
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  onPressed:
-                      hasBalance && !isWithdrawing
-                          ? () {
-                              HapticFeedback.mediumImpact();
-                              _showWithdrawSheet(context, balance);
-                            }
-                          : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: hasBalance ? Colors.white : kBgSurface,
-                    foregroundColor: hasBalance ? kGreen : kTextLight,
-                    disabledBackgroundColor: Colors.white.withValues(alpha: 0.25),
-                    disabledForegroundColor: Colors.white60,
-                    elevation: 0,
-                  ),
-                  icon: isWithdrawing
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: hasBalance ? kGreen : Colors.white60,
-                          ),
-                        )
-                      : Icon(
-                          PhosphorIconsBold.arrowLineDown,
-                          size: 18,
-                        ),
-                  label: Text(
-                    isWithdrawing
-                        ? 'Traitement en cours…'
-                        : hasBalance
-                        ? 'Retirer mon argent'
-                        : 'Aucun solde à retirer',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
+                ],
               ),
             ],
           ),
-        ),
-      ).animate().fadeIn(delay: 80.ms, duration: 320.ms).slideY(
-            begin: 0.04,
-            duration: 320.ms,
-          );
+        ).animate().fadeIn(delay: 80.ms, duration: 320.ms).slideY(
+              begin: 0.04,
+              duration: 320.ms,
+            ),
+      );
     });
   }
 
@@ -311,11 +280,9 @@ class PaymentsScreen extends GetView<PaymentsController> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        configured
-                            ? 'Destination des reversements'
-                            : 'Coordonnées de reversement',
-                        style: const TextStyle(
+                      const Text(
+                        'Coordonnées de reversement',
+                        style: TextStyle(
                           color: kTextPrim,
                           fontSize: 14,
                           fontWeight: FontWeight.w900,
@@ -323,7 +290,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        configured ? '$method · $phone' : phone,
+                        configured ? '$method · $phone' : 'Non configuré',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -335,32 +302,10 @@ class PaymentsScreen extends GetView<PaymentsController> {
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: kBgSurface,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        configured ? 'Modifier' : 'Configurer',
-                        style: const TextStyle(
-                          color: kGreen,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      PhosphorIcon(PhosphorIconsDuotone.caretRight,
-                        color: kGreen,
-                        size: 16,
-                      ),
-                    ],
-                  ),
+                PhosphorIcon(
+                  PhosphorIconsRegular.caretRight,
+                  color: kTextLight,
+                  size: 18,
                 ),
               ],
             ),
@@ -420,145 +365,6 @@ class PaymentsScreen extends GetView<PaymentsController> {
     });
   }
 
-  // ── Header vert avec revenus + sélecteur de période ───────────────────────
-  Widget _buildHeader(BuildContext context) {
-    final top = MediaQuery.of(context).padding.top;
-    return Container(
-      padding: EdgeInsets.fromLTRB(20, top + 12, 20, 24),
-      decoration: const BoxDecoration(
-        gradient: kGreenGradient,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
-        ),
-      ),
-      child: Column(
-        children: [
-          // Barre du haut
-          Row(
-            children: [
-              GestureDetector(
-                onTap: Get.back,
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: PhosphorIcon(PhosphorIconsDuotone.caretLeft,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-              ),
-              const Expanded(
-                child: Text(
-                  'Paiements',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'Orbitron',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 40),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Sélecteur de période
-          Obx(
-            () => Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                children: [
-                  _PeriodTab(
-                    label: 'Jour',
-                    key_: 'day',
-                    active: controller.selectedPeriod.value == 'day',
-                    onTap: () => controller.setPeriod('day'),
-                  ),
-                  _PeriodTab(
-                    label: 'Semaine',
-                    key_: 'week',
-                    active: controller.selectedPeriod.value == 'week',
-                    onTap: () => controller.setPeriod('week'),
-                  ),
-                  _PeriodTab(
-                    label: 'Mois',
-                    key_: 'month',
-                    active: controller.selectedPeriod.value == 'month',
-                    onTap: () => controller.setPeriod('month'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 22),
-
-          // Montant total
-          Obx(
-            () => Column(
-              children: [
-                Text(
-                  'Revenus totaux',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withValues(alpha: 0.75),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${_fmt(controller.totalRevenue.value)} F CFA',
-                  style: const TextStyle(
-                    fontFamily: 'Orbitron',
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-
-          // Stats compactes
-          Obx(
-            () => Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _HeaderStat(
-                  icon: PhosphorIconsDuotone.calendarBlank,
-                  label: 'Ce mois',
-                  value: '${_fmt(controller.monthlyRevenue.value)} F',
-                ),
-                Container(
-                  width: 1,
-                  height: 28,
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  color: Colors.white.withValues(alpha: 0.25),
-                ),
-                _HeaderStat(
-                  icon: PhosphorIconsDuotone.wallet,
-                  label: 'À retirer',
-                  value: '${_fmt(controller.availableBalance.value)} F',
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 350.ms).slideY(begin: -0.05, duration: 350.ms);
-  }
 
   // ── Barre de répartition par méthode de paiement ──────────────────────────
   Widget _buildMethodBreakdown() {
@@ -669,7 +475,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
 
   // ── Filtres (Tout / Payé / En attente / Échoué) ───────────────────────────
   Widget _buildFilterChips() {
-    final filters = [
+    const filters = [
       {'key': 'all', 'label': 'Tout'},
       {'key': 'paid', 'label': 'Payé'},
       {'key': 'pending', 'label': 'En attente'},
@@ -677,105 +483,60 @@ class PaymentsScreen extends GetView<PaymentsController> {
     ];
 
     return Padding(
-      padding: const EdgeInsets.only(top: 16),
-      child: SizedBox(
-        height: 40,
-        child: Obx(() {
-          final active = controller.selectedFilter.value;
-          return ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            separatorBuilder: (context, index) => const SizedBox(width: 10),
-            itemCount: filters.length,
-            itemBuilder: (_, i) {
-              final f = filters[i];
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: Obx(() {
+        final active = controller.selectedFilter.value;
+        return Container(
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: kBgSurface,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: filters.map((f) {
               final isActive = active == f['key'];
-              return GestureDetector(
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  controller.setFilter(f['key']!);
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isActive ? kGreen : kBgCard,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: isActive ? [] : kCardShadow,
-                    border: isActive
-                        ? null
-                        : Border.all(color: kBorder, width: 0.5),
-                  ),
-                  child: Text(
-                    f['label']!,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isActive ? Colors.white : kTextSub,
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    controller.setFilter(f['key']!);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 9),
+                    decoration: BoxDecoration(
+                      color: isActive ? kGreen : Colors.transparent,
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Text(
+                      f['label']!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isActive ? Colors.white : kTextSub,
+                      ),
                     ),
                   ),
                 ),
               );
-            },
-          );
-        }),
-      ),
+            }).toList(),
+          ),
+        );
+      }),
     );
   }
 
-  // ── En-tête "Transactions" + compteur ─────────────────────────────────────
+  // ── En-tête "Transactions" ─────────────────────────────────────────────────
   Widget _buildTransactionsHeader() {
-    return Obx(
-      () => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        child: Row(
-          children: [
-            PhosphorIcon(PhosphorIconsDuotone.listDashes,
-              size: 20,
-              color: kTextPrim,
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              'Transactions',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: kTextPrim,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: kGreenLight,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '${controller.filteredTransactions.length}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: kGreen,
-                ),
-              ),
-            ),
-            const Spacer(),
-            // Compteurs rapides
-            Row(
-              children: [
-                _MiniCount(count: controller.paidCount, color: kGreen),
-                const SizedBox(width: 6),
-                _MiniCount(count: controller.pendingCount, color: kGold),
-                if (controller.failedCount > 0) ...[
-                  const SizedBox(width: 6),
-                  _MiniCount(count: controller.failedCount, color: kRed),
-                ],
-              ],
-            ),
-          ],
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Text(
+        'Transactions',
+        style: TextStyle(
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+          color: kTextPrim,
         ),
       ),
     );
@@ -856,39 +617,16 @@ class PaymentsScreen extends GetView<PaymentsController> {
   }
 
   Widget _buildEmptyState() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 20),
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 60, horizontal: 20),
       child: Center(
-        child: Column(
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: kBgSurface,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: PhosphorIcon(PhosphorIconsDuotone.magnifyingGlass,
-                size: 32,
-                color: kTextLight,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Aucune transaction',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: kTextPrim,
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Aucune transaction ne correspond\nau filtre sélectionné.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: kTextSub, height: 1.5),
-            ),
-          ],
+        child: Text(
+          'Aucune transaction',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: kTextSub,
+          ),
         ),
       ),
     );
@@ -908,6 +646,116 @@ class PaymentsScreen extends GetView<PaymentsController> {
       isScrollControlled: true,
       builder: (_) =>
           _TransactionDetailSheet(transaction: tx, formatAmount: _fmt),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
+    return SliverToBoxAdapter(
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(28),
+        ),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/terrain.webp',
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(color: kGreen),
+              ),
+            ),
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      kGreen.withValues(alpha: 0.88),
+                      Colors.black.withValues(alpha: 0.30),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(20, topPad + 14, 20, 20),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Get.find<ShellController>().select(0),
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            PhosphorIconsRegular.caretLeft,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                      const Expanded(
+                        child: Text(
+                          'Paiements',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Orbitron',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 32),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Obx(
+                    () => Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          _PeriodTab(
+                            label: 'Jour',
+                            key_: 'day',
+                            active: controller.selectedPeriod.value == 'day',
+                            onTap: () => controller.setPeriod('day'),
+                          ),
+                          _PeriodTab(
+                            label: 'Semaine',
+                            key_: 'week',
+                            active: controller.selectedPeriod.value == 'week',
+                            onTap: () => controller.setPeriod('week'),
+                          ),
+                          _PeriodTab(
+                            label: 'Mois',
+                            key_: 'month',
+                            active: controller.selectedPeriod.value == 'month',
+                            onTap: () => controller.setPeriod('month'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -959,49 +807,6 @@ class _PeriodTab extends StatelessWidget {
   }
 }
 
-class _HeaderStat extends StatelessWidget {
-  final dynamic icon;
-  final String label;
-  final String value;
-
-  const _HeaderStat({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        PhosphorIcon(icon, color: Colors.white.withValues(alpha: 0.8), size: 16),
-        const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.white.withValues(alpha: 0.65),
-              ),
-            ),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
 
 class _MiniCount extends StatelessWidget {
   final int count;
@@ -1619,7 +1424,7 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Frais DexPay (2%) et commission MiniFoot (2%)\ndéjà déduits — ce montant est le vôtre.',
+                  'Ce montant vous revient — les frais ont déjà été déduits.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 11, color: kGreen, height: 1.4),
                 ),
@@ -1830,63 +1635,6 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
   }
 }
 
-// ── Widgets utilitaires commission ────────────────────────────────────────────
-
-class _CommissionChip extends StatelessWidget {
-  final String label;
-  final String percent;
-  final bool light;
-  final bool highlight;
-
-  const _CommissionChip({
-    required this.label,
-    required this.percent,
-    required this.light,
-    this.highlight = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final textColor = light
-        ? (highlight ? Colors.white : Colors.white70)
-        : (highlight ? kGreen : kTextSub);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          percent,
-          style: TextStyle(
-            fontSize: highlight ? 15 : 12,
-            fontWeight: FontWeight.w800,
-            color: textColor,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            color: light ? Colors.white60 : kTextLight,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CommissionDot extends StatelessWidget {
-  final bool light;
-  const _CommissionDot({required this.light});
-
-  @override
-  Widget build(BuildContext context) => Container(
-        width: 4,
-        height: 4,
-        decoration: BoxDecoration(
-          color: light ? Colors.white30 : kBorder,
-          shape: BoxShape.circle,
-        ),
-      );
-}
 
 class _DetailRow extends StatelessWidget {
   final String label;

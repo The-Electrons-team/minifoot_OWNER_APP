@@ -24,13 +24,22 @@ class NotificationsScreen extends GetView<NotificationsController> {
             color: kTextPrim,
           ),
         ),
-        leading: GestureDetector(
-          onTap: () => Get.back(),
-          behavior: HitTestBehavior.opaque,
-          child: const Center(
-            child: PhosphorIcon(PhosphorIcons.caretLeft,
-              color: kTextPrim,
-              size: 24,
+        leading: Center(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Get.back(),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: kBgSurface,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                PhosphorIconsRegular.caretLeft,
+                color: kTextPrim,
+                size: 16,
+              ),
             ),
           ),
         ),

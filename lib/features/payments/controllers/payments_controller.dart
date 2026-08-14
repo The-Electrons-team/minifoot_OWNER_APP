@@ -194,7 +194,10 @@ class PaymentsController extends GetxController {
     await loadPayments();
   }
 
-  void goToPayoutSettings() => Get.toNamed(Routes.paymentMethods);
+  Future<void> goToPayoutSettings() async {
+    await Get.toNamed(Routes.paymentMethods);
+    await _loadPayoutInfo();
+  }
 
   int get paidCount =>
       periodTransactions.where((t) => t.status == 'paid').length;

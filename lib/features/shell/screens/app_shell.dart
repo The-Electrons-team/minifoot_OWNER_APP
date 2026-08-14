@@ -85,13 +85,15 @@ class AppShell extends StatelessWidget {
             itemCount: destinations.length,
             itemBuilder: (context, index) => _destination(index, isController),
           ),
-          bottomNavigationBar: OwnerBottomNav(
-            destinations: destinations,
-            currentIndex: shell.currentIndex.value,
-            centerIndex: 2,
-            centerLabel: 'Scanner un QR code de réservation',
-            onSelected: shell.select,
-          ),
+          bottomNavigationBar: shell.currentIndex.value == 2
+              ? null
+              : OwnerBottomNav(
+                  destinations: destinations,
+                  currentIndex: shell.currentIndex.value,
+                  centerIndex: 2,
+                  centerLabel: 'Scanner un QR code de réservation',
+                  onSelected: shell.select,
+                ),
         ),
       );
     });

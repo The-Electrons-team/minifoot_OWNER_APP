@@ -28,12 +28,16 @@ class AppBottomSheet {
     bool isScrollControlled = true,
     bool isDismissible = true,
   }) {
-    return Get.bottomSheet<T>(
-      _SheetShell(title: title, child: child),
+    return showModalBottomSheet<T>(
+      context: Get.context!,
       isScrollControlled: isScrollControlled,
       isDismissible: isDismissible,
       enableDrag: isDismissible,
       backgroundColor: Colors.transparent,
+      // Le Scaffold sous-jacent ne doit pas se redimensionner — la feuille
+      // gère elle-même le décalage via viewInsets dans _SheetShell.
+      useSafeArea: false,
+      builder: (_) => _SheetShell(title: title, child: child),
     );
   }
 }
@@ -46,50 +50,54 @@ class _SheetShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: kBgCard,
-        borderRadius: AppRadius.sheet,
-      ),
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.sm,
-        AppSpacing.lg,
-        // Sans cette marge, le clavier recouvre les champs de la feuille.
-        MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 42,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: kBorder,
-                  borderRadius: BorderRadius.circular(10),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          decoration: const BoxDecoration(
+            color: kBgCard,
+            borderRadius: AppRadius.sheet,
+          ),
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.sm,
+            AppSpacing.lg,
+            MediaQuery.viewInsetsOf(context).bottom + AppSpacing.lg,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: kBorder,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                 ),
-              ),
+                if (title != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    title!,
+                    style: const TextStyle(
+                      fontFamily: 'Orbitron',
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: kTextPrim,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.md),
+                child,
+              ],
             ),
-            if (title != null) ...[
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                title!,
-                style: const TextStyle(
-                  fontFamily: 'Orbitron',
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: kTextPrim,
-                ),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.md),
-            child,
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

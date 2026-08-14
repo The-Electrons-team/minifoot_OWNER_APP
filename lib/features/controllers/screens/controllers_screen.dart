@@ -22,21 +22,73 @@ class ControllersScreen extends GetView<ControllersController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBg,
-      appBar: AppBar(
-        backgroundColor: kBg,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Get.back(),
-          icon: const Icon(
-            PhosphorIconsRegular.caretLeft,
-            size: 18,
+      resizeToAvoidBottomInset: false,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(64),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(bottom: BorderSide(color: kBgSurface)),
+          ),
+          child: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            leading: Center(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Get.back(),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: kBgSurface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    PhosphorIconsRegular.caretLeft,
+                    color: kTextPrim,
+                    size: 16,
+                  ),
+                ),
+              ),
+            ),
+            centerTitle: true,
+            title: const Text(
+              'Contrôleurs',
+              style: TextStyle(
+                fontFamily: 'Orbitron',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: kGreen,
+              ),
+            ),
+            actions: [
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _showCreateSheet(context),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: kGreen,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        PhosphorIconsRegular.plus,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        title: const Text(
-          'Contrôleurs',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-        ),
-        centerTitle: true,
       ),
       body: RefreshIndicator(
         color: kGreen,
@@ -48,8 +100,6 @@ class ControllersScreen extends GetView<ControllersController> {
             );
           }
 
-          // L'erreur passe avant le vide : sinon une coupure réseau
-          // s'affiche comme « Aucun contrôleur ».
           if (controller.errorMessage.value.isNotEmpty) {
             return ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -66,80 +116,77 @@ class ControllersScreen extends GetView<ControllersController> {
           }
 
           if (controller.controllers.isEmpty) {
-            return ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(24, 40, 24, 120),
-              children: [
-                const _EmptyControllerIcon(),
-                const SizedBox(height: 16),
-                // L'état vide invitait à ajouter un contrôleur… sans bouton
-                // pour le faire.
-                AppEmptyState(
-                  title: 'Aucun contrôleur',
-                  message:
-                      'Ajoutez une personne de confiance pour scanner les QR '
-                      'et gérer les créneaux des complexes autorisés.',
-                  actionLabel: 'Ajouter un contrôleur',
-                  onAction: () => _showCreateSheet(context),
-                  illustration: const SizedBox.shrink(),
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(32, 0, 32, 40),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _showCreateSheet(context),
+                        icon: const Icon(PhosphorIconsRegular.plus, size: 18),
+                        label: const Text('Ajouter un contrôleur'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kGreen,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             );
           }
 
           return NotificationListener<ScrollNotification>(
             onNotification: (scroll) {
-              if (scroll.metrics.pixels >=
-                  scroll.metrics.maxScrollExtent - 400) {
+              if (scroll.metrics.pixels >= scroll.metrics.maxScrollExtent - 400) {
                 controller.loadMore();
               }
               return false;
             },
             child: ListView.separated(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-            itemCount:
-                controller.controllers.length + (controller.hasMore ? 1 : 0),
-            separatorBuilder: (_, index) => const SizedBox(height: 12),
-            itemBuilder: (_, index) {
-              if (index >= controller.controllers.length) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Center(
-                    child: SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: kGreen,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
+              itemCount: controller.controllers.length + (controller.hasMore ? 1 : 0),
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (_, index) {
+                if (index >= controller.controllers.length) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: kGreen,
+                        ),
                       ),
                     ),
-                  ),
+                  );
+                }
+                final item = controller.controllers[index];
+                return _ControllerCard(
+                  item: item,
+                  onTap: () => Get.toNamed(Routes.controllerDetail, arguments: item),
+                  onToggle: () => controller.toggleActive(item),
                 );
-              }
-              final item = controller.controllers[index];
-              return _ControllerCard(
-                item: item,
-                onTap: () =>
-                    Get.toNamed(Routes.controllerDetail, arguments: item),
-                onToggle: () => controller.toggleActive(item),
-              );
-            },
+              },
             ),
           );
         }),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: kGreen,
-        onPressed: () => _showCreateSheet(context),
-        icon: Icon(
-          PhosphorIconsBold.plus,
-          color: Colors.white,
-        ),
-        label: const Text(
-          'Ajouter',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-        ),
       ),
     );
   }
@@ -275,9 +322,9 @@ class _ControllerCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Switch(
+                  Switch.adaptive(
                     value: item.isActive,
-                    activeThumbColor: kGreen,
+                    activeTrackColor: kGreen,
                     onChanged: (_) => onToggle(),
                   ),
                 ],
@@ -288,7 +335,6 @@ class _ControllerCard extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   _StatPill(label: 'Scans', value: '${item.scans}'),
-                  _StatPill(label: 'Présences', value: '${item.confirmed}'),
                   _StatPill(
                     label: 'Créneaux bloqués',
                     value: '${item.blockedSlots}',
@@ -310,18 +356,6 @@ class _ControllerCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _EmptyControllerIcon extends StatelessWidget {
-  const _EmptyControllerIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return PhosphorIcon(PhosphorIconsDuotone.identificationBadge,
-      color: kGreen,
-      size: 54,
     );
   }
 }

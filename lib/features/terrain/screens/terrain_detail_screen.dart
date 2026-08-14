@@ -40,16 +40,18 @@ class TerrainDetailScreen extends GetView<TerrainController> {
             SliverAppBar(
               expandedHeight: 300,
               pinned: true,
-              backgroundColor: kGreen,
+              backgroundColor: Colors.white,
               elevation: 0,
+              scrolledUnderElevation: 0,
               leading: Center(
                 child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () => Get.back(),
                   child: Container(
                     width: 40,
                     height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
+                    decoration: const BoxDecoration(
+                      color: kBgSurface,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -65,12 +67,13 @@ class TerrainDetailScreen extends GetView<TerrainController> {
                   child: Padding(
                     padding: const EdgeInsets.only(right: 16),
                     child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: () => controller.goToForm(terrain),
                       child: Container(
                         width: 40,
                         height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.9),
+                        decoration: const BoxDecoration(
+                          color: kBgSurface,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -313,69 +316,74 @@ class TerrainDetailScreen extends GetView<TerrainController> {
   }
 }
 
-class _SubTerrainTile extends StatelessWidget {
-  final SubTerrainModel sub;
-  const _SubTerrainTile({required this.sub});
+// ── Terrain physique regroupé (FULL + HALF) ───────────────────────────────
 
-  String _formatDays(List<int> days) {
+class _PhysicalTerrainCard extends StatelessWidget {
+  final List<SubTerrainModel> group;
+  const _PhysicalTerrainCard({required this.group});
+
+  static String _formatDays(List<int> days) {
     if (days.isEmpty) return 'Tous les jours';
-    const dayNames = {1: 'Lun', 2: 'Mar', 3: 'Mer', 4: 'Jeu', 5: 'Ven', 6: 'Sam', 0: 'Dim'};
-    return days.map((d) => dayNames[d]).join(', ');
+    const n = {1: 'Lun', 2: 'Mar', 3: 'Mer', 4: 'Jeu', 5: 'Ven', 6: 'Sam', 0: 'Dim'};
+    return days.map((d) => n[d] ?? '').join(', ');
   }
 
   @override
   Widget build(BuildContext context) {
+    final first = group.first;
+    final physicalName = first.physicalName ?? first.name.split(' - ').first;
+
+    SubTerrainModel? fullSub;
+    SubTerrainModel? halfSub;
+    for (final s in group) {
+      if (s.divisionType == 'FULL') fullSub ??= s;
+      if (s.divisionType == 'HALF') halfSub ??= s;
+    }
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: kBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: kBgCard,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: kCardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header du Terrain
+          // Header
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             child: Row(
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
                     color: kGreenLight,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(13),
                   ),
                   child: const Icon(
                     PhosphorIconsLight.soccerBall,
                     color: kGreen,
-                    size: 24,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        sub.name,
+                        physicalName,
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
-                          fontSize: 15,
+                          fontSize: 14,
                           color: kTextPrim,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Text(
-                        '${sub.type} • ${sub.capacity} Joueurs • ${sub.surface ?? 'Synthétique'}',
+                        '${first.type} • ${first.surface ?? 'Synthétique'}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: kTextSub,
@@ -385,172 +393,300 @@ class _SubTerrainTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (sub.pricePerHour != null && sub.pricingPeriods.isEmpty)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${sub.pricePerHour} F',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          color: kGreen,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const Text(
-                        'par heure',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: kTextLight,
-                        ),
-                      ),
-                    ],
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: first.isActive ? kGreenLight : kRedLight,
+                    borderRadius: BorderRadius.circular(8),
                   ),
+                  child: Text(
+                    first.isActive ? 'Actif' : 'Pause',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: first.isActive ? kGreen : kRed,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-
-          if (sub.pricingPeriods.isNotEmpty) ...[
+          // Pricing sections
+          if (fullSub != null || halfSub != null)
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
-                color: Color(0xFFFAFAFA),
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-                border: Border(top: BorderSide(color: Color(0xFFF3F4F6))),
+                color: Color(0xFFF9FAF7),
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
+                border: Border(top: BorderSide(color: kBorder)),
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
-                    children: [
-                      Icon(PhosphorIconsLight.tag, size: 14, color: kGreen),
-                      const SizedBox(width: 6),
-                      Text(
-                        'GRILLE TARIFAIRE',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                          color: kGreen,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  ...sub.pricingPeriods.map((p) => Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFE5E7EB)),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    p.label,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color(0xFF1F2937),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Row(
-                                    children: [
-                                      const Icon(PhosphorIconsLight.clock,
-                                          size: 12, color: kTextSub),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '${p.startTime} - ${p.endTime}',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: kTextSub,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      const Icon(PhosphorIconsLight.calendar,
-                                          size: 12, color: kTextSub),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          _formatDays(p.days),
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: kTextSub,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              '${p.pricePerHour} F',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w900,
-                                color: kTextPrim,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const Text(
-                              '/h',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: kTextLight,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )),
+                  if (fullSub != null)
+                    _PricingSection(
+                      label: 'Terrain complet',
+                      color: kGreen,
+                      bg: kGreenLight,
+                      sub: fullSub,
+                      showDivider: halfSub != null,
+                    ),
+                  if (halfSub != null)
+                    _PricingSection(
+                      label: 'Demi terrain',
+                      color: kBlue,
+                      bg: kBlueLight,
+                      sub: halfSub,
+                      showDivider: false,
+                    ),
                 ],
               ),
             ),
-          ],
         ],
       ),
     );
   }
 }
 
-class _FeatureBadge extends StatelessWidget {
+class _PricingSection extends StatelessWidget {
   final String label;
-  const _FeatureBadge({required this.label});
+  final Color color;
+  final Color bg;
+  final SubTerrainModel sub;
+  final bool showDivider;
+
+  const _PricingSection({
+    required this.label,
+    required this.color,
+    required this.bg,
+    required this.sub,
+    required this.showDivider,
+  });
+
+  static String _formatDays(List<int> days) {
+    if (days.isEmpty) return '';
+    const n = {1: 'Lun', 2: 'Mar', 3: 'Mer', 4: 'Jeu', 5: 'Ven', 6: 'Sam', 0: 'Dim'};
+    return days.map((d) => n[d] ?? '').join(', ');
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Liste des capacités et surfaces à exclure pour ne garder que les équipements réels
-    const exclusions = ['5v5', '7v7', '11v11', 'Gazon synthétique', 'Gazon naturel', 'Terre battue'];
-    if (exclusions.contains(label)) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+              ),
+              if (sub.pricePerHour != null && sub.pricingPeriods.isEmpty) ...[
+                const Spacer(),
+                Text(
+                  '${sub.pricePerHour} F/h',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: color,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (sub.pricingPeriods.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          ...sub.pricingPeriods.asMap().entries.map((entry) {
+            final i = entry.key;
+            final p = entry.value;
+            final days = _formatDays(p.days);
+            final isLast = i == sub.pricingPeriods.length - 1;
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              p.label,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: kTextPrim,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Row(
+                              children: [
+                                const Icon(PhosphorIconsLight.clock, size: 11, color: kTextSub),
+                                const SizedBox(width: 3),
+                                Text(
+                                  '${p.startTime} – ${p.endTime}',
+                                  style: const TextStyle(fontSize: 11, color: kTextSub),
+                                ),
+                                if (days.isNotEmpty) ...[
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    days,
+                                    style: const TextStyle(fontSize: 11, color: kTextLight),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        '${p.pricePerHour} F/h',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          color: color,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (!isLast)
+                  const Divider(color: kDivider, height: 20, indent: 14, endIndent: 14),
+              ],
+            );
+          }),
+        ],
+        SizedBox(height: showDivider ? 12 : 14),
+        if (showDivider) const Divider(color: kBorder, height: 1),
+      ],
+    );
+  }
+}
+
+// ── Équipements & services ─────────────────────────────────────────────────
+
+class _EquipmentGrid extends StatelessWidget {
+  final List<String> items;
+  const _EquipmentGrid({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    const icons = <String, IconData>{
+      'Éclairage': PhosphorIconsLight.lightbulb,
+      'Vestiaires': PhosphorIconsLight.shirtFolded,
+      'Ballon': PhosphorIconsLight.soccerBall,
+      'Parking': PhosphorIconsLight.park,
+      'Tribunes': PhosphorIconsLight.chair,
+      'Wi-Fi': PhosphorIconsLight.wifiHigh,
+      'Buvette': PhosphorIconsLight.coffee,
+      'Douches': PhosphorIconsLight.shower,
+      'Arbitre': PhosphorIconsLight.flag,
+    };
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: kBgCard,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: kCardShadow,
+      ),
+      child: GridView.count(
+        crossAxisCount: 2,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 3.5,
+        children: items.map((e) {
+          final icon = icons[e] ?? PhosphorIconsLight.checks;
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: kGreenLight,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: kGreen.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, color: kGreen, size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    e,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: kGreen,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _FormatChip extends StatelessWidget {
+  final String label;
+  const _FormatChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: kBgCard,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: kBorder),
+        boxShadow: kCardShadow,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(PhosphorIconsLight.checkCircle, size: 16, color: kGreen),
-          const SizedBox(width: 8),
+          const Icon(PhosphorIconsLight.users, size: 15, color: kGreen),
+          const SizedBox(width: 6),
           Text(
             label,
             style: const TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
               color: kTextPrim,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w800,
+        color: kTextPrim,
       ),
     );
   }
@@ -726,74 +862,74 @@ class _AboutTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Regroupe les sub-terrains par terrain physique (divisionGroup ou physicalName)
+    final grouped = <String, List<SubTerrainModel>>{};
+    for (final sub in terrain.subTerrains) {
+      final key = sub.divisionGroup ?? sub.physicalName ?? sub.name;
+      grouped.putIfAbsent(key, () => []).add(sub);
+    }
+
+    // Sépare : formats (capacités), surfaces, équipements
+    const knownSurfaces = {'Gazon synthétique', 'Gazon naturel', 'Terre battue'};
+    const knownCapacities = {'5v5', '7v7', '9v9', '11v11'};
+    final formats = terrain.features.where(knownCapacities.contains).toList();
+    final equipment = terrain.features
+        .where((f) => !knownCapacities.contains(f) && !knownSurfaces.contains(f))
+        .toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Description
-        const Text(
-          'À propos du complexe',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-            color: kTextPrim,
+        if (terrain.description != null && terrain.description!.isNotEmpty) ...[
+          const _SectionLabel('À propos'),
+          const SizedBox(height: 10),
+          Text(
+            terrain.description!,
+            style: const TextStyle(fontSize: 14, color: kTextSub, height: 1.6),
           ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          terrain.description ?? 'Aucune description fournie.',
-          style: const TextStyle(
-            fontSize: 14,
-            color: kTextSub,
-            height: 1.6,
-          ),
-        ),
+          const SizedBox(height: 28),
+        ],
 
-        const SizedBox(height: 32),
-
-        // Terrains
-        if (terrain.subTerrains.isNotEmpty) ...[
+        // Terrains physiques regroupés
+        if (grouped.isNotEmpty) ...[
           Row(
             children: [
-              const Text(
-                'Options de réservation',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: kTextPrim,
-                ),
-              ),
+              _SectionLabel('Terrains (${grouped.length})'),
               const Spacer(),
               Text(
-                '${terrain.subTerrains.length} terrains',
+                '${terrain.subTerrains.length} surfaces',
                 style: const TextStyle(
                   fontSize: 12,
                   color: kGreen,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          ...terrain.subTerrains.map((s) => _SubTerrainTile(sub: s)),
+          const SizedBox(height: 14),
+          ...grouped.values.map((g) => _PhysicalTerrainCard(group: g)),
+          const SizedBox(height: 14),
         ],
 
-        const SizedBox(height: 32),
+        // Formats de jeu
+        if (formats.isNotEmpty) ...[
+          const _SectionLabel('Formats disponibles'),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: formats.map((f) => _FormatChip(label: f)).toList(),
+          ),
+          const SizedBox(height: 24),
+        ],
 
         // Équipements
-        const Text(
-          'Équipements & Services',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-            color: kTextPrim,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: terrain.features.map((f) => _FeatureBadge(label: f)).toList(),
-        ),
+        if (equipment.isNotEmpty) ...[
+          const _SectionLabel('Équipements & services'),
+          const SizedBox(height: 12),
+          _EquipmentGrid(items: equipment),
+        ],
       ],
     );
   }

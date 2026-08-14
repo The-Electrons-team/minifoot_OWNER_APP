@@ -9,6 +9,7 @@ import '../features/auth/screens/register_screen.dart';
 import '../features/auth/screens/otp_screen.dart';
 import '../features/auth/screens/owner_pending_screen.dart';
 import '../features/auth/screens/change_password_screen.dart';
+import '../features/auth/screens/contract_screen.dart';
 import '../features/shell/bindings/shell_binding.dart';
 import '../features/shell/screens/app_shell.dart';
 import '../features/terrain/bindings/terrain_binding.dart';
@@ -67,6 +68,7 @@ abstract class Routes {
   static const controllers = '/controllers';
   static const controllerDetail = '/controllers/detail';
   static const changePassword = '/auth/change-password';
+  static const contract = '/contract';
 }
 
 final appPages = [
@@ -256,6 +258,13 @@ final appPages = [
     binding: AuthBinding(),
     transition: Transition.fadeIn,
     transitionDuration: const Duration(milliseconds: 350),
+  ),
+  GetPage(
+    name: Routes.contract,
+    page: () => const ContractScreen(),
+    binding: AuthBinding(),
+    transition: Transition.fadeIn,
+    transitionDuration: const Duration(milliseconds: 400),
   ),
 ];
 

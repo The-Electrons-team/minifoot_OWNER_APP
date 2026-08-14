@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
-import 'package:lottie/lottie.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../core/utils/app_format.dart';
 import '../../../core/widgets/app_states.dart';
@@ -39,7 +38,7 @@ class TerrainListScreen extends GetView<TerrainController> {
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
-                    PhosphorIconsLight.arrowLeft,
+                    PhosphorIconsLight.caretLeft,
                     color: kTextPrim,
                     size: 16,
                   ),
@@ -48,7 +47,7 @@ class TerrainListScreen extends GetView<TerrainController> {
             ),
             centerTitle: true,
             title: const Text(
-              'Mes terrains',
+              'Mes complexes',
               style: TextStyle(
                 fontFamily: 'Orbitron',
                 fontSize: 18,
@@ -59,17 +58,20 @@ class TerrainListScreen extends GetView<TerrainController> {
           ),
         ).animate().fadeIn(duration: 400.ms),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => controller.goToForm(null),
-        backgroundColor: kGreen,
-        elevation: 8,
-        shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
-        child: const Icon(
-          PhosphorIconsLight.plus,
-          color: Colors.white,
-          size: 28,
-        ),
-      ),
+      floatingActionButton: Obx(() {
+        if (controller.totalTerrains == 0) return const SizedBox.shrink();
+        return FloatingActionButton(
+          onPressed: () => controller.goToForm(null),
+          backgroundColor: kGreen,
+          elevation: 8,
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
+          child: const Icon(
+            PhosphorIconsLight.plus,
+            color: Colors.white,
+            size: 28,
+          ),
+        );
+      }),
       body: Container(
         color: kBg,
         child: Column(
@@ -83,10 +85,19 @@ class TerrainListScreen extends GetView<TerrainController> {
                       children: [
                         Expanded(
                           child: _StatPill(
-                            label: 'Terrains',
+                            label: 'Complexes',
                             value: '${controller.totalTerrains}',
-                            icon: PhosphorIconsLight.soccerBall,
+                            icon: PhosphorIconsLight.buildings,
                             color: kGreen,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _StatPill(
+                            label: 'Terrains',
+                            value: '${controller.totalPhysicalTerrains}',
+                            icon: PhosphorIconsLight.soccerBall,
+                            color: const Color(0xFFB7791F),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -95,16 +106,7 @@ class TerrainListScreen extends GetView<TerrainController> {
                             label: 'Actifs',
                             value: '${controller.activeTerrains}',
                             icon: PhosphorIconsLight.checkCircle,
-                            color: const Color(0xFF00A85A),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _StatPill(
-                            label: 'Terrains',
-                            value: '${controller.totalPhysicalTerrains}',
-                            icon: PhosphorIconsLight.gridFour,
-                            color: const Color(0xFFB7791F),
+                            color: kBlue,
                           ),
                         ),
                       ],
@@ -312,73 +314,41 @@ class TerrainListScreen extends GetView<TerrainController> {
 
   Widget _buildEmptyState() {
     final hasAnyTerrain = controller.totalTerrains > 0;
-    return LayoutBuilder(
-      builder: (context, constraints) => ListView(
-        physics: const AlwaysScrollableScrollPhysics(
-          parent: BouncingScrollPhysics(),
+    if (hasAnyTerrain) {
+      return const Center(
+        child: Text(
+          'Aucun résultat',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: kTextSub,
+          ),
         ),
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 140),
-        children: [
-          ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight - 24),
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Lottie.asset(
-                      'assets/lottie/football_bounce.json',
-                      width: 140,
-                      height: 140,
-                      repeat: true,
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      hasAnyTerrain ? 'Aucun résultat' : 'Aucun terrain',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: kTextPrim,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      hasAnyTerrain
-                          ? 'Essayez une autre recherche\nou un autre filtre.'
-                          : 'Ajoutez votre premier terrain\npour commencer.',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: kTextSub,
-                        height: 1.5,
-                      ),
-                    ),
-                    if (!hasAnyTerrain) ...[
-                      const SizedBox(height: 24),
-                      ElevatedButton.icon(
-                        onPressed: () => controller.goToForm(null),
-                        icon: const Icon(PhosphorIconsLight.plus, size: 18),
-                        label: const Text('Ajouter un terrain'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kGreen,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 12,
-                          ),
-                          elevation: 0,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 44, 24, 0),
+      child: SizedBox(
+        width: double.infinity,
+        height: 54,
+        child: ElevatedButton.icon(
+          onPressed: () => controller.goToForm(null),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kGreen,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
             ),
           ),
-        ],
+          icon: const Icon(PhosphorIconsLight.plus, size: 20, color: Colors.white),
+          label: const Text(
+            'Ajouter un complexe',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+          ),
+        ),
       ),
-    ).animate().fadeIn(duration: 250.ms);
+    );
   }
 }
 

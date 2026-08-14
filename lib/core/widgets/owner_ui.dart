@@ -152,28 +152,38 @@ class PaymentBrandBadge extends StatelessWidget {
     final normalized = method.toUpperCase();
     final meta = _brandMeta(normalized);
 
+    final radius = compact ? 12.0 : 14.0;
+    final needsClip = normalized == 'WAVE' ||
+        normalized == 'ORANGE_MONEY' ||
+        normalized == 'ORANGE MONEY';
+
     return Container(
       width: size,
       height: size,
-      padding: EdgeInsets.all(compact ? 7 : 8),
+      padding: needsClip ? EdgeInsets.zero : EdgeInsets.all(compact ? 7 : 8),
       decoration: BoxDecoration(
         color: meta.background,
-        borderRadius: BorderRadius.circular(compact ? 12 : 14),
+        borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: meta.border),
       ),
-      child: _brandAsset(normalized),
+      child: needsClip
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(radius - 1),
+              child: _brandAsset(normalized),
+            )
+          : _brandAsset(normalized),
     );
   }
 
   Widget _brandAsset(String normalized) {
     switch (normalized) {
       case 'WAVE':
-        return Image.asset('assets/images/wave_logo.webp', fit: BoxFit.contain);
+        return Image.asset('assets/images/wave_logo.webp', fit: BoxFit.cover);
       case 'ORANGE_MONEY':
       case 'ORANGE MONEY':
         return Image.asset(
           'assets/images/orange_money.png',
-          fit: BoxFit.contain,
+          fit: BoxFit.cover,
         );
       case 'FREE_MONEY':
       case 'YAS_MONEY':

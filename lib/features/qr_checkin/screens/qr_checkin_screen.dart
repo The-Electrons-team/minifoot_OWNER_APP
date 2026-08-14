@@ -7,6 +7,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../shell/controllers/shell_controller.dart';
 import '../controllers/qr_checkin_controller.dart';
 
 class QrCheckInScreen extends StatefulWidget {
@@ -133,7 +134,7 @@ class _QrCheckInScreenState extends State<QrCheckInScreen> {
                       borderRadius: BorderRadius.circular(14),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(14),
-                        onTap: () => Get.back(),
+                        onTap: () => Get.find<ShellController>().select(0),
                         child: const Padding(
                           padding: EdgeInsets.all(10),
                           child: Icon(
@@ -209,7 +210,7 @@ class _QrCheckInScreenState extends State<QrCheckInScreen> {
           Obx(() {
             if (controller.status.value.isNotEmpty) return const SizedBox();
             return Positioned(
-              bottom: 80,
+              bottom: 48,
               left: 40,
               right: 40,
               child: Container(

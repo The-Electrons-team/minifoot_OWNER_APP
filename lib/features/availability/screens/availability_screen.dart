@@ -93,42 +93,39 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
   Widget _buildAppBar(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
     return Padding(
-      padding: EdgeInsets.fromLTRB(8, topPad + 4, 16, 0),
+      padding: EdgeInsets.fromLTRB(16, topPad + 12, 16, 8),
       child: Row(
         children: [
           // Bouton retour
-          IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(
-              PhosphorIconsRegular.caretLeft,
-              color: kTextPrim,
-              size: 18,
+          Center(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: kBgSurface,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  PhosphorIconsRegular.caretLeft,
+                  color: kTextPrim,
+                  size: 16,
+                ),
+              ),
             ),
           ),
-          // Titre
-          Expanded(
-            child: Obx(
-              () => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Créneaux',
-                    style: TextStyle(
-                      fontFamily: 'Orbitron',
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: kTextPrim,
-                    ),
-                  ),
-                  Text(
-                    '${controller.selectedDateLabel} • ${controller.scopeLabel}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: kTextSub,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+          // Titre centré sur 2 lignes
+          const Expanded(
+            child: Text(
+              'Créneaux',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Orbitron',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: kGreen,
               ),
             ),
           ),
@@ -182,54 +179,83 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
 
   // ── Sélecteur de terrain ─────────────────────────────────────────────────────
   Widget _buildTerrainSelector() {
-    return SizedBox(
-      height: 82,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Obx(() {
         if (controller.isLoadingTerrains.value) {
-          return ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            itemCount: 3,
-            separatorBuilder: (context, index) => const SizedBox(width: 8),
-            itemBuilder: (_, i) =>
-                Container(
-                      width: 190,
-                      decoration: BoxDecoration(
-                        color: kBgSurface,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    )
-                    .animate(onPlay: (c) => c.repeat())
-                    .shimmer(duration: 1200.ms, color: kBgCard),
-          );
+          return Container(
+            height: 42,
+            decoration: BoxDecoration(
+              color: kBgSurface,
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ).animate(onPlay: (c) => c.repeat()).shimmer(
+                duration: 1200.ms,
+                color: kBgCard,
+              );
         }
 
         if (controller.terrains.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: _NoTerrainChip(),
-          );
+          return const _NoTerrainChip();
         }
 
-        return ListView.separated(
+        final terrains = controller.terrains;
+
+        return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          itemCount: controller.terrains.length,
-          separatorBuilder: (context, index) => const SizedBox(width: 8),
-          itemBuilder: (_, i) {
-            final terrain = controller.terrains[i];
-            return Obx(
-              () => _TerrainSelectorChip(
-                key: ValueKey('${terrain.id}:${terrain.subTerrainId ?? 'all'}'),
-                terrain: terrain,
-                selected: controller.isTerrainSelected(terrain),
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  controller.selectTerrain(i);
-                },
+          child: Container(
+            decoration: BoxDecoration(
+              color: kBgSurface,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.all(3),
+            child: IntrinsicHeight(
+              child: Row(
+                children: List.generate(terrains.length, (i) {
+                  final terrain = terrains[i];
+                  final selected = controller.isTerrainSelected(terrain);
+                  final label = terrain.isComplexView
+                      ? terrain.complexName
+                      : terrain.isMiniTerrain
+                          ? terrain.name
+                          : terrain.complexName;
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      controller.selectTerrain(i);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      constraints: const BoxConstraints(maxWidth: 140),
+                      margin: EdgeInsets.only(
+                        right: i < terrains.length - 1 ? 3 : 0,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 9,
+                      ),
+                      decoration: BoxDecoration(
+                        color: selected ? kGreen : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: selected ? Colors.white : kTextSub,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
               ),
-            );
-          },
+            ),
+          ),
         );
       }),
     );
@@ -391,21 +417,10 @@ class AvailabilityScreen extends GetView<AvailabilityController> {
         return const SizedBox.shrink();
       }
       if (controller.terrains.isEmpty) {
-        return const _AvailabilityEmptyState(
-          icon: PhosphorIconsFill.soccerBall,
-          title: 'Aucun complexe',
-          message:
-              'Crée d’abord un complexe pour gérer ses créneaux de réservation.',
-          showCreateButton: true,
-        );
+        return const _AvailabilityEmptyState(showCreateButton: true);
       }
       if (slots.isEmpty) {
-        return const _AvailabilityEmptyState(
-          icon: PhosphorIconsRegular.calendarX,
-          title: 'Aucun créneau',
-          message:
-              'Tire vers le bas pour recharger les disponibilités du jour.',
-        );
+        return const _AvailabilityEmptyState();
       }
 
       // Séparer par périodes
@@ -1012,188 +1027,68 @@ class _NoTerrainChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(
-        color: kBgSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: kBorder),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(PhosphorIconsRegular.info, size: 14, color: kTextSub),
-          SizedBox(width: 6),
-          Text(
-            'Aucun complexe disponible',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: kTextSub,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TerrainSelectorChip extends StatelessWidget {
-  final TerrainOption terrain;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _TerrainSelectorChip({
-    super.key,
-    required this.terrain,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      constraints: const BoxConstraints(minWidth: 176, minHeight: 58),
-      decoration: BoxDecoration(
-        color: selected ? kGreen : kBgSurface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: selected ? kGreen : kBorder,
-          width: selected ? 0 : 1,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(18),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  terrain.isMiniTerrain
-                      ? PhosphorIconsRegular.gridFour
-                      : PhosphorIconsFill.soccerBall,
-                  size: 14,
-                  color: selected ? Colors.white : kTextSub,
-                ),
-                const SizedBox(width: 6),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 210),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.max,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        terrain.complexName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          height: 1.05,
-                          fontWeight: FontWeight.w800,
-                          color: selected ? Colors.white : kTextPrim,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        terrain.isComplexView
-                            ? 'Tous les terrains'
-                            : terrain.isMiniTerrain
-                                ? terrain.name
-                                : 'Terrain principal',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 10,
-                          height: 1.05,
-                          fontWeight: FontWeight.w600,
-                          color: selected
-                              ? Colors.white.withValues(alpha: 0.8)
-                              : kTextSub,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return const Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        'Aucun complexe',
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: kTextSub,
         ),
       ),
     );
   }
 }
+
 
 class _AvailabilityEmptyState extends StatelessWidget {
-  final dynamic icon;
-  final String title;
-  final String message;
   final bool showCreateButton;
 
-  const _AvailabilityEmptyState({
-    required this.icon,
-    required this.title,
-    required this.message,
-    this.showCreateButton = false,
-  });
+  const _AvailabilityEmptyState({this.showCreateButton = false});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 44, 24, 0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 74,
-            height: 74,
-            decoration: const BoxDecoration(
-              color: kGreenLight,
-              shape: BoxShape.circle,
-            ),
-            child: PhosphorIcon(icon, color: kGreen, size: 34),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: kTextPrim,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13, height: 1.4, color: kTextSub),
-          ),
-          if (showCreateButton) ...[
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 48,
-              child: ElevatedButton.icon(
-                onPressed: () => Get.toNamed(Routes.terrainForm),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kGreen,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                ),
-                icon: const Icon(PhosphorIconsRegular.plus, size: 20),
-                label: const Text(
-                  'Créer un complexe',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
+    if (showCreateButton) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 44, 24, 0),
+        child: SizedBox(
+          width: double.infinity,
+          height: 54,
+          child: ElevatedButton.icon(
+            onPressed: () => Get.toNamed(Routes.terrainForm),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kGreen,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
               ),
             ),
-          ],
-        ],
+            icon: const PhosphorIcon(
+              PhosphorIconsRegular.plus,
+              size: 20,
+              color: Colors.white,
+            ),
+            label: const Text(
+              'Créer un complexe',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+            ),
+          ),
+        ),
+      );
+    }
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(24, 44, 24, 0),
+      child: Center(
+        child: Text(
+          'Aucun créneau',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: kTextSub,
+          ),
+        ),
       ),
     );
   }

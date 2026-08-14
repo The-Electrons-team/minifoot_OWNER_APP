@@ -15,29 +15,48 @@ class EditProfileScreen extends GetView<ProfileController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBg,
-      appBar: AppBar(
-        backgroundColor: kBg,
-        elevation: 0,
-        leading: GestureDetector(
-          onTap: _close,
-          behavior: HitTestBehavior.opaque,
-          child: const Center(
-            child: PhosphorIcon(PhosphorIcons.caretLeft,
-              color: kTextPrim,
-              size: 24,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(64),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(bottom: BorderSide(color: kBgSurface)),
+          ),
+          child: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            leading: Center(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _close,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: kBgSurface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    PhosphorIconsRegular.caretLeft,
+                    color: kTextPrim,
+                    size: 16,
+                  ),
+                ),
+              ),
+            ),
+            centerTitle: true,
+            title: const Text(
+              'Modifier le profil',
+              style: TextStyle(
+                fontFamily: 'Orbitron',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: kGreen,
+              ),
             ),
           ),
         ),
-        title: const Text(
-          'Modifier le profil',
-          style: TextStyle(
-            fontFamily: 'Orbitron',
-            color: kTextPrim,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        centerTitle: true,
       ),
       body: Obx(
         () => ListView(

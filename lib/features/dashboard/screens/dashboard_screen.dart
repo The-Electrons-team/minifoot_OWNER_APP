@@ -173,48 +173,49 @@ class DashboardScreen extends GetView<DashboardController> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
       child: Obx(
-        () => Row(
-          children: [
-            Expanded(
-                  child: _StatMiniCard(
+        () => Container(
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          decoration: BoxDecoration(
+            color: kBgCard,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: kCardShadow,
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                Expanded(
+                  child: _StatCell(
                     icon: PhosphorIconsDuotone.calendarBlank,
-                    iconBgColor: kBlueLight,
                     iconColor: kBlue,
                     value: '${controller.todayBookings.value}',
-                    label: "Rés. aujourd'hui",
+                    label: "Aujourd'hui",
                   ),
-                )
-                .animate()
-                .fadeIn(duration: 400.ms, delay: 300.ms)
-                .slideY(begin: 0.2, end: 0),
-            const SizedBox(width: 10),
-            Expanded(
-                  child: _StatMiniCard(
+                ),
+                const VerticalDivider(color: kDivider, width: 1, thickness: 1),
+                Expanded(
+                  child: _StatCell(
                     icon: PhosphorIconsDuotone.star,
-                    iconBgColor: kGoldLight,
                     iconColor: kGold,
                     value: '${controller.rating.value}',
-                    label: 'Note moyenne',
+                    label: 'Note',
                   ),
-                )
-                .animate()
-                .fadeIn(duration: 400.ms, delay: 400.ms)
-                .slideY(begin: 0.2, end: 0),
-            const SizedBox(width: 10),
-            Expanded(
-                  child: _StatMiniCard(
+                ),
+                const VerticalDivider(color: kDivider, width: 1, thickness: 1),
+                Expanded(
+                  child: _StatCell(
                     icon: PhosphorIconsDuotone.chartPie,
-                    iconBgColor: kGreenLight,
                     iconColor: kGreen,
                     value: '${(controller.occupancyRate.value * 100).round()}%',
                     label: 'Occupation',
                   ),
-                )
-                .animate()
-                .fadeIn(duration: 400.ms, delay: 500.ms)
-                .slideY(begin: 0.2, end: 0),
-          ],
-        ),
+                ),
+              ],
+            ),
+          ),
+        )
+            .animate()
+            .fadeIn(duration: 400.ms, delay: 300.ms)
+            .slideY(begin: 0.2, end: 0),
       ),
     );
   }
@@ -228,29 +229,14 @@ class DashboardScreen extends GetView<DashboardController> {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: const OwnerSectionHeader(
-              title: 'À faire maintenant',
-              subtitle:
-                  'Accès directs vers les actions les plus fréquentes du gérant',
-            ),
+            child: const OwnerSectionHeader(title: 'Accès rapides'),
           ),
           const SizedBox(height: 14),
           Obx(() {
-            final terrainSubtitle = controller.terrainCount.value == 0
-                ? 'Aucun terrain'
-                : '${controller.activeTerrainCount.value}/${controller.terrainCount.value} actifs';
-            final reservationSubtitle = controller.todayBookings.value > 0
-                ? '${controller.todayBookings.value} aujourd\'hui'
-                : '${controller.totalBookings.value} total';
-            final paymentSubtitle = controller.pendingPayments.value > 0
-                ? '${controller.pendingPayments.value} en attente'
-                : 'À jour';
-
             final actions = [
               _ActionData(
                 icon: PhosphorIconsDuotone.calendarCheck,
                 label: 'Réservations',
-                subtitle: reservationSubtitle,
                 color: kBlue,
                 bgColor: kBlueLight,
                 onTap: controller.goToReservations,
@@ -258,7 +244,6 @@ class DashboardScreen extends GetView<DashboardController> {
               _ActionData(
                 icon: PhosphorIconsDuotone.clockCountdown,
                 label: 'Créneaux',
-                subtitle: 'Disponibilités',
                 color: kGold,
                 bgColor: kGoldLight,
                 onTap: controller.goToAvailability,
@@ -266,7 +251,6 @@ class DashboardScreen extends GetView<DashboardController> {
               _ActionData(
                 icon: PhosphorIconsDuotone.qrCode,
                 label: 'Scanner',
-                subtitle: 'QR réservation',
                 color: kOrange,
                 bgColor: const Color(0xFFFFF3E0),
                 onTap: controller.goToQrCheckIn,
@@ -275,7 +259,6 @@ class DashboardScreen extends GetView<DashboardController> {
                 _ActionData(
                   icon: PhosphorIconsDuotone.soccerBall,
                   label: 'Terrains',
-                  subtitle: terrainSubtitle,
                   color: kGreen,
                   bgColor: kGreenLight,
                   onTap: controller.goToTerrains,
@@ -283,7 +266,6 @@ class DashboardScreen extends GetView<DashboardController> {
                 _ActionData(
                   icon: PhosphorIconsDuotone.usersThree,
                   label: 'Contrôleurs',
-                  subtitle: 'Accès & suivi',
                   color: kBlue,
                   bgColor: kBlueLight,
                   onTap: controller.goToControllers,
@@ -291,7 +273,6 @@ class DashboardScreen extends GetView<DashboardController> {
                 _ActionData(
                   icon: PhosphorIconsDuotone.wallet,
                   label: 'Paiements',
-                  subtitle: paymentSubtitle,
                   color: kOrange,
                   bgColor: const Color(0xFFFFF3E0),
                   onTap: controller.goToPayments,
@@ -313,47 +294,40 @@ class DashboardScreen extends GetView<DashboardController> {
                             onTap: a.onTap,
                             child: Container(
                               width: itemWidth,
-                              padding: const EdgeInsets.all(14),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 20,
+                              ),
                               decoration: BoxDecoration(
                                 color: kBgCard,
                                 borderRadius: BorderRadius.circular(18),
                                 boxShadow: kCardShadow,
                               ),
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Container(
-                                    width: 40,
-                                    height: 40,
+                                    width: 44,
+                                    height: 44,
                                     decoration: BoxDecoration(
                                       color: a.bgColor,
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(13),
                                     ),
                                     child: PhosphorIcon(
                                       a.icon,
                                       color: a.color,
-                                      size: 22,
+                                      size: 24,
                                     ),
                                   ),
-                                  const SizedBox(height: 18),
+                                  const SizedBox(height: 12),
                                   Text(
                                     a.label,
+                                    textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w700,
                                       color: kTextPrim,
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    a.subtitle,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: kTextLight,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
                               ),
@@ -378,7 +352,16 @@ class DashboardScreen extends GetView<DashboardController> {
 
   // ─── Weekly chart ─────────────────────────────────────────────────────────
   Widget _buildWeeklyChart() {
-    return Padding(
+    return Obx(() {
+      final data = controller.activeChartData;
+      final maxVal = data.reduce((a, b) => a > b ? a : b);
+      if (maxVal == 0) return const SizedBox.shrink();
+
+      final isWeek = controller.chartPeriod.value == 'week';
+      final labels = controller.activeChartLabels;
+      final hasData = true;
+
+      return Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
       child: Container(
         padding: const EdgeInsets.all(20),
@@ -387,12 +370,7 @@ class DashboardScreen extends GetView<DashboardController> {
           borderRadius: BorderRadius.circular(18),
           boxShadow: kCardShadow,
         ),
-        child: Obx(() {
-          final isWeek = controller.chartPeriod.value == 'week';
-          final data = controller.activeChartData;
-          final labels = controller.activeChartLabels;
-          final maxVal = data.reduce((a, b) => a > b ? a : b);
-          final hasData = maxVal > 0;
+        child: Builder(builder: (_) {
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -542,6 +520,7 @@ class DashboardScreen extends GetView<DashboardController> {
         }),
       ),
     ).animate().fadeIn(duration: 500.ms, delay: 600.ms);
+    });
   }
 
   // ─── Recent bookings ──────────────────────────────────────────────────────
@@ -551,74 +530,13 @@ class DashboardScreen extends GetView<DashboardController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Text(
-                    'Réservations récentes',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: kTextPrim,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Obx(
-                    () => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: kGreenLight,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${controller.recentBookings.length}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: kGreen,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              GestureDetector(
-                onTap: controller.goToReservations,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: kBgSurface,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Voir tout',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: kGreen,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      PhosphorIcon(
-                        PhosphorIconsBold.caretRight,
-                        color: kGreen,
-                        size: 18,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+          const Text(
+            'Réservations récentes',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: kTextPrim,
+            ),
           ),
           const SizedBox(height: 14),
           Obx(() {
@@ -626,20 +544,38 @@ class DashboardScreen extends GetView<DashboardController> {
               return const _EmptyRecentBookings();
             }
 
+            final displayed = controller.recentBookings.take(5).toList();
+            final hasMore = controller.recentBookings.length > 5;
+
             return Column(
-              children: controller.recentBookings
-                  .asMap()
-                  .entries
-                  .map(
-                    (entry) => _BookingTile(booking: entry.value)
-                        .animate()
-                        .fadeIn(
-                          duration: 400.ms,
-                          delay: AppMotion.stagger(entry.key, base: 700),
-                        )
-                        .slideY(begin: 0.1, end: 0),
-                  )
-                  .toList(),
+              children: [
+                ...displayed.asMap().entries.map(
+                  (entry) => _BookingTile(booking: entry.value)
+                      .animate()
+                      .fadeIn(
+                        duration: 400.ms,
+                        delay: AppMotion.stagger(entry.key, base: 700),
+                      )
+                      .slideY(begin: 0.1, end: 0),
+                ),
+                if (hasMore)
+                  GestureDetector(
+                    onTap: controller.goToReservations,
+                    child: const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Center(
+                        child: Text(
+                          'Voir plus',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: kGreen,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             );
           }),
         ],
@@ -773,41 +709,19 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
                         top: topPad,
                         left: 16,
                         right: 16,
+                        bottom: 12,
                       ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Center(
-                              child: Obx(
-                                () => Text(
-                                  controller.ownerInitials,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                    color: kGreen,
-                                  ),
-                                ),
-                              ),
-                            ),
+                      child: const Center(
+                        child: Text(
+                          'MINIFOOT',
+                          style: TextStyle(
+                            fontFamily: 'Orbitron',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            fontStyle: FontStyle.italic,
+                            color: Colors.white,
                           ),
-                          const SizedBox(width: 10),
-                          const Expanded(
-                            child: Text(
-                              'Tableau de bord',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -1227,14 +1141,12 @@ class _RevenueCardAnimated extends StatelessWidget {
 class _ActionData {
   final dynamic icon;
   final String label;
-  final String subtitle;
   final Color color;
   final Color bgColor;
   final VoidCallback onTap;
   const _ActionData({
     required this.icon,
     required this.label,
-    required this.subtitle,
     required this.color,
     required this.bgColor,
     required this.onTap,
@@ -1325,16 +1237,14 @@ class _EmptyRecentBookings extends StatelessWidget {
   }
 }
 
-class _StatMiniCard extends StatelessWidget {
+class _StatCell extends StatelessWidget {
   final dynamic icon;
-  final Color iconBgColor;
   final Color iconColor;
   final String value;
   final String label;
 
-  const _StatMiniCard({
+  const _StatCell({
     required this.icon,
-    required this.iconBgColor,
     required this.iconColor,
     required this.value,
     required this.label,
@@ -1342,47 +1252,33 @@ class _StatMiniCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: kBgCard,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: kCardShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: iconBgColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: PhosphorIcon(icon, color: iconColor, size: 18),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        PhosphorIcon(icon, color: iconColor, size: 20),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            color: kTextPrim,
+            height: 1,
           ),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: kTextPrim,
-            ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: kTextSub,
+            fontWeight: FontWeight.w500,
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: kTextSub,
-              fontWeight: FontWeight.w500,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 }

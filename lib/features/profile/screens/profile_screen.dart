@@ -8,6 +8,7 @@ import '../../../core/widgets/app_network_image.dart';
 import '../../../core/widgets/owner_ui.dart';
 import '../../../routes/app_routes.dart';
 import '../controllers/profile_controller.dart';
+import '../../shell/controllers/shell_controller.dart';
 
 class ProfileScreen extends GetView<ProfileController> {
   const ProfileScreen({super.key});
@@ -16,42 +17,72 @@ class ProfileScreen extends GetView<ProfileController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBg,
-      appBar: AppBar(
-        backgroundColor: kBg,
-        elevation: 0,
-        leading: GestureDetector(
-          onTap: () => Get.back(),
-          behavior: HitTestBehavior.opaque,
-          child: const Center(
-            child: PhosphorIcon(PhosphorIcons.caretLeft,
-              color: kTextPrim,
-              size: 24,
-            ),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(64),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(bottom: BorderSide(color: kBgSurface)),
           ),
-        ),
-        title: const Text(
-          'Profil',
-          style: TextStyle(
-            color: kTextPrim,
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          GestureDetector(
-            onTap: _openEditProfile,
-            behavior: HitTestBehavior.opaque,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              alignment: Alignment.center,
-              child: PhosphorIcon(PhosphorIconsDuotone.pencilSimpleLine,
-                color: kGreen,
-                size: 22,
+          child: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            leading: Center(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Get.find<ShellController>().select(0),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: kBgSurface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    PhosphorIconsRegular.caretLeft,
+                    color: kTextPrim,
+                    size: 16,
+                  ),
+                ),
               ),
             ),
+            centerTitle: true,
+            title: const Text(
+              'Profil',
+              style: TextStyle(
+                fontFamily: 'Orbitron',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: kGreen,
+              ),
+            ),
+            actions: [
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _openEditProfile,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: kBgSurface,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        PhosphorIconsRegular.pencilSimple,
+                        color: kTextPrim,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: controller.loadProfile,
@@ -595,51 +626,44 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        height: 78,
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
         decoration: BoxDecoration(
           color: kBgCard,
           borderRadius: BorderRadius.circular(16),
           boxShadow: kCardShadow,
         ),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 34,
-              height: 34,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
                 color: bgColor,
-                borderRadius: BorderRadius.circular(11),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: PhosphorIcon(icon, color: color, size: 18),
+              child: PhosphorIcon(icon, color: color, size: 20),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: kTextPrim,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: kTextSub,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 8),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: kTextPrim,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: kTextSub,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],

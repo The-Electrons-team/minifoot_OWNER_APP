@@ -6,6 +6,7 @@ import '../../../core/config/app_config.dart';
 import '../../../core/models/user_model.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/notification_service.dart';
+import '../screens/contract_screen.dart';
 import '../../../core/widgets/app_snackbar.dart';
 import '../../../routes/app_routes.dart';
 
@@ -25,7 +26,7 @@ class AuthController extends GetxController {
 
   void goToRegister() => Get.toNamed(Routes.register);
   void goToLogin() => Get.back();
-  void goToPostAuthDestination() {
+  Future<void> goToPostAuthDestination() async {
     final current = user.value;
     if (current?.mustChangePassword == true) {
       Get.offAllNamed(Routes.changePassword);
@@ -33,6 +34,12 @@ class AuthController extends GetxController {
     }
     if (current?.isOwner == true && current?.isOwnerApproved != true) {
       Get.offAllNamed(Routes.ownerPending);
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final contractAccepted = prefs.getBool(kContractAcceptedKey) ?? false;
+    if (!contractAccepted) {
+      Get.offAllNamed(Routes.contract);
       return;
     }
     Get.offAllNamed(Routes.dashboard);

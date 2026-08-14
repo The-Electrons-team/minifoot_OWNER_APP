@@ -284,7 +284,7 @@ class _RegisterFlowState extends State<_RegisterFlow> {
                     child: Padding(
                       padding: const EdgeInsets.only(right: 12),
                       child: Icon(
-                        PhosphorIconsBold.caretLeft,
+                        PhosphorIconsRegular.caretLeft,
                         color: kTextPrim,
                         size: 24,
                       ),

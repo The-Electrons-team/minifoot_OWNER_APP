@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -129,6 +130,8 @@ class _SubTerrainDraft {
   final RxBool allowHalf;
   final RxBool allowThird;
   final RxList<_PricingPeriodDraft> pricingPeriods;
+  final RxnString expandedTarget = RxnString();
+  final Rxn<_PricingPeriodDraft> expandedPeriod = Rxn<_PricingPeriodDraft>();
 
   _SubTerrainDraft({
     this.divisionGroup,
@@ -312,15 +315,16 @@ class _SubTerrainDraft {
   }
 
   void addPricingPeriod(String target) {
-    pricingPeriods.add(
-      _PricingPeriodDraft(
-        label: 'Soirée',
-        startTime: '18:00',
-        endTime: '23:00',
-        pricePerHour: 10000,
-        target: target,
-      ),
+    final period = _PricingPeriodDraft(
+      label: '',
+      startTime: '08:00',
+      endTime: '23:00',
+      pricePerHour: 10000,
+      target: target,
     );
+    pricingPeriods.add(period);
+    expandedPeriod.value = period;
+    expandedTarget.value = target;
   }
 
   void removePricingPeriod(_PricingPeriodDraft period) {
@@ -336,6 +340,14 @@ class _SubTerrainDraft {
       period.dispose();
     }
   }
+}
+
+/// Déduit un label depuis la plage horaire : Journée ou Soirée.
+String _periodLabel(String start, String end) {
+  final startMin = _timeToMinutes(start);
+  if (startMin < 0) return 'Tarif';
+  // Soirée si le créneau commence à partir de 18h
+  return startMin >= 17 * 60 ? 'Soirée' : 'Journée';
 }
 
 bool _isValidTime(String value) => RegExp(r'^\d{2}:\d{2}$').hasMatch(value);
@@ -382,6 +394,8 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
   final _miniTerrains = <_SubTerrainDraft>[].obs;
   final _contactPhones = <String>[].obs;
   final _phoneCtrl = TextEditingController();
+  final _reviewPricingExpanded = <int, RxBool>{};
+  final _commune = ''.obs;
 
   final _equipments = <String, bool>{
     'Éclairage': true,
@@ -421,6 +435,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
     if (t != null) {
       _nameCtrl.text = t.name;
       _addressCtrl.text = t.address;
+      _commune.value = t.address;
       _descCtrl.text = t.description ?? '';
       _priceCtrl.text = '${t.pricePerHour}';
       _zone.value = t.zone;
@@ -469,7 +484,16 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
     // préremplissage, sinon l'édition serait considérée comme modifiée d'emblée.
     _initialSignature = _inputSignature;
 
-    if (!_isEditing) {
+    // Pour un nouveau complexe, on géolocalise d'emblée.
+    // Pour un existant, on re-géolocalise si l'adresse stockée ressemble
+    // à l'ancienne valeur de fallback ou contient des coordonnées.
+    final storedAddress = _addressCtrl.text.trim();
+    final needsGeocode = !_isEditing ||
+        storedAddress.isEmpty ||
+        storedAddress.toLowerCase().contains('actuelle') ||
+        storedAddress.toLowerCase().contains('détectée') ||
+        RegExp(r'^\d+\.\d+').hasMatch(storedAddress);
+    if (needsGeocode) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _useCurrentLocation());
     }
   }
@@ -493,15 +517,32 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
 
   Future<void> _reverseGeocode(LatLng point) async {
     try {
-      final uri = AppConfig.reverseGeocode(point.latitude, point.longitude);
+      final base = AppConfig.reverseGeocode(point.latitude, point.longitude);
+      // addressdetails=1 décompose l'adresse en champs (suburb, city, etc.)
+      final uri = base.replace(
+        queryParameters: {...base.queryParameters, 'addressdetails': '1'},
+      );
       final res = await http
           .get(uri, headers: {'Accept-Language': 'fr'})
           .timeout(AppConfig.geocodingTimeout);
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        final address = data['display_name']?.toString() ?? '';
-        _addressCtrl.text = address;
-        _zone.value = _zoneFromAddress(address);
+        final addr = data['address'] as Map<String, dynamic>? ?? {};
+        // Priorité : sous-quartier → quartier → arrondissement → ville
+        final commune = addr['suburb']?.toString() ??
+            addr['neighbourhood']?.toString() ??
+            addr['quarter']?.toString() ??
+            addr['city_district']?.toString() ??
+            addr['city']?.toString() ??
+            addr['town']?.toString() ??
+            addr['village']?.toString() ??
+            addr['county']?.toString() ??
+            '';
+        if (commune.isNotEmpty) {
+          _addressCtrl.text = commune;
+          _commune.value = commune;
+          _zone.value = _zoneFromAddress(commune);
+        }
       }
     } catch (_) {}
   }
@@ -564,13 +605,58 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
       final pt = LatLng(pos.latitude, pos.longitude);
       _mapCenter.value = pt;
       await _reverseGeocode(pt);
-      if (_addressCtrl.text.trim().isEmpty) {
-        _addressCtrl.text = 'Position actuelle détectée';
-      }
     } catch (e) {
       AppSnackbar.error('Impossible d\'obtenir votre position. Réessayez.');
     }
     _isLocating.value = false;
+  }
+
+  Future<void> _showAddressPicker() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _AddressPickerSheet(
+        onUseGps: () async {
+          Navigator.of(ctx).pop();
+          await _useCurrentLocation();
+        },
+        onSelect: (commune, lat, lng) {
+          _addressCtrl.text = commune;
+          _commune.value = commune;
+          _mapCenter.value = LatLng(lat, lng);
+          _zone.value = _zoneFromAddress(commune);
+        },
+        searchFn: _searchNominatim,
+      ),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _searchNominatim(String query) async {
+    if (query.trim().length < 2) return [];
+    try {
+      final base = AppConfig.reverseGeocode(0, 0);
+      final searchUri = Uri(
+        scheme: base.scheme,
+        host: base.host,
+        port: base.hasPort ? base.port : null,
+        path: '/search',
+        queryParameters: {
+          'q': query.trim(),
+          'format': 'json',
+          'addressdetails': '1',
+          'limit': '8',
+          'accept-language': 'fr',
+        },
+      );
+      final res = await http
+          .get(searchUri, headers: {'User-Agent': 'MiniFoot-Owner-App/1.0'})
+          .timeout(AppConfig.geocodingTimeout);
+      if (res.statusCode == 200) {
+        return (jsonDecode(res.body) as List).cast<Map<String, dynamic>>();
+      }
+    } catch (_) {}
+    return [];
   }
 
   @override
@@ -684,7 +770,14 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
   }
 
   Widget _buildStepHeader() {
-    final current = _step.value + 1;
+    // L'éditeur de terrain (index 3) est une sous-étape de Terrains (index 2),
+    // pas une étape principale — on l'affiche comme étape 3 sur 4.
+    final displayIndex = _step.value == 3
+        ? 2
+        : _step.value > 3
+            ? _step.value - 1
+            : _step.value;
+    final current = displayIndex + 1;
     final titles = [
       'Infos',
       'Photos',
@@ -697,7 +790,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Étape $current sur 5',
+          'Étape $current sur 4',
           style: const TextStyle(
             color: kTextSub,
             fontSize: 12,
@@ -706,17 +799,24 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
         ),
         const SizedBox(height: 8),
         Row(
-          children: List.generate(5, (index) {
-            final active = index <= _step.value;
+          children: List.generate(4, (index) {
+            final active = index <= displayIndex;
+            // Bar 0→step 0, 1→step 1, 2→step 2, 3→step 4 (skip sub-étape terrain)
+            final targetStep = index == 3 ? 4 : index;
             return Expanded(
-              child: Container(
-                height: 5,
-                margin: EdgeInsets.only(right: index == 4 ? 0 : 6),
-                decoration: BoxDecoration(
-                  color: active
-                      ? kGreen
-                      : kBorder,
-                  borderRadius: BorderRadius.circular(999),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _setStep(targetStep),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Container(
+                    height: 5,
+                    margin: EdgeInsets.only(right: index == 3 ? 0 : 6),
+                    decoration: BoxDecoration(
+                      color: active ? kGreen : kBorder,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
                 ),
               ),
             );
@@ -861,55 +961,403 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
 
   Widget _buildReviewStep() {
     final equipments = _equipments.entries
-        .where((entry) => entry.value)
-        .map((entry) => entry.key)
+        .where((e) => e.value)
+        .map((e) => e.key)
         .toList();
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _Card(
-          title: 'Complexe',
-          icon: PhosphorIconsLight.buildings,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        _buildReviewComplexeCard(equipments),
+        const SizedBox(height: 16),
+        ...List.generate(_miniTerrains.length, (i) => Padding(
+          padding: EdgeInsets.only(
+            bottom: i == _miniTerrains.length - 1 ? 0 : 14,
+          ),
+          child: _buildReviewTerrainCard(_miniTerrains[i], i),
+        )),
+      ],
+    );
+  }
+
+  Widget _buildReviewComplexeCard(List<String> equipments) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Photo
+        Obx(() {
+          if (_images.isEmpty) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.file(
+                File(_images.first.path),
+                height: 160,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+          );
+        }),
+        // Nom + badge
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Text(
+                _nameCtrl.text.trim().isEmpty ? 'Sans nom' : _nameCtrl.text.trim(),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: kTextPrim,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: kGreenLight,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Actif',
+                style: TextStyle(color: kGreen, fontSize: 11, fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        ),
+        // Adresse (commune)
+        if (_commune.value.trim().isNotEmpty) ...[
+          const SizedBox(height: 5),
+          Row(
             children: [
-              _ReviewLine(label: 'Nom', value: _nameCtrl.text.trim()),
-              _ReviewLine(label: 'Adresse', value: _addressCtrl.text.trim()),
-              _ReviewLine(label: 'Photos', value: '${_images.length} ajoutée(s)'),
-              _ReviewLine(
-                label: 'Équipements',
-                value: equipments.isEmpty ? 'Aucun' : equipments.join(', '),
+              const Icon(PhosphorIconsLight.mapPin, size: 13, color: kTextSub),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  _commune.value.trim(),
+                  style: const TextStyle(
+                    color: kTextSub, fontSize: 13, fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
-        ),
+        ],
         const SizedBox(height: 16),
-        _Card(
-          title: 'Terrains',
-          icon: PhosphorIconsLight.soccerBall,
-          child: Obx(
-            () => Column(
-              children: List.generate(_miniTerrains.length, (index) {
-                final terrain = _miniTerrains[index];
-                return Padding(
-                  padding: EdgeInsets.only(
-                    bottom: index == _miniTerrains.length - 1 ? 0 : 10,
+        // Stats card — style dashboard
+        Obx(
+          () => Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: kBgCard,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: kCardShadow,
+            ),
+            child: IntrinsicHeight(
+              child: Row(
+                children: [
+                  _ReviewStat(
+                    icon: PhosphorIconsDuotone.soccerBall,
+                    color: kGreen,
+                    value: '${_miniTerrains.length}',
+                    label: 'terrain${_miniTerrains.length > 1 ? 's' : ''}',
                   ),
-                  child: _TerrainDraftTile(
-                    index: index,
-                    terrain: terrain,
-                    onEdit: () {
-                      _editingTerrainIndex.value = index;
-                      _setStep(3);
-                    },
+                  const VerticalDivider(color: kDivider, width: 1, thickness: 1),
+                  _ReviewStat(
+                    icon: PhosphorIconsDuotone.image,
+                    color: kBlue,
+                    value: '${_images.length}',
+                    label: 'photo${_images.length > 1 ? 's' : ''}',
                   ),
-                );
-              }),
+                  const VerticalDivider(color: kDivider, width: 1, thickness: 1),
+                  _ReviewStat(
+                    icon: PhosphorIconsDuotone.shieldCheck,
+                    color: kGold,
+                    value: '${equipments.length}',
+                    label: 'équip.',
+                  ),
+                ],
+              ),
             ),
           ),
         ),
+        // Équipements — grille 2 colonnes sur card
+        if (equipments.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: kBgCard,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: kCardShadow,
+            ),
+            child: GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 3.5,
+              children: equipments.map((e) {
+                const icons = {
+                  'Éclairage': PhosphorIconsLight.lightbulb,
+                  'Vestiaires': PhosphorIconsLight.shirtFolded,
+                  'Ballon': PhosphorIconsLight.soccerBall,
+                  'Parking': PhosphorIconsLight.park,
+                  'Tribunes': PhosphorIconsLight.chair,
+                  'Wi-Fi': PhosphorIconsLight.wifiHigh,
+                  'Buvette': PhosphorIconsLight.coffee,
+                  'Douches': PhosphorIconsLight.shower,
+                  'Arbitre': PhosphorIconsLight.flag,
+                };
+                final icon = icons[e] ?? PhosphorIconsLight.checks;
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: kGreenLight,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: kGreen.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(icon, color: kGreen, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          e,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: kGreen,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
       ],
     );
+  }
+
+  Widget _buildReviewTerrainCard(_SubTerrainDraft terrain, int index) {
+    final expanded = _reviewPricingExpanded.putIfAbsent(index, () => false.obs);
+
+    return Obx(() {
+      final formats = terrain.formats.isEmpty
+          ? 'Aucun format'
+          : terrain.formats.join(', ');
+      final fullPeriods = terrain.pricingPeriods
+          .where((p) => p.target.value == 'FULL')
+          .toList();
+      final halfPeriods = terrain.pricingPeriods
+          .where((p) => p.target.value == 'HALF')
+          .toList();
+      final isExpanded = expanded.value;
+
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: kBgCard,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: kCardShadow,
+        ),
+        child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Nom + modifier
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  terrain.nameCtrl.text.trim().isEmpty
+                      ? 'Terrain ${index + 1}'
+                      : terrain.nameCtrl.text.trim(),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: kTextPrim,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: () {
+                  _editingTerrainIndex.value = index;
+                  _setStep(3);
+                },
+                tooltip: 'Modifier',
+                constraints: const BoxConstraints.tightFor(
+                  width: AppTouch.minTarget,
+                  height: AppTouch.minTarget,
+                ),
+                icon: const Icon(
+                  PhosphorIconsLight.pencilSimple,
+                  color: kGreen,
+                  size: 18,
+                ),
+              ),
+            ],
+          ),
+          // Formats + surface
+          Text(
+            '$formats • ${terrain.surface.value}',
+            style: const TextStyle(
+              fontSize: 12,
+              color: kTextSub,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 7),
+          // Badges
+          Row(
+            children: [
+              if (fullPeriods.isNotEmpty)
+                _ReviewBadge(
+                  label: 'Terrain complet',
+                  color: kGreen,
+                  bg: kGreenLight,
+                ),
+              if (fullPeriods.isNotEmpty && halfPeriods.isNotEmpty)
+                const SizedBox(width: 6),
+              if (halfPeriods.isNotEmpty)
+                _ReviewBadge(
+                  label: 'Demi terrain',
+                  color: kBlue,
+                  bg: kBlueLight,
+                ),
+            ],
+          ),
+          // Grille tarifaire collapsible
+          if (terrain.pricingPeriods.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => expanded.value = !expanded.value,
+              child: Row(
+                children: [
+                  const Icon(PhosphorIconsLight.tag, size: 13, color: kGreen),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'GRILLE TARIFAIRE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                      color: kGreen,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '(${terrain.pricingPeriods.length})',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: kTextSub,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    isExpanded
+                        ? PhosphorIconsLight.caretUp
+                        : PhosphorIconsLight.caretDown,
+                    size: 14,
+                    color: kTextSub,
+                  ),
+                ],
+              ),
+            ),
+            if (isExpanded) ...[
+              const SizedBox(height: 10),
+              ...terrain.pricingPeriods.asMap().entries.map((entry) {
+                final i = entry.key;
+                final p = entry.value;
+                final lbl = p.labelCtrl.text.trim().isNotEmpty
+                    ? p.labelCtrl.text.trim()
+                    : _periodLabel(p.startCtrl.text, p.endCtrl.text);
+                final price = p.priceCtrl.text.trim();
+                final isHalf = p.target.value == 'HALF';
+                final isLast = i == terrain.pricingPeriods.length - 1;
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      lbl,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: kTextPrim,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _ReviewBadge(
+                                      label: isHalf ? 'Demi' : 'Complet',
+                                      color: isHalf ? kBlue : kGreen,
+                                      bg: isHalf ? kBlueLight : kGreenLight,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      PhosphorIconsLight.clock,
+                                      size: 11,
+                                      color: kTextSub,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      '${p.startCtrl.text} – ${p.endCtrl.text}',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: kTextSub,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (price.isNotEmpty)
+                            Text(
+                              '$price F',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                color: kTextPrim,
+                                fontSize: 14,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (!isLast) const Divider(color: kDivider, height: 1),
+                  ],
+                );
+              }),
+            ],
+          ],
+        ],
+      ),
+      );
+    });
   }
 
   // ── 1. Photos ──────────────────────────────────────────────────────────────
@@ -1042,6 +1490,78 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
           hint: 'Ex: Complexe Foot Almadies',
           icon: PhosphorIconsLight.pen,
         ),
+        const SizedBox(height: 16),
+        // Localisation — saisie libre ou GPS
+        const Text(
+          'Localisation *',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: kTextSub,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Obx(() {
+          final commune = _commune.value.trim();
+          final loading = _isLocating.value;
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: loading ? null : _showAddressPicker,
+            child: Container(
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAF7),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: kBorder),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    PhosphorIconsLight.mapPin,
+                    size: 18,
+                    color: commune.isNotEmpty ? kGreen : kTextLight,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: loading
+                        ? const Text(
+                            'Détection en cours…',
+                            style: TextStyle(
+                              color: kTextLight,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          )
+                        : Text(
+                            commune.isNotEmpty ? commune : 'Choisir l\'adresse…',
+                            style: TextStyle(
+                              color: commune.isNotEmpty ? kTextPrim : kTextLight,
+                              fontSize: 13,
+                              fontWeight: commune.isNotEmpty ? FontWeight.w600 : FontWeight.w500,
+                            ),
+                          ),
+                  ),
+                  if (loading)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: kGreen,
+                      ),
+                    )
+                  else
+                    const Icon(
+                      PhosphorIconsLight.magnifyingGlass,
+                      size: 16,
+                      color: kTextSub,
+                    ),
+                ],
+              ),
+            ),
+          );
+        }),
         const SizedBox(height: 16),
         // Description
         _MultilineField(
@@ -1275,7 +1795,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
               Obx(
                 () => Switch.adaptive(
                   value: miniTerrain.isActive.value,
-                  activeThumbColor: kGreen,
+                  activeTrackColor: kGreen,
                   onChanged: (value) => miniTerrain.isActive.value = value,
                 ),
               ),
@@ -1393,43 +1913,106 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
           .where((period) => period.target.value == target)
           .toList();
 
-      return Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: kBorder),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      color: kTextPrim,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
+      // Collapsed when both types exist and this is not the active one.
+      final hasBoth =
+          miniTerrain.pricingPeriods.any((p) => p.target.value == 'FULL') &&
+          miniTerrain.pricingPeriods.any((p) => p.target.value == 'HALF');
+      final isCollapsed =
+          hasBoth &&
+          miniTerrain.expandedTarget.value != null &&
+          miniTerrain.expandedTarget.value != target;
+
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: isCollapsed ? () => miniTerrain.expandedTarget.value = target : null,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: kBorder),
+          ),
+          child: isCollapsed
+              ? Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: const TextStyle(
+                          color: kTextPrim,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
-                  ),
+                    Text(
+                      '${periods.length} tarif${periods.length > 1 ? 's' : ''}',
+                      style: const TextStyle(
+                        color: kTextSub,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Icon(
+                      PhosphorIconsLight.caretDown,
+                      size: 16,
+                      color: kTextSub,
+                    ),
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: kTextPrim,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    ...periods.map((period) {
+                      // Show expanded period if it's the selected one,
+                      // or if it's the only period of its type.
+                      final isExpanded =
+                          miniTerrain.expandedPeriod.value == period ||
+                          (miniTerrain.expandedPeriod.value == null &&
+                              periods.length == 1);
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: isExpanded
+                            ? _buildPricingPeriodRow(miniTerrain, period)
+                            : _buildPricingPeriodSummary(miniTerrain, period),
+                      );
+                    }),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => miniTerrain.addPricingPeriod(target),
+                        icon: const Icon(
+                          PhosphorIconsLight.plus,
+                          size: 16,
+                        ),
+                        label: const Text('Ajouter un tarif'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: kGreen,
+                          side: BorderSide.none,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          textStyle: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                _IconPillButton(
-                  label: 'Tarif',
-                  icon: PhosphorIconsLight.plus,
-                  onTap: () => miniTerrain.addPricingPeriod(target),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            ...periods.map((period) {
-              return Padding(
-                padding: EdgeInsets.only(bottom: period == periods.last ? 0 : 10),
-                child: _buildPricingPeriodRow(miniTerrain, period),
-              );
-            }),
-          ],
         ),
       );
     });
@@ -1542,6 +2125,88 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPricingPeriodSummary(
+    _SubTerrainDraft miniTerrain,
+    _PricingPeriodDraft period,
+  ) {
+    final start = period.startCtrl.text;
+    final end = period.endCtrl.text;
+    final label = period.labelCtrl.text.trim().isNotEmpty
+        ? period.labelCtrl.text.trim()
+        : _periodLabel(start, end);
+    final price = period.priceCtrl.text.trim();
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => miniTerrain.expandedPeriod.value = period,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9FAF7),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: kBorder),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: kTextPrim,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$start – $end',
+                    style: const TextStyle(
+                      color: kTextSub,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (price.isNotEmpty) ...[
+              Text(
+                '$price F/h',
+                style: const TextStyle(
+                  color: kGreen,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 4),
+            ],
+            IconButton(
+              onPressed: () => miniTerrain.removePricingPeriod(period),
+              tooltip: 'Supprimer cette plage tarifaire',
+              constraints: const BoxConstraints.tightFor(
+                width: AppTouch.minTarget,
+                height: AppTouch.minTarget,
+              ),
+              icon: const Icon(
+                PhosphorIconsLight.trash,
+                color: kRed,
+                size: 18,
+              ),
+            ),
+            const Icon(
+              PhosphorIconsLight.caretDown,
+              size: 16,
+              color: kTextSub,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2234,41 +2899,76 @@ class _TerrainDraftTile extends StatelessWidget {
   }
 }
 
-class _ReviewLine extends StatelessWidget {
-  final String label;
+class _ReviewStat extends StatelessWidget {
+  final dynamic icon;
+  final Color color;
   final String value;
+  final String label;
 
-  const _ReviewLine({required this.label, required this.value});
+  const _ReviewStat({
+    required this.icon,
+    required this.color,
+    required this.value,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Expanded(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 92,
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: kTextSub,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
+          PhosphorIcon(icon, color: color, size: 20),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: kTextPrim,
             ),
           ),
-          Expanded(
-            child: Text(
-              value.isEmpty ? '-' : value,
-              style: const TextStyle(
-                color: kTextPrim,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: kTextSub,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ReviewBadge extends StatelessWidget {
+  final String label;
+  final Color color;
+  final Color bg;
+
+  const _ReviewBadge({
+    required this.label,
+    required this.color,
+    required this.bg,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
       ),
     );
   }
@@ -2592,6 +3292,319 @@ class _AddPricingTypeButton extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AddressPickerSheet extends StatefulWidget {
+  final Future<void> Function() onUseGps;
+  final void Function(String commune, double lat, double lng) onSelect;
+  final Future<List<Map<String, dynamic>>> Function(String query) searchFn;
+
+  const _AddressPickerSheet({
+    required this.onUseGps,
+    required this.onSelect,
+    required this.searchFn,
+  });
+
+  @override
+  State<_AddressPickerSheet> createState() => _AddressPickerSheetState();
+}
+
+class _AddressPickerSheetState extends State<_AddressPickerSheet> {
+  final _searchCtrl = TextEditingController();
+  List<Map<String, dynamic>> _results = [];
+  bool _searching = false;
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    if (value.trim().length < 2) {
+      setState(() { _results = []; _searching = false; });
+      return;
+    }
+    setState(() { _searching = true; });
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      final results = await widget.searchFn(value);
+      if (mounted) setState(() { _results = results; _searching = false; });
+    });
+  }
+
+  String _extractCommune(Map<String, dynamic> result) {
+    final addr = result['address'] as Map<String, dynamic>? ?? {};
+    return addr['suburb']?.toString() ??
+        addr['neighbourhood']?.toString() ??
+        addr['quarter']?.toString() ??
+        addr['city_district']?.toString() ??
+        addr['city']?.toString() ??
+        addr['town']?.toString() ??
+        addr['village']?.toString() ??
+        addr['county']?.toString() ??
+        '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(top: 12),
+                decoration: BoxDecoration(
+                  color: kBorder,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: Row(
+                  children: [
+                    const Text(
+                      'Adresse du complexe',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: kTextPrim,
+                      ),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: const BoxDecoration(
+                          color: kBgSurface,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          PhosphorIconsRegular.x,
+                          size: 14,
+                          color: kTextSub,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: kBgSurface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: kBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 14),
+                      const Icon(
+                        PhosphorIconsLight.magnifyingGlass,
+                        size: 18,
+                        color: kTextSub,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _searchCtrl,
+                          autofocus: true,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: kTextPrim,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          decoration: const InputDecoration(
+                            hintText: 'Rechercher un quartier, commune…',
+                            hintStyle: TextStyle(
+                              color: kTextLight,
+                              fontSize: 13,
+                            ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          onChanged: _onSearchChanged,
+                        ),
+                      ),
+                      if (_searching)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 14),
+                          child: SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: kGreen,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: widget.onUseGps,
+                  child: Container(
+                    height: 50,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: kGreenLight,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: kGreen.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(PhosphorIconsLight.mapPin, size: 18, color: kGreen),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Utiliser ma position GPS',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: kGreen,
+                            ),
+                          ),
+                        ),
+                        Icon(PhosphorIconsLight.caretRight, size: 16, color: kGreen),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              if (_results.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Résultats',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: kTextSub,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: _results.length,
+                  itemBuilder: (context, index) {
+                    final result = _results[index];
+                    final commune = _extractCommune(result);
+                    final displayName = result['display_name']?.toString() ?? '';
+                    final title = commune.isNotEmpty ? commune : displayName;
+                    final lat = double.tryParse(result['lat']?.toString() ?? '') ?? 0;
+                    final lng = double.tryParse(result['lon']?.toString() ?? '') ?? 0;
+                    final isLast = index == _results.length - 1;
+
+                    return GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        Navigator.pop(context);
+                        widget.onSelect(title, lat, lng);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        decoration: BoxDecoration(
+                          border: isLast
+                              ? null
+                              : const Border(
+                                  bottom: BorderSide(color: kDivider),
+                                ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: kBgSurface,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                PhosphorIconsLight.mapPin,
+                                size: 16,
+                                color: kTextSub,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    title,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: kTextPrim,
+                                    ),
+                                  ),
+                                  if (displayName.isNotEmpty && displayName != title)
+                                    Text(
+                                      displayName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: kTextSub,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              PhosphorIconsLight.caretRight,
+                              size: 14,
+                              color: kTextLight,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
