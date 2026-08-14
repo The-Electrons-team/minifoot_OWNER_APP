@@ -139,7 +139,7 @@ class _DayHeader extends GetView<AvailabilityController> {
                               style: kManrope(
                                 size: 14,
                                 weight: FontWeight.w600,
-                                color: selected ? const Color(0xFF00552C) : kTextPrim,
+                                color: selected ? kGreenInk : kTextPrim,
                               ),
                             ),
                           ),
@@ -363,7 +363,7 @@ class _SlotRow extends GetView<AvailabilityController> {
       final busy = controller.isBulkUpdating.value;
 
       final (bg, timeColor, titleColor, subColor) = switch (slot.status) {
-        SlotStatus.blocked => (kGoldLight, const Color(0xFF92400E), const Color(0xFF92400E), const Color(0xFFB45309)),
+        SlotStatus.blocked => (kGoldLight, kGoldInk, kGoldInk, kGoldDeep),
         _ => (kBgCard, kTextPrim, kTextPrim, kTextSub),
       };
 
@@ -483,8 +483,8 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, bg, fg) = switch (status) {
-      SlotStatus.booked => ('RÉSERVÉ', kGreenLight, const Color(0xFF00552C)),
-      SlotStatus.blocked => ('LIBÉRER', Colors.white.withValues(alpha: 0.7), const Color(0xFF92400E)),
+      SlotStatus.booked => ('RÉSERVÉ', kGreenLight, kGreenInk),
+      SlotStatus.blocked => ('LIBÉRER', Colors.white.withValues(alpha: 0.7), kGoldInk),
       SlotStatus.available => ('BLOQUER', kBg, kTextSub),
     };
     return Container(
@@ -624,7 +624,7 @@ class _EmptyState extends StatelessWidget {
               height: 88,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0xFFEFEAE0),
+                color: kSurfaceMuted,
                 borderRadius: BorderRadius.circular(30),
               ),
               child: const PhosphorIcon(PhosphorIconsRegular.calendarBlank, color: kTextSub, size: 40),

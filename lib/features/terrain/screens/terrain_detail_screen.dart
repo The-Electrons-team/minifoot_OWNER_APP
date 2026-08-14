@@ -219,11 +219,11 @@ class _GalleryState extends State<_Gallery> {
           else
             const DecoratedBox(
               decoration: BoxDecoration(
-                color: Color(0xFFB9B2A4),
+                color: kSurfacePlaceholderDark,
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0x5C006F39), Color(0x14006F39)],
+                  colors: [kGreenOverlay36, kGreenOverlay08],
                 ),
               ),
             ),
@@ -369,7 +369,7 @@ class _Tabs extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFEDE7DB),
+        color: kSurfaceStrong,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -476,7 +476,7 @@ class _SubTerrainCard extends StatelessWidget {
               height: 46,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: sub.isActive ? kGreenLight : const Color(0xFFEDE7DB),
+                color: sub.isActive ? kGreenLight : kSurfaceStrong,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Text(

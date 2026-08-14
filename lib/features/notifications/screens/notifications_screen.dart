@@ -255,7 +255,7 @@ class _NotificationTile extends GetView<NotificationsController> {
     return switch (type) {
       'booking' => (PhosphorIconsRegular.calendarCheck, kBlueLight, kBlue),
       'payment' => (PhosphorIconsRegular.wallet, kGreenLight, kGreen),
-      'chat' => (PhosphorIconsRegular.chatCircle, kGoldLight, const Color(0xFF92400E)),
+      'chat' => (PhosphorIconsRegular.chatCircle, kGoldLight, kGoldInk),
       _ => (PhosphorIconsRegular.bell, kBg, kTextSub),
     };
   }
@@ -294,7 +294,7 @@ class _EmptyState extends StatelessWidget {
               height: 88,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0xFFEFEAE0),
+                color: kSurfaceMuted,
                 borderRadius: BorderRadius.circular(30),
               ),
               child: const PhosphorIcon(PhosphorIconsRegular.bell, color: kTextSub, size: 40),

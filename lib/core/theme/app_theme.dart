@@ -41,39 +41,79 @@ TextStyle kManrope({
 );
 
 // ─── Palette harmonisée avec l'app client ───────────────────────────────────
-const Color kBg        = Color(0xFFF5F0E8);   // fond beige chaud (identique client)
-const Color kBgCard    = Color(0xFFFFFFFF);   // cartes blanches
-const Color kBgSurface = Color(0xFFF0EBE3);   // surface inputs (beige plus clair)
-const Color kGreen     = Color(0xFF006F39);   // vert principal (identique client)
-const Color kGreenDark = Color(0xFF00C264);   // vert clair pour dark mode/accents
-const Color kGreenDim  = Color(0xFF005A2E);   // vert foncé
-const Color kGreenLight= Color(0xFFE8F5E9);   // vert très clair (badges, fonds)
-const Color kGold      = Color(0xFFF59E0B);   // or/revenus
-const Color kGoldLight = Color(0xFFFEF3C7);   // or clair (badge fond)
-const Color kRed       = Color(0xFFEF4444);   // danger
-const Color kRedLight  = Color(0xFFFEE2E2);   // danger clair (badge fond)
-const Color kBlue      = Color(0xFF1565C0);   // info (identique client)
-const Color kBlueLight = Color(0xFFDBEAFE);   // info clair
-const Color kOrange    = Color(0xFFE65100);   // orange accent
-const Color kTextPrim  = Color(0xFF1A1A1A);   // texte principal — 15,3:1 sur kBg
+const Color kBg = Color(0xFFF5F0E8); // fond beige chaud (identique client)
+const Color kBgCard = Color(0xFFFFFFFF); // cartes blanches
+const Color kBgSurface = Color(0xFFF0EBE3); // surface inputs
+const Color kGreen = Color(0xFF006F39); // vert principal
+const Color kGreenDark = Color(0xFF00C264); // vert clair dark mode/accents
+const Color kGreenDim = Color(0xFF005A2E); // vert foncé
+const Color kGreenLight = Color(0xFFE8F5E9); // badges succès
+const Color kGold = Color(0xFFF59E0B); // or/revenus
+const Color kGoldLight = Color(0xFFFEF3C7); // badge or
+const Color kRed = Color(0xFFEF4444); // danger
+const Color kRedLight = Color(0xFFFEE2E2); // danger clair
+const Color kBlue = Color(0xFF1565C0); // info
+const Color kBlueLight = Color(0xFFDBEAFE); // info clair
+const Color kOrange = Color(0xFFE65100); // orange accent
+const Color kTextPrim = Color(0xFF1A1A1A); // texte principal
 // Les deux niveaux secondaires ont été assombris pour passer WCAG AA (4,5:1)
 // sur kBg comme sur kBgSurface. Les valeurs d'origine (#6B7280 et #9CA3AF)
 // tombaient à 4,26:1 et 2,24:1 : illisibles au soleil, et #9CA3AF servait de
 // couleur par défaut à *tous* les placeholders. Voir test/theme_contrast_test.dart.
-const Color kTextSub   = Color(0xFF4B5563);   // texte secondaire — 6,66:1 sur kBg
-const Color kTextLight = Color(0xFF5F6672);   // texte léger, placeholders — 5,10:1
+const Color kTextSub = Color(0xFF4B5563); // texte secondaire
+const Color kTextLight = Color(0xFF5F6672); // placeholders
 // Or lisible en texte sur fond clair : kGold (#F59E0B) ne fait que 2,15:1 avec
 // du blanc, il ne doit servir que de remplissage ou d'accent.
-const Color kGoldDeep  = Color(0xFFB45309);   // 5,02:1 avec du blanc
-const Color kBorder    = Color(0xFFE5E0D8);   // bordures beige
-const Color kDivider   = Color(0xFFF0EBE3);   // séparateurs
+const Color kGoldDeep = Color(0xFFB45309); // 5,02:1 avec du blanc
+const Color kBorder = Color(0xFFE5E0D8); // bordures beige
+const Color kDivider = Color(0xFFF0EBE3); // séparateurs
 
 // ─── Couleurs de marque des moyens de paiement ──────────────────────────────
 // Imposées par les opérateurs : elles ne suivent pas la palette et ne doivent
 // pas être « harmonisées ». Nommées ici pour cesser d'être recopiées à la main.
-const Color kBrandWave        = Color(0xFF00B0F0);
+const Color kBrandWave = Color(0xFF00B0F0);
 const Color kBrandOrangeMoney = Color(0xFFFF6D00);
-const Color kBrandYasMoney    = Color(0xFFFFD100);
+const Color kBrandYasMoney = Color(0xFFFFD100);
+
+// ─── Tokens sémantiques du nouveau design Owner ───────────────────────────
+// Ces teintes appartiennent au langage visuel des maquettes 12–44. Elles sont
+// nommées ici pour éviter que chaque écran ne reconstruise sa propre palette.
+const Color kGreenInk = Color(0xFF00552C);
+const Color kGreenMutedText = Color(0xFF3F7A55);
+const Color kGreenLegacy = Color(0xFF2E7D32);
+const Color kGreenLegacyDark = Color(0xFF1B5E20);
+const Color kBlueInk = Color(0xFF0F4C99);
+const Color kGoldInk = Color(0xFF92400E);
+const Color kGoldDark = Color(0xFFD97706);
+const Color kGoldDarkInk = Color(0xFF78350F);
+const Color kGoldSoft = Color(0xFFFFF8E0);
+const Color kRedSoft = Color(0xFFFEF2F2);
+const Color kRedMuted = Color(0xFFFCA5A5);
+const Color kRedStrong = Color(0xFFB91C1C);
+const Color kRedInk = Color(0xFF7F1D1D);
+
+const Color kSurfaceMuted = Color(0xFFEFEAE0);
+const Color kSurfaceStrong = Color(0xFFEDE7DB);
+const Color kSurfacePlaceholder = Color(0xFFD8D2C6);
+const Color kSurfacePlaceholderDark = Color(0xFFB9B2A4);
+const Color kScannerBg = Color(0xFF0C1410);
+
+const Color kWaveSurface = Color(0xFFE7F8FE);
+const Color kWaveSurfaceAlt = Color(0xFFE0F4FD);
+const Color kWaveBorder = Color(0xFFBFEAFB);
+const Color kOrangeMoneySurface = Color(0xFFFFF1E8);
+const Color kOrangeMoneySurfaceAlt = Color(0xFFFFF3E0);
+const Color kOrangeMoneyBorder = Color(0xFFFFD6BF);
+const Color kYasMoneySurface = Color(0xFFFFF8D9);
+const Color kYasMoneyBorder = Color(0xFFFBE8A3);
+
+const Color kOverlayBlack44 = Color(0x70000000);
+const Color kOverlayBlack40 = Color(0x66000000);
+const Color kGreenOverlay36 = Color(0x5C006F39);
+const Color kGreenOverlay35 = Color(0x59006F39);
+const Color kGreenOverlay22 = Color(0x38006F39);
+const Color kGreenOverlay08 = Color(0x14006F39);
+const Color kGreenOverlay05 = Color(0x0D006F39);
 
 // ─── Ombres (style client) ──────────────────────────────────────────────────
 List<BoxShadow> get kCardShadow => [
@@ -102,13 +142,13 @@ List<BoxShadow> get kNavShadow => [
 
 // ─── Gradients ──────────────────────────────────────────────────────────────
 const LinearGradient kGreenGradient = LinearGradient(
-  colors: [Color(0xFF006F39), Color(0xFF00C264)],
+  colors: [kGreen, kGreenDark],
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
 );
 
 const LinearGradient kGoldGradient = LinearGradient(
-  colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+  colors: [kGold, kGoldDark],
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
 );
@@ -343,7 +383,8 @@ ThemeData get appTheme => ThemeData(
 
   switchTheme: SwitchThemeData(
     thumbColor: WidgetStateProperty.resolveWith(
-      (states) => states.contains(WidgetState.selected) ? Colors.white : kBgCard,
+      (states) =>
+          states.contains(WidgetState.selected) ? Colors.white : kBgCard,
     ),
     trackColor: WidgetStateProperty.resolveWith(
       (states) => states.contains(WidgetState.selected) ? kGreen : kBorder,

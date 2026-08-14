@@ -218,7 +218,7 @@ class _PeriodSwitch extends GetView<RevenuesController> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFEDE7DB),
+        color: kSurfaceStrong,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Obx(
@@ -321,7 +321,7 @@ class _PeriodTotal extends GetView<RevenuesController> {
                 style: kManrope(
                   size: 12,
                   weight: FontWeight.w700,
-                  color: delta >= 0 ? const Color(0xFF00552C) : kRed,
+                  color: delta >= 0 ? kGreenInk : kRed,
                 ),
               ),
             ),
@@ -361,7 +361,7 @@ class _TransactionRow extends StatelessWidget {
             ),
             child: PhosphorIcon(
               PhosphorIconsBold.plus,
-              color: credited ? kGreen : const Color(0xFF92400E),
+              color: credited ? kGreen : kGoldInk,
               size: 14,
             ),
           ),
@@ -404,7 +404,7 @@ class _TransactionRow extends StatelessWidget {
                 style: kManrope(
                   size: 10,
                   weight: FontWeight.w700,
-                  color: credited ? const Color(0xFF00552C) : const Color(0xFF92400E),
+                  color: credited ? kGreenInk : kGoldInk,
                 ),
               ),
             ],
@@ -687,7 +687,7 @@ class _EmptyState extends StatelessWidget {
             height: 88,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: const Color(0xFFEFEAE0),
+              color: kSurfaceMuted,
               borderRadius: BorderRadius.circular(30),
             ),
             child: const PhosphorIcon(PhosphorIconsRegular.wallet, color: kTextSub, size: 40),

@@ -424,7 +424,7 @@ class _EmptyState extends StatelessWidget {
               height: 88,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0xFFEFEAE0),
+                color: kSurfaceMuted,
                 borderRadius: BorderRadius.circular(30),
               ),
               child: const PhosphorIcon(PhosphorIconsRegular.image, color: kTextSub, size: 40),

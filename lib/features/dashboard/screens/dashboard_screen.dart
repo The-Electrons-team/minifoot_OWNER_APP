@@ -622,9 +622,9 @@ class _UpcomingTile extends StatelessWidget {
   static (String, Color, Color)? _badgeFor(String status) {
     switch (status) {
       case 'confirmed':
-        return ('PAYÉ', kGreenLight, const Color(0xFF00552C));
+        return ('PAYÉ', kGreenLight, kGreenInk);
       case 'pending':
-        return ('ACOMPTE', kBlueLight, const Color(0xFF0F4C99));
+        return ('ACOMPTE', kBlueLight, kBlueInk);
       default:
         return null;
     }
@@ -669,12 +669,12 @@ class _NoUpcoming extends StatelessWidget {
               children: [
                 Text(
                   'Rien en attente',
-                  style: kArchivo(size: 14.5, weight: FontWeight.w700, color: const Color(0xFF00552C)),
+                  style: kArchivo(size: 14.5, weight: FontWeight.w700, color: kGreenInk),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Toutes les demandes sont traitées.',
-                  style: kManrope(size: 12.5, weight: FontWeight.w400, color: const Color(0xFF3F7A55), height: 1.4),
+                  style: kManrope(size: 12.5, weight: FontWeight.w400, color: kGreenMutedText, height: 1.4),
                 ),
               ],
             ),

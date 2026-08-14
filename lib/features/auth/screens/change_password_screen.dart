@@ -63,7 +63,7 @@ class _ForceChangePasswordScreenState extends State<ForceChangePasswordScreen> {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: kGreen.withOpacity(0.1),
+                  color: kGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Icon(PhosphorIconsRegular.lockKeyOpen, color: kGreen, size: 32),

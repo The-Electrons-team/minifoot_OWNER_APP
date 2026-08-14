@@ -64,7 +64,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
               decoration: BoxDecoration(
                 gradient: hasBalance
                     ? const LinearGradient(
-                        colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+                        colors: [kGreenLegacyDark, kGreenLegacy],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       )
@@ -694,11 +694,11 @@ class _TransactionCard extends StatelessWidget {
   Color get _methodBg {
     switch (transaction.method) {
       case 'Wave':
-        return const Color(0xFFE0F4FD);
+        return kWaveSurfaceAlt;
       case 'Orange Money':
         return kTextPrim;
       case 'Yas Money':
-        return const Color(0xFFFFF8E0);
+        return kGoldSoft;
       default:
         return kBgSurface;
     }

@@ -111,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           letterSpacing: 4,
                           shadows: [
                             Shadow(
-                              color: Color(0x70000000),
+                              color: kOverlayBlack44,
                               blurRadius: 10,
                               offset: Offset(0, 3),
                             ),

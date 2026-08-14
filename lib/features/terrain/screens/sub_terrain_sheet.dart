@@ -545,7 +545,7 @@ class _Chip extends StatelessWidget {
           style: kManrope(
             size: 13,
             weight: FontWeight.w600,
-            color: selected ? const Color(0xFF00552C) : kTextPrim,
+            color: selected ? kGreenInk : kTextPrim,
           ),
         ),
       ),

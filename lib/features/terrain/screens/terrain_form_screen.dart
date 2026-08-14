@@ -624,7 +624,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                       style: kManrope(
                         size: 14,
                         weight: FontWeight.w700,
-                        color: _lat.value == null ? kTextPrim : const Color(0xFF00552C),
+                        color: _lat.value == null ? kTextPrim : kGreenInk,
                       ),
                     ),
                   ),
@@ -729,7 +729,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
             children: [
               const PhosphorIcon(
                 PhosphorIconsRegular.info,
-                color: Color(0xFF92400E),
+                color: kGoldInk,
                 size: 18,
               ),
               const SizedBox(width: 11),
@@ -741,7 +741,7 @@ class _TerrainFormScreenState extends State<TerrainFormScreen> {
                   style: kManrope(
                     size: 13,
                     weight: FontWeight.w500,
-                    color: const Color(0xFF92400E),
+                    color: kGoldInk,
                     height: 1.45,
                   ),
                 ),

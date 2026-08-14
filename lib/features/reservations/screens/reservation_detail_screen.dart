@@ -169,7 +169,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                             Expanded(
                               child: Text(
                                 'Acompte versé — encaissez le solde sur place puis confirmez.',
-                                style: kManrope(size: 13.5, weight: FontWeight.w600, color: const Color(0xFF92400E), height: 1.4),
+                                style: kManrope(size: 13.5, weight: FontWeight.w600, color: kGoldInk, height: 1.4),
                               ),
                             ),
                           ],

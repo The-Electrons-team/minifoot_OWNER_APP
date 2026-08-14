@@ -58,7 +58,7 @@ class PaymentMethodsScreen extends GetView<ProfileController> {
               title: 'Orange Money',
               subtitle: 'Numéro Orange Money',
               color: kOrange,
-              bgColor: const Color(0xFFFFF3E0),
+              bgColor: kOrangeMoneySurfaceAlt,
               method: 'ORANGE_MONEY',
               textController: controller.orangePhoneCtrl,
               selected:

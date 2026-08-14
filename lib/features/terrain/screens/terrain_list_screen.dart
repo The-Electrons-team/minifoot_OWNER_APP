@@ -174,7 +174,7 @@ class _ComplexCard extends GetView<TerrainController> {
                         child: _CardButton(
                           label: 'Disponibilités',
                           bg: kGreenLight,
-                          fg: const Color(0xFF00552C),
+                          fg: kGreenInk,
                           onTap: () => Get.toNamed(Routes.availability, arguments: terrain.id),
                         ),
                       ),
@@ -257,9 +257,9 @@ class _CardHeader extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0x38006F39), Color(0x0D006F39)],
+                  colors: [kGreenOverlay22, kGreenOverlay05],
                 ),
-                color: Color(0xFFD8D2C6),
+                color: kSurfacePlaceholder,
               ),
             ),
           if (hasImage)
@@ -268,7 +268,7 @@ class _CardHeader extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.center,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Color(0x66000000)],
+                  colors: [Colors.transparent, kOverlayBlack40],
                 ),
               ),
             ),
@@ -297,7 +297,7 @@ class _CardHeader extends StatelessWidget {
                     style: kManrope(
                       size: 11,
                       weight: FontWeight.w700,
-                      color: terrain.isActive ? const Color(0xFF00552C) : const Color(0xFF92400E),
+                      color: terrain.isActive ? kGreenInk : kGoldInk,
                     ),
                   ),
                 ],
@@ -428,7 +428,7 @@ class _EmptyState extends StatelessWidget {
               height: 88,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0xFFEFEAE0),
+                color: kSurfaceMuted,
                 borderRadius: BorderRadius.circular(30),
               ),
               child: const PhosphorIcon(PhosphorIconsRegular.soccerBall, color: kTextSub, size: 40),

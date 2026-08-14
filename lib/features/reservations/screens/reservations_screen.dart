@@ -176,7 +176,7 @@ class _TabSwitch extends GetView<ReservationsController> {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(color: const Color(0xFFEDE7DB), borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: kSurfaceStrong, borderRadius: BorderRadius.circular(14)),
       child: Obx(
         () => Row(
           children: [
@@ -376,12 +376,12 @@ class _ReservationTile extends StatelessWidget {
   }
 
   static (String, Color, Color)? _badgeFor(ReservationModel r) {
-    if (r.isCheckedIn) return ('PRÉSENT', kGreenLight, const Color(0xFF00552C));
-    if (r.status == 'confirmed') return ('PAYÉ', kGreenLight, const Color(0xFF00552C));
+    if (r.isCheckedIn) return ('PRÉSENT', kGreenLight, kGreenInk);
+    if (r.status == 'confirmed') return ('PAYÉ', kGreenLight, kGreenInk);
     if (r.status == 'awaiting_owner_confirmation' || r.paymentStatus == 'Payé') {
-      return ('ACOMPTE', kBlueLight, const Color(0xFF0F4C99));
+      return ('ACOMPTE', kBlueLight, kBlueInk);
     }
-    if (r.status == 'pending') return ('EN ATTENTE', kGoldLight, const Color(0xFF92400E));
+    if (r.status == 'pending') return ('EN ATTENTE', kGoldLight, kGoldInk);
     return null;
   }
 }
@@ -404,7 +404,7 @@ class _EmptyState extends GetView<ReservationsController> {
               width: 88,
               height: 88,
               alignment: Alignment.center,
-              decoration: BoxDecoration(color: const Color(0xFFEFEAE0), borderRadius: BorderRadius.circular(30)),
+              decoration: BoxDecoration(color: kSurfaceMuted, borderRadius: BorderRadius.circular(30)),
               child: PhosphorIcon(
                 hasQuery ? PhosphorIconsRegular.magnifyingGlass : PhosphorIconsRegular.calendarBlank,
                 color: kTextSub,

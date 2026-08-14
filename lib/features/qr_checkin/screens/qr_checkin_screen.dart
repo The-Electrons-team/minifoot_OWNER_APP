@@ -141,7 +141,7 @@ class _ScannerView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0C1410),
+      backgroundColor: kScannerBg,
       body: Stack(
         children: [
           MobileScanner(
@@ -151,7 +151,7 @@ class _ScannerView extends StatelessWidget {
               if (error.errorCode == MobileScannerErrorCode.permissionDenied) {
                 WidgetsBinding.instance.addPostFrameCallback((_) => onCameraDenied());
               }
-              return const ColoredBox(color: Color(0xFF0C1410));
+              return const ColoredBox(color: kScannerBg);
             },
           ),
           const DecoratedBox(
@@ -159,7 +159,7 @@ class _ScannerView extends StatelessWidget {
               gradient: RadialGradient(
                 center: Alignment(0, -0.16),
                 radius: 0.62,
-                colors: [Color(0x59006F39), Colors.transparent],
+                colors: [kGreenOverlay35, Colors.transparent],
               ),
             ),
             child: SizedBox.expand(),
@@ -355,7 +355,7 @@ class _VerifyingView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0C1410),
+      backgroundColor: kScannerBg,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -398,9 +398,9 @@ class _ValidTicketView extends StatelessWidget {
       icon: PhosphorIconsBold.check,
       iconColor: Colors.white,
       title: 'Billet valide',
-      titleColor: const Color(0xFF00552C),
+      titleColor: kGreenInk,
       subtitle: 'Réservation payée intégralement',
-      subtitleColor: const Color(0xFF3F7A55),
+      subtitleColor: kGreenMutedText,
       statusBarDark: true,
       body: Column(
         children: [
@@ -455,8 +455,8 @@ class _TooEarlyView extends StatelessWidget {
             reservation: r,
             slotLabel: 'SON CRÉNEAU',
             slotBg: kGoldLight,
-            slotLabelColor: const Color(0xFF92400E),
-            slotValueColor: const Color(0xFF78350F),
+            slotLabelColor: kGoldInk,
+            slotValueColor: kGoldDarkInk,
             secondTileLabel: 'IL EST',
             secondTileValue: now,
           ),
@@ -513,7 +513,7 @@ class _AlreadyUsedView extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEF2F2),
+                  color: kRedSoft,
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Column(
@@ -524,14 +524,14 @@ class _AlreadyUsedView extends StatelessWidget {
                       style: kManrope(
                         size: 11,
                         weight: FontWeight.w500,
-                        color: const Color(0xFFB91C1C),
+                        color: kRedStrong,
                         letterSpacing: 0.04 * 11,
                       ),
                     ),
                     const SizedBox(height: 7),
                     Text(
                       DateFormat('HH:mm', 'fr_FR').format(checkedInAt),
-                      style: kArchivo(size: 15, weight: FontWeight.w700, color: const Color(0xFF7F1D1D), height: 1.3),
+                      style: kArchivo(size: 15, weight: FontWeight.w700, color: kRedInk, height: 1.3),
                     ),
                   ],
                 ),
@@ -727,7 +727,7 @@ class _CameraDeniedView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0C1410),
+      backgroundColor: kScannerBg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 34),
@@ -744,7 +744,7 @@ class _CameraDeniedView extends StatelessWidget {
                 ),
                 child: const PhosphorIcon(
                   PhosphorIconsRegular.cameraSlash,
-                  color: Color(0xFFFCA5A5),
+                  color: kRedMuted,
                   size: 44,
                 ),
               ),
@@ -988,7 +988,7 @@ class _ClientCard extends StatelessWidget {
                   height: 54,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: avatarMuted ? const Color(0xFFEFEAE0) : kGreen,
+                    color: avatarMuted ? kSurfaceMuted : kGreen,
                     borderRadius: BorderRadius.circular(17),
                   ),
                   child: Text(

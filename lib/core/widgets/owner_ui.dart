@@ -227,21 +227,21 @@ class PaymentBrandBadge extends StatelessWidget {
     switch (normalized) {
       case 'WAVE':
         return const _PaymentBrandMeta(
-          background: Color(0xFFE7F8FE),
-          border: Color(0xFFBFEAFB),
+          background: kWaveSurface,
+          border: kWaveBorder,
         );
       case 'ORANGE_MONEY':
       case 'ORANGE MONEY':
         return const _PaymentBrandMeta(
-          background: Color(0xFFFFF1E8),
-          border: Color(0xFFFFD6BF),
+          background: kOrangeMoneySurface,
+          border: kOrangeMoneyBorder,
         );
       case 'FREE_MONEY':
       case 'YAS_MONEY':
       case 'YAS MONEY':
         return const _PaymentBrandMeta(
-          background: Color(0xFFFFF8D9),
-          border: Color(0xFFFBE8A3),
+          background: kYasMoneySurface,
+          border: kYasMoneyBorder,
         );
       default:
         return const _PaymentBrandMeta(background: kBgSurface, border: kBorder);
