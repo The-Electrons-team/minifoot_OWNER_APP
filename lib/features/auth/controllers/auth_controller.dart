@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/config/app_config.dart';
@@ -78,10 +79,13 @@ class AuthController extends GetxController {
   Future<void> startLogin(String phone, String password) async {
     isLoading.value = true;
     try {
+      debugPrint('[LOGIN] Tentative: phone=$phone');
       final res = await _authService.login(phone, password);
+      debugPrint('[LOGIN] Réponse: role=${res['user']?['role']}, id=${res['user']?['id']}');
       if (res['token'] != null) {
         token.value = res['token'];
         user.value = UserModel.fromJson(res['user']);
+        debugPrint('[LOGIN] canUseOwnerApp=${user.value?.canUseOwnerApp}, role=${user.value?.role}');
         if (user.value?.canUseOwnerApp != true) {
           token.value = null;
           user.value = null;
@@ -101,7 +105,7 @@ class AuthController extends GetxController {
       if (e.toString().contains('COMPTE_NON_TROUVE')) {
         message = 'Aucun compte trouvé avec ce numéro. Inscrivez-vous d\'abord.';
       } else if (e.toString().contains('ID_INVALIDES')) {
-        message = 'Mot de passe incorrect. Vérifiez et réessayez.';
+        message = 'Identifiants invalides. Vérifiez et réessayez.';
       } else if (e.toString().contains('ROLE_NON_AUTORISE')) {
         message = 'Ce numéro correspond à un compte joueur. Utilisez un compte propriétaire.';
       } else if (e.toString().contains('SERVER_UNAVAILABLE')) {

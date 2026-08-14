@@ -76,6 +76,21 @@ class DashboardController extends GetxController {
     isLoading.value = true;
     errorMessage.value = '';
     try {
+      final user = _auth.user.value;
+      ownerName.value = '${user?.firstName ?? ''} ${user?.lastName ?? ''}'.trim();
+
+      if (isController) {
+        // Un contrôleur n'a pas accès au dashboard propriétaire
+        // On charge uniquement les notifications
+        try {
+          final data = await _service.getOwnerDashboard();
+          notificationCount.value = data.unreadNotifications;
+        } catch (_) {
+          // Silencieux : les notifs sont secondaires
+        }
+        return;
+      }
+
       final data = await _service.getOwnerDashboard();
       ownerName.value = data.ownerName;
       totalRevenue.value = data.totalRevenue;
