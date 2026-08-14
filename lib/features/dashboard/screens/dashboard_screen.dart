@@ -45,17 +45,17 @@ class DashboardScreen extends GetView<DashboardController> {
               child: SizedBox(height: _kCardFullH - _kOverlapFull - 48),
             ),
             SliverToBoxAdapter(
-              child: Column(
+              child: Obx(() => Column(
                 children: [
                   _buildDashboardNotice(),
-                  _buildTodayFocus(),
-                  _buildStatsRow(),
+                  if (!controller.isController) _buildTodayFocus(),
+                  if (!controller.isController) _buildStatsRow(),
                   _buildQuickActions(),
-                  _buildWeeklyChart(),
-                  _buildRecentBookings(),
+                  if (!controller.isController) _buildWeeklyChart(),
+                  if (!controller.isController) _buildRecentBookings(),
                   const SizedBox(height: 84),
                 ],
-              ),
+              )),
             ),
           ],
         ),
@@ -743,14 +743,15 @@ class _HeaderDelegate extends SliverPersistentHeaderDelegate {
           ),
         ),
 
-        // ── Revenue card (se réduit au scroll, reste visible) ────────────
-        Positioned(
-          top: cardTop,
-          left: 24,
-          right: 24,
-          height: cardH,
-          child: _RevenueCardAnimated(controller: controller, t: t),
-        ),
+        // ── Revenue card : uniquement pour les propriétaires ─────────────
+        if (!controller.isController)
+          Positioned(
+            top: cardTop,
+            left: 24,
+            right: 24,
+            height: cardH,
+            child: _RevenueCardAnimated(controller: controller, t: t),
+          ),
       ],
     );
   }
