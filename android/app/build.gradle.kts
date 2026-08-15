@@ -57,9 +57,6 @@ android {
         }
     }
 
-    packagingOptions {
-        jniLibs.keepDebugSymbols.add("**/*.so")
-    }
 }
 
 flutter {
