@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../core/services/reservation_service.dart';
 import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_snackbar.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 class ReservationModel {
   final String id;
@@ -139,6 +140,7 @@ class ReservationModel {
 
 class ReservationsController extends GetxController {
   final _service = ReservationService();
+  final _auth = Get.find<AuthController>();
   final _allReservations = <ReservationModel>[].obs;
   final selectedFilter = 'all'.obs;
   final isLoading = false.obs;
@@ -154,6 +156,7 @@ class ReservationsController extends GetxController {
   final total = 0.obs;
 
   bool get hasMore => _allReservations.length < total.value;
+  bool get isController => _auth.user.value?.isController == true;
 
   @override
   void onInit() {
@@ -220,6 +223,7 @@ class ReservationsController extends GetxController {
   }
 
   Future<void> cancelReservation(String id) async {
+    if (isController) return;
     final confirmed = await AppDialog.confirm(
       title: 'Refuser la réservation',
       message: 'Cette réservation passera en statut annulé.',
@@ -231,6 +235,7 @@ class ReservationsController extends GetxController {
   }
 
   Future<void> cancelReservationDirect(String id) async {
+    if (isController) return;
     try {
       await _service.cancelOwnerReservation(id);
       await loadReservations();

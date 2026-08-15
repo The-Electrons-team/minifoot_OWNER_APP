@@ -44,6 +44,7 @@ class ReservationsScreen extends GetView<ReservationsController> {
           ),
         ),
         actions: [
+          if (!controller.isController)
           GestureDetector(
             onTap: () => Get.to(
               () => const ReportScreen(),
@@ -129,7 +130,6 @@ class ReservationsScreen extends GetView<ReservationsController> {
   Widget _buildSummaryStrip() {
     return Obx(() {
       final list = controller.filteredReservations;
-      final totalAmount = list.fold<int>(0, (sum, item) => sum + item.amount);
       final checkedInCount = list.where((item) => item.isCheckedIn).length;
       final pendingActionCount =
           list.where((item) => item.status == 'pending').length;
@@ -148,10 +148,19 @@ class ReservationsScreen extends GetView<ReservationsController> {
               children: [
                 Expanded(
                   child: _ResStatCell(
-                    icon: PhosphorIconsDuotone.wallet,
+                    icon: controller.isController
+                        ? PhosphorIconsDuotone.calendarBlank
+                        : PhosphorIconsDuotone.wallet,
                     iconColor: kGreen,
-                    value: _formatAmount(totalAmount),
-                    label: 'Montant',
+                    value: controller.isController
+                        ? '${list.length}'
+                        : _formatAmount(
+                            list.fold<int>(
+                              0,
+                              (sum, item) => sum + item.amount,
+                            ),
+                          ),
+                    label: controller.isController ? "Aujourd'hui" : 'Montant',
                   ),
                 ),
                 const VerticalDivider(color: kDivider, width: 1, thickness: 1),
@@ -233,6 +242,7 @@ class ReservationsScreen extends GetView<ReservationsController> {
           final reservation = list[i];
           final card = _ReservationCard(
             reservation: reservation,
+            isController: controller.isController,
             onTap: () => _openReservationDetails(reservation),
           );
 
@@ -240,9 +250,9 @@ class ReservationsScreen extends GetView<ReservationsController> {
           // l'action la plus fréquente sur cet écran, elle mérite d'être
           // accessible d'un glissement. Seules les réservations encore
           // annulables l'exposent.
-          final canRefuse =
-              reservation.status == 'pending' ||
-              reservation.status == 'confirmed';
+          final canRefuse = !controller.isController &&
+              (reservation.status == 'pending' ||
+                  reservation.status == 'confirmed');
 
           return Slidable(
             key: ValueKey(reservation.id),
@@ -290,9 +300,14 @@ String _formatAmount(int amount) => AppFormat.amount(amount);
 
 class _ReservationCard extends StatelessWidget {
   final ReservationModel reservation;
+  final bool isController;
   final VoidCallback onTap;
 
-  const _ReservationCard({required this.reservation, required this.onTap});
+  const _ReservationCard({
+    required this.reservation,
+    required this.isController,
+    required this.onTap,
+  });
 
   Color get _statusColor {
     switch (reservation.status) {
@@ -521,15 +536,17 @@ class _ReservationCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _formatAmount(reservation.amount),
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: kTextPrim,
+                    if (!isController) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatAmount(reservation.amount),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: kTextPrim,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -545,15 +562,17 @@ class _ReservationCard extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Expanded(
-                        child: _InlineState(
-                          icon: PhosphorIconsDuotone.creditCard,
-                          label: reservation.paymentStatus,
-                          value: reservation.paymentMethod,
+                      if (!isController) ...[
+                        Expanded(
+                          child: _InlineState(
+                            icon: PhosphorIconsDuotone.creditCard,
+                            label: reservation.paymentStatus,
+                            value: reservation.paymentMethod,
+                          ),
                         ),
-                      ),
-                      Container(width: 1, height: 24, color: kBorder),
-                      const SizedBox(width: 12),
+                        Container(width: 1, height: 24, color: kBorder),
+                        const SizedBox(width: 12),
+                      ],
                       Expanded(
                         child: _InlineState(
                           icon: reservation.isCheckedIn

@@ -161,18 +161,18 @@ class AvailabilityController extends GetxController {
   bool get isController => _auth.user.value?.isController == true;
 
   DateTime get firstSelectableDay => isController
-      ? _startOfCurrentWeek()
+      ? _today()
       : DateTime.now().subtract(const Duration(days: 365));
 
   DateTime get lastSelectableDay => isController
-      ? _startOfCurrentWeek().add(const Duration(days: 6))
+      ? _today()
       : DateTime.now().add(const Duration(days: 365));
 
   String get scopeLabel {
     if (isLoadingTerrains.value) return 'Chargement des complexes';
     if (terrains.isEmpty) return 'Aucun complexe disponible';
     if (isController) {
-      return '${complexCount.value} complexe${complexCount.value > 1 ? 's' : ''} assigné${complexCount.value > 1 ? 's' : ''} • semaine en cours';
+      return '${complexCount.value} complexe${complexCount.value > 1 ? 's' : ''} assigné${complexCount.value > 1 ? 's' : ''} • aujourd\'hui uniquement';
     }
     return '${complexCount.value} complexe${complexCount.value > 1 ? 's' : ''} • ${terrains.length} option${terrains.length > 1 ? 's' : ''}';
   }
@@ -193,7 +193,7 @@ class AvailabilityController extends GetxController {
   // ── Sélection de date ───────────────────────────────────────────────────────
   void onDaySelected(DateTime day, DateTime focused) {
     if (!canAccessDate(day)) {
-      AppSnackbar.info('Vous pouvez consulter uniquement les créneaux de la semaine en cours.');
+      AppSnackbar.info('Vous pouvez gérer uniquement les créneaux du jour.');
       return;
     }
     final clampedDay = _clampToAllowedRange(day);
@@ -209,7 +209,7 @@ class AvailabilityController extends GetxController {
   void goToAdjacentDay(int delta) {
     final target = selectedDate.value.add(Duration(days: delta));
     if (!canAccessDate(target)) {
-      AppSnackbar.info('Vous êtes limité à la semaine en cours.');
+      AppSnackbar.info('Vous êtes limité aux créneaux du jour.');
       return;
     }
     onDaySelected(target, target);
@@ -577,10 +577,7 @@ class AvailabilityController extends GetxController {
   DateTime _startOfDay(DateTime date) =>
       DateTime(date.year, date.month, date.day);
 
-  DateTime _startOfCurrentWeek() {
-    final today = _startOfDay(DateTime.now());
-    return today.subtract(Duration(days: today.weekday % 7));
-  }
+  DateTime _today() => _startOfDay(DateTime.now());
 
   String _addThirtyMin(String time) {
     final parts = time.split('h');

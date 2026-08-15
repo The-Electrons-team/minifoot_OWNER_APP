@@ -58,6 +58,8 @@ class ProfileController extends GetxController {
   final nextPhoneCtrl = TextEditingController();
   final phoneOtpCtrl = TextEditingController();
 
+  bool get isController => _authController.user.value?.isController == true;
+
   @override
   void onInit() {
     super.onInit();
@@ -90,6 +92,9 @@ class ProfileController extends GetxController {
         _authController.user.value = user;
         _syncUser(user);
       }
+
+      // Un controller n'accède pas aux statistiques ou revenus du gérant.
+      if (isController) return;
 
       // Listes complètes : la note moyenne et le revenu total portent sur
       // l'ensemble, une page tronquée donnerait des chiffres faux.

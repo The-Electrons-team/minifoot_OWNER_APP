@@ -29,6 +29,10 @@ class DashboardScreen extends GetView<DashboardController> {
 
   @override
   Widget build(BuildContext context) {
+    if (controller.isController) {
+      return _buildControllerDashboard();
+    }
+
     return Scaffold(
       backgroundColor: kBg,
       body: RefreshIndicator(
@@ -58,6 +62,137 @@ class DashboardScreen extends GetView<DashboardController> {
               )),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildControllerDashboard() {
+    return Scaffold(
+      backgroundColor: kBg,
+      body: SafeArea(
+        child: RefreshIndicator(
+          color: kGreen,
+          onRefresh: controller.refreshDashboard,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 100),
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: const ShapeDecoration(
+                      gradient: kGreenGradient,
+                      shape: CircleBorder(),
+                    ),
+                    alignment: Alignment.center,
+                    child: Obx(
+                      () => Text(
+                        controller.ownerInitials,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'POSTE DE CONTRÔLE',
+                          style: TextStyle(
+                            color: kGreen,
+                            fontFamily: 'Orbitron',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Obx(
+                          () => Text(
+                            controller.ownerName.value,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: kTextPrim,
+                              fontSize: 19,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Obx(
+                    () => IconButton(
+                      onPressed: controller.goToNotifications,
+                      icon: Badge(
+                        isLabelVisible: controller.notificationCount.value > 0,
+                        label: Text('${controller.notificationCount.value}'),
+                        child: const PhosphorIcon(
+                          PhosphorIconsDuotone.bell,
+                          color: kTextPrim,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Obx(
+                () => ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: DecoratedBox(
+                    decoration: const ShapeDecoration(
+                      gradient: kGreenGradient,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(20)),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _ControllerStat(
+                              value: '${controller.todayBookings.value}',
+                              label: "Réservations aujourd'hui",
+                            ),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 44,
+                            color: Colors.white.withValues(alpha: 0.35),
+                          ),
+                          Expanded(
+                            child: _ControllerStat(
+                              value: '${controller.activeTerrainCount.value}',
+                              label: 'Terrains assignés',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              _buildDashboardNotice(),
+              const OwnerSectionHeader(
+                title: "Actions d'aujourd'hui",
+                subtitle: 'Accès limité aux opérations de contrôle',
+              ),
+              _buildQuickActions(),
+            ],
+          ),
         ),
       ),
     );
@@ -596,6 +731,39 @@ class DashboardScreen extends GetView<DashboardController> {
   }
 
   // ─── Bottom nav ───────────────────────────────────────────────────────────
+}
+
+class _ControllerStat extends StatelessWidget {
+  final String value;
+  final String label;
+
+  const _ControllerStat({required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.85),
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

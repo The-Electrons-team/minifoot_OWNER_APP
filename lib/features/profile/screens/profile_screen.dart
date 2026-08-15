@@ -58,6 +58,7 @@ class ProfileScreen extends GetView<ProfileController> {
               ),
             ),
             actions: [
+              if (!controller.isController)
               Center(
                 child: Padding(
                   padding: const EdgeInsets.only(right: 16),
@@ -95,10 +96,12 @@ class ProfileScreen extends GetView<ProfileController> {
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 34),
           children: [
             _buildIdentityCard(),
-            const SizedBox(height: 14),
-            _buildStatsRow(),
-            const SizedBox(height: 14),
-            _buildRevenueCard(),
+            if (!controller.isController) ...[
+              const SizedBox(height: 14),
+              _buildStatsRow(),
+              const SizedBox(height: 14),
+              _buildRevenueCard(),
+            ],
             const SizedBox(height: 14),
             _buildAccountCard(),
             const SizedBox(height: 16),
@@ -125,7 +128,7 @@ class ProfileScreen extends GetView<ProfileController> {
               initials: controller.initials,
               imageUrl: controller.avatarUrl.value,
               isUploading: controller.isUploadingAvatar.value,
-              onTap: _showAvatarPicker,
+              onTap: controller.isController ? null : _showAvatarPicker,
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -161,9 +164,9 @@ class ProfileScreen extends GetView<ProfileController> {
                       color: kGreenLight,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Text(
-                      'Compte actif',
-                      style: TextStyle(
+                    child: Text(
+                      controller.isController ? 'Contrôleur' : 'Compte actif',
+                      style: const TextStyle(
                         color: kGreen,
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
@@ -275,9 +278,11 @@ class ProfileScreen extends GetView<ProfileController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const OwnerSectionHeader(
+            OwnerSectionHeader(
               title: 'Informations du compte',
-              subtitle: 'Identité, sécurité et coordonnées de reversement',
+              subtitle: controller.isController
+                  ? 'Identité et sécurité du compte'
+                  : 'Identité, sécurité et coordonnées de reversement',
             ),
             const SizedBox(height: 10),
             _InfoRow(
@@ -297,13 +302,15 @@ class ProfileScreen extends GetView<ProfileController> {
               label: 'Membre depuis',
               value: controller.memberSince.value,
             ),
-            const Divider(height: 22, color: kDivider),
-            _AccountAction(
-              icon: PhosphorIcons.wallet,
-              title: 'Reversements',
-              subtitle: 'Wave, Orange Money, Yas Money',
-              onTap: _openPaymentMethods,
-            ),
+            if (!controller.isController) ...[
+              const Divider(height: 22, color: kDivider),
+              _AccountAction(
+                icon: PhosphorIcons.wallet,
+                title: 'Reversements',
+                subtitle: 'Wave, Orange Money, Yas Money',
+                onTap: _openPaymentMethods,
+              ),
+            ],
             const Divider(height: 22, color: kDivider),
             _AccountAction(
               icon: PhosphorIcons.shieldCheck,
@@ -586,7 +593,7 @@ class _ProfileAvatar extends StatelessWidget {
   final String initials;
   final String? imageUrl;
   final bool isUploading;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _ProfileAvatar({
     required this.initials,
@@ -635,24 +642,25 @@ class _ProfileAvatar extends StatelessWidget {
                 ),
               ),
             ),
-          Positioned(
-            right: -2,
-            bottom: -2,
-            child: Container(
-              width: 25,
-              height: 25,
-              decoration: BoxDecoration(
-                color: kGreen,
-                shape: BoxShape.circle,
-                border: Border.all(color: kBgCard, width: 2),
-              ),
-              child: Icon(
-                PhosphorIconsBold.camera,
-                color: Colors.white,
-                size: 13,
+          if (onTap != null)
+            Positioned(
+              right: -2,
+              bottom: -2,
+              child: Container(
+                width: 25,
+                height: 25,
+                decoration: BoxDecoration(
+                  color: kGreen,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: kBgCard, width: 2),
+                ),
+                child: Icon(
+                  PhosphorIconsBold.camera,
+                  color: Colors.white,
+                  size: 13,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

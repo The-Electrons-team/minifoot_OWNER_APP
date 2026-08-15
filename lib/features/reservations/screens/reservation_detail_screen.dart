@@ -332,20 +332,22 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                       label: 'Créneau',
                       value: reservation.timeSlot,
                     ),
-                    _DetailRow(
-                      icon: PhosphorIconsDuotone.wallet,
-                      label: 'Paiement',
-                      value:
-                          '${reservation.paymentMethod} · ${reservation.paymentStatus}',
-                    ),
-                    _DetailRow(
-                      icon: PhosphorIconsDuotone.money,
-                      label: 'Montant',
-                      value: _formatAmount(reservation.amount),
-                    ),
+                    if (!controller.isController) ...[
+                      _DetailRow(
+                        icon: PhosphorIconsDuotone.wallet,
+                        label: 'Paiement',
+                        value:
+                            '${reservation.paymentMethod} · ${reservation.paymentStatus}',
+                      ),
+                      _DetailRow(
+                        icon: PhosphorIconsDuotone.money,
+                        label: 'Montant',
+                        value: _formatAmount(reservation.amount),
+                      ),
+                    ],
                   ],
                 ),
-                if (reservation.canCancel) ...[
+                if (!controller.isController && reservation.canCancel) ...[
                   const SizedBox(height: 18),
                   SizedBox(
                     width: double.infinity,
