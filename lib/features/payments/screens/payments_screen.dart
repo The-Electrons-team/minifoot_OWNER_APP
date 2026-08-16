@@ -35,7 +35,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
             ),
             slivers: [
               _buildHeader(context),
-              SliverToBoxAdapter(child: _buildAvailableBalance(context)),
+              SliverToBoxAdapter(child: _buildRevenueCard()),
               SliverToBoxAdapter(child: _buildPayoutDestination()),
               SliverToBoxAdapter(child: _buildNotice()),
               SliverToBoxAdapter(child: _buildMethodBreakdown()),
@@ -50,22 +50,10 @@ class PaymentsScreen extends GetView<PaymentsController> {
     );
   }
 
-  // ── Carte revenus + solde + bouton Retirer ────────────────────────────────
-  Widget _buildAvailableBalance(BuildContext context) {
+  // ── Carte revenus ─────────────────────────────────────────────────────────
+  Widget _buildRevenueCard() {
     return Obx(() {
-      final balance = controller.availableBalance.value;
       final total = controller.totalRevenue.value;
-      final count = controller.pendingPaymentsCount.value;
-      final isWithdrawing = controller.isWithdrawing.value;
-      final hasBalance = balance > 0;
-
-      final textPrim = hasBalance ? Colors.white : kTextPrim;
-      final textSub = hasBalance
-          ? Colors.white.withValues(alpha: 0.70)
-          : kTextSub;
-      final divColor = hasBalance
-          ? Colors.white.withValues(alpha: 0.20)
-          : kDivider;
 
       return Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -73,14 +61,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
             Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    gradient: hasBalance
-                        ? const LinearGradient(
-                            colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          )
-                        : null,
-                    color: hasBalance ? null : kBgCard,
+                    color: kBgCard,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: kElevatedShadow,
                   ),
@@ -93,7 +74,7 @@ class PaymentsScreen extends GetView<PaymentsController> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: textSub,
+                          color: kTextSub,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -103,99 +84,9 @@ class PaymentsScreen extends GetView<PaymentsController> {
                           fontFamily: 'Orbitron',
                           fontSize: 24,
                           fontWeight: FontWeight.w800,
-                          color: textPrim,
+                          color: kTextPrim,
                           height: 1,
                         ),
-                      ),
-
-                      const SizedBox(height: 14),
-                      Container(height: 1, color: divColor),
-                      const SizedBox(height: 14),
-
-                      // ── À retirer + bouton ─────────────────────────────────────
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'À retirer',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: textSub,
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  '${_fmt(balance)} F CFA',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                    color: textPrim,
-                                    height: 1,
-                                  ),
-                                ),
-                                if (count > 0) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '$count rés. non retirée${count > 1 ? 's' : ''}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: textSub,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          if (hasBalance) ...[
-                            const SizedBox(width: 12),
-                            SizedBox(
-                              height: 42,
-                              child: ElevatedButton.icon(
-                                onPressed: isWithdrawing
-                                    ? null
-                                    : () {
-                                        HapticFeedback.mediumImpact();
-                                        _showWithdrawSheet(context, balance);
-                                      },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: kGreen,
-                                  disabledBackgroundColor: Colors.white
-                                      .withValues(alpha: 0.4),
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                ),
-                                icon: isWithdrawing
-                                    ? const SizedBox(
-                                        width: 14,
-                                        height: 14,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: kGreen,
-                                        ),
-                                      )
-                                    : const PhosphorIcon(
-                                        PhosphorIconsBold.arrowLineDown,
-                                        size: 16,
-                                      ),
-                                label: Text(
-                                  isWithdrawing ? 'En cours…' : 'Retirer',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
                       ),
                     ],
                   ),
@@ -205,21 +96,6 @@ class PaymentsScreen extends GetView<PaymentsController> {
                 .slideY(begin: 0.04, duration: 320.ms),
       );
     });
-  }
-
-  void _showWithdrawSheet(BuildContext context, int balance) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => _WithdrawSheet(
-        availableBalance: balance,
-        formatAmount: _fmt,
-        payoutPhone: controller.payoutPhone.value,
-        payoutMethodLabel: controller.payoutMethodLabel,
-        onWithdraw: (phone) => controller.withdraw(phone),
-      ),
-    );
   }
 
   Widget _buildPayoutDestination() {
